@@ -1,26 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
 import { 
-  RefreshCw, Copy, ExternalLink, Edit2, Check, X, 
+  RefreshCw, Copy, ExternalLink,
   User, Mail, Phone, MapPin, Home, Bath, BedDouble, 
   Calendar, Clock, Sparkles, Building2, PoundSterling,
   ChevronLeft, ChevronRight, ArrowUpDown, Send
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 type TimePeriod = 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_3_months' | 'all';
 
@@ -65,6 +58,7 @@ interface SentQuote {
   address: string | null;
   bedrooms: number | null;
   bathrooms: number | null;
+  toilets: number | null;
   frequency: string | null;
   selected_date: string | null;
   selected_time: string | null;
@@ -83,6 +77,11 @@ interface SentQuote {
   created_by_admin_id: string | null;
   agent_user_id: string | null;
   converted_booking_id: number | null;
+  oven_cleaning: boolean | null;
+  oven_size: string | null;
+  property_access: string | null;
+  access_notes: string | null;
+  short_notice_charge: number | null;
 }
 
 interface AdminProfile {
@@ -98,6 +97,7 @@ interface SentQuotesTabProps {
 }
 
 const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = false }) => {
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState<SentQuote[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,28 +105,6 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('last_month');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
-  const [editingQuote, setEditingQuote] = useState<SentQuote | null>(null);
-  const [editForm, setEditForm] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    postcode: '',
-    address: '',
-    property_type: '',
-    bedrooms: 0,
-    bathrooms: 0,
-    frequency: '',
-    selected_date: '',
-    selected_time: '',
-    is_flexible: false,
-    calculated_quote: 0,
-    recommended_hours: 0,
-    weekly_cost: 0,
-    weekly_hours: 0,
-    first_deep_clean: false,
-  });
-  const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
     setRefreshing(true);
@@ -191,7 +169,8 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
     return `https://account.sncleaningservices.co.uk/b/${quote.short_code}`;
   };
 
-  const handleCopyLink = async (quote: SentQuote) => {
+  const handleCopyLink = async (quote: SentQuote, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const link = getBookingLink(quote);
     try {
       await navigator.clipboard.writeText(link);
@@ -201,76 +180,61 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
     }
   };
 
-  const handlePreview = (quote: SentQuote) => {
+  const handlePreview = (quote: SentQuote, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const link = getBookingLink(quote);
     window.open(link, '_blank');
   };
 
-  const handleEdit = (quote: SentQuote) => {
-    setEditingQuote(quote);
-    setEditForm({
-      first_name: quote.first_name || '',
-      last_name: quote.last_name || '',
-      email: quote.email || '',
-      phone: quote.phone || '',
-      postcode: quote.postcode || '',
-      address: quote.address || '',
-      property_type: quote.property_type || '',
-      bedrooms: quote.bedrooms || 0,
-      bathrooms: quote.bathrooms || 0,
-      frequency: quote.frequency || '',
-      selected_date: quote.selected_date || '',
-      selected_time: quote.selected_time || '',
-      is_flexible: quote.is_flexible || false,
-      calculated_quote: quote.calculated_quote || 0,
-      recommended_hours: quote.recommended_hours || 0,
-      weekly_cost: quote.weekly_cost || 0,
-      weekly_hours: quote.weekly_hours || 0,
-      first_deep_clean: quote.first_deep_clean || false,
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingQuote) return;
+  // Navigate to booking form with quote data for editing
+  const handleEditQuote = (quote: SentQuote) => {
+    // Build URL params to prefill the form
+    const params = new URLSearchParams();
     
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('quote_leads')
-        .update({
-          first_name: editForm.first_name || null,
-          last_name: editForm.last_name || null,
-          email: editForm.email || null,
-          phone: editForm.phone || null,
-          postcode: editForm.postcode || null,
-          address: editForm.address || null,
-          property_type: editForm.property_type || null,
-          bedrooms: editForm.bedrooms || null,
-          bathrooms: editForm.bathrooms || null,
-          frequency: editForm.frequency || null,
-          selected_date: editForm.selected_date || null,
-          selected_time: editForm.selected_time || null,
-          is_flexible: editForm.is_flexible,
-          calculated_quote: editForm.calculated_quote,
-          recommended_hours: editForm.recommended_hours,
-          weekly_cost: editForm.weekly_cost || null,
-          weekly_hours: editForm.weekly_hours || null,
-          first_deep_clean: editForm.first_deep_clean,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', editingQuote.id);
-
-      if (error) throw error;
-
-      toast.success('Quote updated successfully');
-      setEditingQuote(null);
-      fetchData();
-    } catch (error) {
-      console.error('Error updating quote:', error);
-      toast.error('Failed to update quote');
-    } finally {
-      setSaving(false);
+    // Quote identification
+    params.set('editQuoteId', quote.id);
+    params.set('ref', quote.session_id);
+    
+    // Customer details
+    if (quote.first_name) params.set('firstName', quote.first_name);
+    if (quote.last_name) params.set('lastName', quote.last_name);
+    if (quote.email) params.set('email', quote.email);
+    if (quote.phone) params.set('phone', quote.phone);
+    
+    // Property details
+    if (quote.property_type) params.set('propertyType', quote.property_type.toLowerCase());
+    if (quote.bedrooms) params.set('bedrooms', quote.bedrooms.toString());
+    if (quote.bathrooms) params.set('bathrooms', quote.bathrooms.toString());
+    if (quote.toilets) params.set('toilets', quote.toilets.toString());
+    if (quote.postcode) params.set('postcode', quote.postcode);
+    if (quote.address) params.set('address', quote.address);
+    if (quote.property_access) params.set('propertyAccess', quote.property_access);
+    if (quote.access_notes) params.set('accessNotes', quote.access_notes);
+    
+    // Service details
+    if (quote.frequency) params.set('frequency', quote.frequency.toLowerCase());
+    if (quote.oven_cleaning) params.set('oven', '1');
+    if (quote.oven_size) params.set('ovenType', quote.oven_size);
+    
+    // Schedule
+    if (quote.selected_date) params.set('date', quote.selected_date);
+    if (quote.selected_time) params.set('time', quote.selected_time);
+    if (quote.is_flexible) params.set('flexibility', 'flexible-time');
+    
+    // Pricing
+    if (quote.calculated_quote) params.set('quotedCost', quote.calculated_quote.toString());
+    if (quote.recommended_hours) params.set('quotedHours', quote.recommended_hours.toString());
+    if (quote.short_notice_charge) params.set('shortNotice', quote.short_notice_charge.toString());
+    
+    // First deep clean / recurring
+    if (quote.first_deep_clean) {
+      params.set('firstDeepClean', '1');
+      if (quote.weekly_hours) params.set('weeklyHours', quote.weekly_hours.toString());
+      if (quote.weekly_cost) params.set('weeklyCost', quote.weekly_cost.toString());
     }
+    
+    // Navigate to admin domestic form with edit mode
+    navigate(`/admin/domestic-cleaning?${params.toString()}`);
   };
 
   // Filter by time period
@@ -384,7 +348,7 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
               className={`rounded-2xl border shadow-sm overflow-hidden transition-all hover:shadow-md cursor-pointer ${
                 quote.converted_booking_id ? 'border-l-4 border-l-green-500 bg-green-50/30' : 'border-gray-100'
               }`}
-              onClick={() => handleEdit(quote)}
+              onClick={() => handleEditQuote(quote)}
             >
               <CardContent className="p-4 space-y-3">
                 {/* Header Row */}
@@ -425,7 +389,7 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleCopyLink(quote)}
+                      onClick={(e) => handleCopyLink(quote, e)}
                       className="gap-1 text-xs"
                     >
                       <Copy className="h-3 w-3" />
@@ -434,7 +398,7 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePreview(quote)}
+                      onClick={(e) => handlePreview(quote, e)}
                       className="gap-1 text-xs"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -600,291 +564,6 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
           </div>
         </div>
       )}
-
-      {/* Edit Dialog */}
-      <Dialog open={!!editingQuote} onOpenChange={(open) => !open && setEditingQuote(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit2 className="h-5 w-5" />
-              Edit Quote
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            {editingQuote && (
-              <>
-                {/* Header with link actions */}
-                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                  <div className="text-sm font-mono text-gray-600">
-                    account.sncleaningservices.co.uk/b/{editingQuote.short_code}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopyLink(editingQuote)}
-                      className="gap-1"
-                    >
-                      <Copy className="h-3 w-3" />
-                      Copy Link
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePreview(editingQuote)}
-                      className="gap-1"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      Preview
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Customer Details Section */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Customer Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="first_name">First Name</Label>
-                      <Input
-                        id="first_name"
-                        value={editForm.first_name}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, first_name: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="last_name">Last Name</Label>
-                      <Input
-                        id="last_name"
-                        value={editForm.last_name}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, last_name: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={editForm.email}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        id="phone"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Property Details Section */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    Property Details
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="postcode">Postcode</Label>
-                      <Input
-                        id="postcode"
-                        value={editForm.postcode}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, postcode: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="property_type">Property Type</Label>
-                      <Select 
-                        value={editForm.property_type} 
-                        onValueChange={(value) => setEditForm(prev => ({ ...prev, property_type: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          <SelectItem value="Flat">Flat</SelectItem>
-                          <SelectItem value="House">House</SelectItem>
-                          <SelectItem value="Studio">Studio</SelectItem>
-                          <SelectItem value="Maisonette">Maisonette</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2 grid gap-2">
-                      <Label htmlFor="address">Address</Label>
-                      <Input
-                        id="address"
-                        value={editForm.address}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, address: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="bedrooms">Bedrooms</Label>
-                      <Input
-                        id="bedrooms"
-                        type="number"
-                        min="0"
-                        value={editForm.bedrooms}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, bedrooms: parseInt(e.target.value) || 0 }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="bathrooms">Bathrooms</Label>
-                      <Input
-                        id="bathrooms"
-                        type="number"
-                        min="0"
-                        value={editForm.bathrooms}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, bathrooms: parseInt(e.target.value) || 0 }))}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Schedule Section */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Schedule
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="frequency">Frequency</Label>
-                      <Select 
-                        value={editForm.frequency} 
-                        onValueChange={(value) => setEditForm(prev => ({ ...prev, frequency: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select frequency" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white">
-                          <SelectItem value="Weekly">Weekly</SelectItem>
-                          <SelectItem value="Fortnightly">Fortnightly</SelectItem>
-                          <SelectItem value="Monthly">Monthly</SelectItem>
-                          <SelectItem value="One-off">One-off</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="selected_date">Preferred Date</Label>
-                      <Input
-                        id="selected_date"
-                        type="date"
-                        value={editForm.selected_date}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, selected_date: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="selected_time">Preferred Time</Label>
-                      <Input
-                        id="selected_time"
-                        type="time"
-                        value={editForm.selected_time}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, selected_time: e.target.value }))}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 pt-6">
-                      <input
-                        id="is_flexible"
-                        type="checkbox"
-                        checked={editForm.is_flexible}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, is_flexible: e.target.checked }))}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="is_flexible" className="cursor-pointer">Time is flexible</Label>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pricing Section */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <PoundSterling className="h-4 w-4" />
-                    Pricing
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="calculated_quote">Quote Amount (£)</Label>
-                      <Input
-                        id="calculated_quote"
-                        type="number"
-                        step="0.01"
-                        value={editForm.calculated_quote}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, calculated_quote: parseFloat(e.target.value) || 0 }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="recommended_hours">Hours</Label>
-                      <Input
-                        id="recommended_hours"
-                        type="number"
-                        step="0.5"
-                        value={editForm.recommended_hours}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, recommended_hours: parseFloat(e.target.value) || 0 }))}
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 col-span-2">
-                      <input
-                        id="first_deep_clean"
-                        type="checkbox"
-                        checked={editForm.first_deep_clean}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, first_deep_clean: e.target.checked }))}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="first_deep_clean" className="cursor-pointer">First Deep Clean (recurring pricing applies)</Label>
-                    </div>
-                    {editForm.first_deep_clean && (
-                      <>
-                        <div className="grid gap-2">
-                          <Label htmlFor="weekly_cost">Recurring Cost (£/visit)</Label>
-                          <Input
-                            id="weekly_cost"
-                            type="number"
-                            step="0.01"
-                            value={editForm.weekly_cost}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, weekly_cost: parseFloat(e.target.value) || 0 }))}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="weekly_hours">Recurring Hours</Label>
-                          <Input
-                            id="weekly_hours"
-                            type="number"
-                            step="0.5"
-                            value={editForm.weekly_hours}
-                            onChange={(e) => setEditForm(prev => ({ ...prev, weekly_hours: parseFloat(e.target.value) || 0 }))}
-                          />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setEditingQuote(null)} disabled={saving}>
-              <X className="h-4 w-4 mr-1" />
-              Cancel
-            </Button>
-            <Button onClick={handleSaveEdit} disabled={saving}>
-              {saving ? (
-                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4 mr-1" />
-              )}
-              Save Changes
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
