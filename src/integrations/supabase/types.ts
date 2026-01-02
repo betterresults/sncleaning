@@ -681,14 +681,17 @@ export type Database = {
           calculated_pay: number
           cleaner_id: number
           created_at: string | null
+          description: string | null
           fixed_amount: number | null
           hourly_rate: number | null
           hours_assigned: number | null
           id: string
           is_primary: boolean | null
+          payment_date: string | null
           payment_type: string
           percentage_rate: number | null
           status: string | null
+          title: string | null
           updated_at: string | null
         }
         Insert: {
@@ -696,14 +699,17 @@ export type Database = {
           calculated_pay?: number
           cleaner_id: number
           created_at?: string | null
+          description?: string | null
           fixed_amount?: number | null
           hourly_rate?: number | null
           hours_assigned?: number | null
           id?: string
           is_primary?: boolean | null
+          payment_date?: string | null
           payment_type?: string
           percentage_rate?: number | null
           status?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -711,14 +717,17 @@ export type Database = {
           calculated_pay?: number
           cleaner_id?: number
           created_at?: string | null
+          description?: string | null
           fixed_amount?: number | null
           hourly_rate?: number | null
           hours_assigned?: number | null
           id?: string
           is_primary?: boolean | null
+          payment_date?: string | null
           payment_type?: string
           percentage_rate?: number | null
           status?: string | null
+          title?: string | null
           updated_at?: string | null
         }
         Relationships: [
