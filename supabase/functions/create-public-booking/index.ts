@@ -408,6 +408,7 @@ const handler = async (req: Request): Promise<Response> => {
         start_date: dateStr || null,
         start_time: time24ForDB ? `${time24ForDB}:00+00` : null,
         postponed: false,
+        confirmed: false, // New recurring services start unconfirmed until first clean is completed
         interval: interval,
         recurring_group_id: recurringGroupId,
         created_by_user_id: createdByUserId,

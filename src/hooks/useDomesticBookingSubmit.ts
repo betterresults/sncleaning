@@ -514,7 +514,8 @@ export const useDomesticBookingSubmit = () => {
           interval: interval,
           recurring_group_id: recurringGroupId,
           created_by_user_id: createdByUserId,
-          created_by_source: createdBySource
+          created_by_source: createdBySource,
+          confirmed: false // New recurring services start unconfirmed until first clean is completed
         };
 
         const { error: recurringError } = await supabase

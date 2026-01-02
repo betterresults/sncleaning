@@ -93,6 +93,7 @@ export default function AddRecurringBooking() {
     start_date: '',
     start_time: '',
     postponed: false,
+    confirmed: false, // New field for pre-confirming recurring services
     recurringGroupId: null as string | null,
   });
 
@@ -398,6 +399,7 @@ export default function AddRecurringBooking() {
         start_date: selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` : formData.start_date,
         start_time: selectedTime,
         postponed: formData.postponed,
+        confirmed: formData.confirmed, // Allow pre-confirming when manually creating
         interval: interval,
         recurring_group_id: recurringGroupId,
         // Tracking - who created this recurring service
@@ -680,6 +682,24 @@ export default function AddRecurringBooking() {
                   </div>
                 </div>
               )}
+
+              {/* Confirmation Status */}
+              <div className="flex items-center space-x-3 p-4 rounded-lg border-2 border-emerald-200 bg-emerald-50/50">
+                <Checkbox
+                  id="confirmed"
+                  checked={formData.confirmed}
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, confirmed: checked === true }))}
+                  className="border-2 border-emerald-400"
+                />
+                <div className="flex-1">
+                  <Label htmlFor="confirmed" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                    Already Confirmed
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Check this if this is an existing customer and you don't need to wait for the first clean to confirm
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
