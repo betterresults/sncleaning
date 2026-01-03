@@ -13,6 +13,7 @@ interface EndOfTenancyCalculationInput {
   additionalRooms?: string[];
   ovenType?: string;
   houseShareAreas?: string[];
+  additionalServices?: string[];
   blindsItems?: { type: string; quantity: number; price: number }[];
   extraServices?: { id: string; name: string; quantity: number; price: number }[];
   carpetItems?: { id: string; name: string; quantity: number; price: number }[];
@@ -48,6 +49,7 @@ export interface EndOfTenancyCalculationResult {
   ovenCleaningCost: number;   // Oven cleaning (fixed, not affected by percentages)
   blindsTotal: number;        // Blinds cost (not affected by percentages)
   extrasTotal: number;        // Extra services cost (not affected by percentages)
+  additionalServicesTotal: number; // Additional services (Balcony, Garage, Waste Removal)
   steamCleaningTotal: number; // Carpet/upholstery/mattress total
   steamCleaningDiscount: number; // 20% discount on steam cleaning when combined
   steamCleaningFinal: number; // Steam cleaning after discount
@@ -95,6 +97,7 @@ export const useEndOfTenancyCalculations = (
         ovenCleaningCost: 0,
         blindsTotal: 0,
         extrasTotal: 0,
+        additionalServicesTotal: 0,
         steamCleaningTotal: 0,
         steamCleaningDiscount: 0,
         steamCleaningFinal: 0,
@@ -166,6 +169,18 @@ export const useEndOfTenancyCalculations = (
       });
     }
 
+    // Additional services (Balcony, Garage, Waste Removal, etc.) - tracked separately for display
+    let additionalServicesTotal = 0;
+    let additionalServicesTime = 0;
+    if (data.additionalServices && data.additionalServices.length > 0) {
+      data.additionalServices.forEach(service => {
+        const serviceConfig = getConfigValue('additional_services', service);
+        additionalServicesTotal += serviceConfig.value;
+        additionalServicesTime += serviceConfig.time;
+      });
+      totalTime += additionalServicesTime;
+    }
+
     // Oven cleaning - stored separately as it's a fixed add-on not affected by percentages
     // Note: "no_oven_cleaning" has a negative value (-30) to deduct from total since single oven is included in base price
     let ovenCleaningCost = 0;
@@ -217,9 +232,9 @@ export const useEndOfTenancyCalculations = (
     const steamCleaningFinal = steamCleaningTotal - steamCleaningDiscount;
 
     // 6. Calculate subtotal before first-time discount
-    // Oven cleaning is added as a fixed cost, not affected by condition/furniture percentages
+    // Oven cleaning and additional services are added as fixed costs, not affected by condition/furniture percentages
     const shortNoticeCharge = data.shortNoticeCharge || 0;
-    const subtotalBeforeDiscounts = adjustedBaseCost + ovenCleaningCost + blindsTotal + extrasTotal + steamCleaningFinal + shortNoticeCharge;
+    const subtotalBeforeDiscounts = adjustedBaseCost + ovenCleaningCost + blindsTotal + extrasTotal + additionalServicesTotal + steamCleaningFinal + shortNoticeCharge;
 
     // 7. Apply 10% first-time customer discount
     const firstTimeDiscount = isFirstTimeCustomer ? subtotalBeforeDiscounts * FIRST_TIME_DISCOUNT_PERCENTAGE : 0;
@@ -236,6 +251,7 @@ export const useEndOfTenancyCalculations = (
       ovenCleaningCost,
       blindsTotal,
       extrasTotal,
+      additionalServicesTotal,
       steamCleaningTotal,
       steamCleaningDiscount,
       steamCleaningFinal,
