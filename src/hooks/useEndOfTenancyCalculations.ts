@@ -61,7 +61,6 @@ export interface EndOfTenancyCalculationResult {
   isLoading: boolean;
 }
 
-const CARPET_DISCOUNT_PERCENTAGE = 0.20; // 20% off carpet when combined
 const FIRST_TIME_DISCOUNT_PERCENTAGE = 0.10; // 10% off for first-time customers
 
 const useEndOfTenancyFieldConfigs = () => {
@@ -222,14 +221,14 @@ export const useEndOfTenancyCalculations = (
     // Extra services
     const extrasTotal = (data.extraServices || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // 5. Calculate STEAM CLEANING with 20% discount
+    // 5. Calculate STEAM CLEANING (prices already discounted in form, no additional discount needed)
     const steamCleaningTotal = 
       (data.carpetItems || []).reduce((sum, item) => sum + (item.price * item.quantity), 0) +
       (data.upholsteryItems || []).reduce((sum, item) => sum + (item.price * item.quantity), 0) +
       (data.mattressItems || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    const steamCleaningDiscount = steamCleaningTotal * CARPET_DISCOUNT_PERCENTAGE;
-    const steamCleaningFinal = steamCleaningTotal - steamCleaningDiscount;
+    const steamCleaningDiscount = 0; // No discount - prices are already reduced
+    const steamCleaningFinal = steamCleaningTotal;
 
     // 6. Calculate subtotal before first-time discount
     // Oven cleaning and additional services are added as fixed costs, not affected by condition/furniture percentages
