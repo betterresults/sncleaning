@@ -110,11 +110,15 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {/* Oven Cleaning */}
-      {calculations.ovenCleaningCost > 0 && (
+      {/* Oven Cleaning - show positive costs or negative deductions */}
+      {calculations.ovenCleaningCost !== 0 && (
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Oven Cleaning</span>
-          <span className="text-foreground font-semibold">£{calculations.ovenCleaningCost.toFixed(2)}</span>
+          <span className="text-muted-foreground">
+            {calculations.ovenCleaningCost < 0 ? 'No Oven Cleaning' : 'Oven Cleaning'}
+          </span>
+          <span className={`font-semibold ${calculations.ovenCleaningCost < 0 ? 'text-green-600' : 'text-foreground'}`}>
+            {calculations.ovenCleaningCost < 0 ? '-' : ''}£{Math.abs(calculations.ovenCleaningCost).toFixed(2)}
+          </span>
         </div>
       )}
 
@@ -266,11 +270,15 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {/* Oven Cleaning */}
-      {calculations.ovenCleaningCost > 0 && (
+      {/* Oven Cleaning - show positive costs or negative deductions */}
+      {calculations.ovenCleaningCost !== 0 && (
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">Oven Cleaning</span>
-          <span className="text-foreground font-semibold">£{calculations.ovenCleaningCost.toFixed(2)}</span>
+          <span className="text-muted-foreground">
+            {calculations.ovenCleaningCost < 0 ? 'No Oven Cleaning' : 'Oven Cleaning'}
+          </span>
+          <span className={`font-semibold ${calculations.ovenCleaningCost < 0 ? 'text-green-600' : 'text-foreground'}`}>
+            {calculations.ovenCleaningCost < 0 ? '-' : ''}£{Math.abs(calculations.ovenCleaningCost).toFixed(2)}
+          </span>
         </div>
       )}
 
