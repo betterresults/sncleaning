@@ -43,9 +43,9 @@ const BLINDS_OPTIONS = [
 
 // Extra services
 const EXTRA_SERVICES = [
-  { id: 'balcony', name: 'Balcony Cleaning', price: 30, icon: Square },
-  { id: 'waste', name: 'Household Waste Removal', price: 40, icon: Trash2 },
-  { id: 'garage', name: 'Garage Cleaning', price: 50, icon: Car },
+  { id: 'balcony', name: 'Balcony Cleaning', price: 39, icon: Square },
+  { id: 'waste', name: 'Household Waste Removal', price: 59, icon: Trash2 },
+  { id: 'garage', name: 'Garage Cleaning', price: 59, icon: Car },
 ];
 
 // Carpet items
