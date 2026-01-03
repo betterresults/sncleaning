@@ -148,6 +148,15 @@ export const useEndOfTenancyCalculations = (
       });
     }
 
+    // Additional services (Balcony, Garage, Waste Removal, etc.)
+    if (data.additionalServices && data.additionalServices.length > 0) {
+      data.additionalServices.forEach(service => {
+        const serviceConfig = getConfigValue('additional_services', service);
+        baseCost += serviceConfig.value;
+        totalTime += serviceConfig.time;
+      });
+    }
+
     // Oven cleaning - stored separately as it's a fixed add-on not affected by percentages
     // Note: "no_oven_cleaning" has a negative value (-30) to deduct from total since single oven is included in base price
     let ovenCleaningCost = 0;
