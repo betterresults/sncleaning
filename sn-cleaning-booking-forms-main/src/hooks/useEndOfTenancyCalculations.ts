@@ -102,6 +102,13 @@ export const useEndOfTenancyCalculations = (
     let baseCost = 0;
     let totalTime = 0;
 
+    // Property Type (Flat, House, House Share)
+    if (data.propertyType) {
+      const propertyTypeConfig = getConfigValue('property_type', data.propertyType);
+      baseCost += propertyTypeConfig.value;
+      totalTime += propertyTypeConfig.time;
+    }
+
     // Bedrooms
     if (data.bedrooms) {
       const bedroomConfig = getConfigValue('bedrooms', data.bedrooms);
