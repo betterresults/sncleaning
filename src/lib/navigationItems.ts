@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList, MessageSquareText, XCircle } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList, MessageSquareText, XCircle, FileText, Sparkles } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -270,6 +270,32 @@ export const adminNavigation = [
     icon: ClipboardList,
   },
   {
+    title: "Booking Forms",
+    icon: FileText,
+    subItems: [
+      {
+        title: "Domestic Form Settings",
+        url: "/admin-domestic-form-settings",
+        icon: Home,
+      },
+      {
+        title: "Airbnb Form Settings",
+        url: "/admin-airbnb-form-settings",
+        icon: Sparkles,
+      },
+      {
+        title: "End of Tenancy Settings",
+        url: "/admin-end-of-tenancy-form-settings",
+        icon: CheckSquare,
+      },
+      {
+        title: "Carpet Cleaning Settings",
+        url: "/admin-carpet-cleaning-form-settings",
+        icon: Sparkles,
+      },
+    ],
+  },
+  {
     title: "Settings",
     icon: Settings,
     subItems: [
@@ -299,19 +325,9 @@ export const adminNavigation = [
         icon: Map,
       },
       {
-        title: "Airbnb Form Settings",
-        url: "/admin-airbnb-form-settings",
-        icon: CheckSquare,
-      },
-      {
         title: "Airbnb Booking Form",
         url: "/admin/airbnb",
         icon: Home,
-      },
-      {
-        title: "End of Tenancy Form Settings",
-        url: "/admin-end-of-tenancy-form-settings",
-        icon: CheckSquare,
       },
       {
         title: "Linen Order Form",

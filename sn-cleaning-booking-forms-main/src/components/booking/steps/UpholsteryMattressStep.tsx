@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { CarpetCleaningData, CarpetCleaningItem } from '../CarpetCleaningForm';
-import { Plus, Minus, Sofa, Bed, BedDouble, BedSingle, Armchair, Square, PanelTop, type LucideIcon } from 'lucide-react';
+import { Plus, Minus, Sofa, Bed, BedDouble, BedSingle, Armchair, Square, PanelTop, Crown, type LucideIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UpholsteryMattressStepProps {
   data: CarpetCleaningData;
@@ -11,26 +13,23 @@ interface UpholsteryMattressStepProps {
   onBack: () => void;
 }
 
-// Upholstery items with pricing and icons
-const upholsteryOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
-  { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', description: 'Love seat', price: 59, icon: Sofa },
-  { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', description: 'Standard sofa', price: 89, icon: Sofa },
-  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', description: 'L-shaped sectional', price: 109, icon: Sofa },
-  { id: 'armchair', name: 'Armchair', size: 'small', description: 'Single chair', price: 39, icon: Armchair },
-  { id: 'dining_chair', name: 'Dining Chair', size: 'small', description: 'Fabric seat', price: 15, icon: Square },
-  { id: 'ottoman', name: 'Ottoman', size: 'small', description: 'Fabric ottoman', price: 29, icon: Square },
-  { id: 'headboard', name: 'Headboard', size: 'medium', description: 'Upholstered headboard', price: 45, icon: PanelTop },
-  { id: 'curtains_half', name: 'Curtains Set (Half)', size: 'small', description: 'Half-length curtains', price: 35, icon: PanelTop },
-  { id: 'curtains_full', name: 'Curtains Set (Full)', size: 'medium', description: 'Full-length curtains', price: 49, icon: PanelTop },
-];
-
-// Mattress items with pricing and icons (base price is for one side)
-const mattressOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
-  { id: 'mattress_single', name: 'Single Mattress', size: 'small', description: '90x190cm', price: 35, icon: BedSingle },
-  { id: 'mattress_double', name: 'Double Mattress', size: 'medium', description: '135x190cm', price: 45, icon: BedDouble },
-  { id: 'mattress_king', name: 'King Mattress', size: 'large', description: '150x200cm', price: 55, icon: Bed },
-  { id: 'mattress_superking', name: 'Super King', size: 'large', description: '180x200cm', price: 65, icon: Bed },
-];
+// Icon mapping for upholstery and mattress items
+const ICON_MAP: Record<string, LucideIcon> = {
+  'sofa_2seat': Sofa,
+  'sofa_3seat': Sofa,
+  'sofa_corner': Sofa,
+  'armchair': Armchair,
+  'dining_chair': Square,
+  'cushions': Square,
+  'curtains_half': PanelTop,
+  'curtains_full': PanelTop,
+  'headboard': PanelTop,
+  'ottoman': Square,
+  'mattress_single': BedSingle,
+  'mattress_double': BedDouble,
+  'mattress_king': Bed,
+  'mattress_superking': Crown,
+};
 
 // Price multiplier for both sides
 const BOTH_SIDES_MULTIPLIER = 1.5;
@@ -43,6 +42,51 @@ export const UpholsteryMattressStep: React.FC<UpholsteryMattressStepProps> = ({
 }) => {
   // Track which mattresses have "both sides" enabled
   const [bothSides, setBothSides] = useState<Record<string, boolean>>({});
+
+  // Fetch upholstery and mattress items from database
+  const { data: steamConfigs } = useQuery({
+    queryKey: ['steam-cleaning-configs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('end_of_tenancy_field_configs')
+        .select('*')
+        .in('category', ['upholstery', 'mattress'])
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Transform database configs into options format
+  const upholsteryOptions = useMemo(() => {
+    if (!steamConfigs) return [];
+    return steamConfigs
+      .filter(c => c.category === 'upholstery')
+      .map(c => ({
+        id: c.option,
+        name: c.label || c.option,
+        size: 'medium' as const,
+        description: '',
+        price: c.value,
+        icon: ICON_MAP[c.option] || Square,
+      }));
+  }, [steamConfigs]);
+
+  const mattressOptions = useMemo(() => {
+    if (!steamConfigs) return [];
+    return steamConfigs
+      .filter(c => c.category === 'mattress')
+      .map(c => ({
+        id: c.option,
+        name: c.label || c.option,
+        size: 'medium' as const,
+        description: '',
+        price: c.value,
+        icon: ICON_MAP[c.option] || Square,
+      }));
+  }, [steamConfigs]);
 
   const getItemQuantity = (items: CarpetCleaningItem[], id: string) => {
     const item = items.find(i => i.id === id);

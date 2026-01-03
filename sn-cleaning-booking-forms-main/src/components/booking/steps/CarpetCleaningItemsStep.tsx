@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningData, CarpetCleaningItem } from '../CarpetCleaningForm';
-import { Plus, Minus, Layers, BedDouble, BedSingle, Bed, Tv, UtensilsCrossed, ChevronsUp, DoorOpen, Square, type LucideIcon } from 'lucide-react';
+import { Plus, Minus, Layers, BedDouble, BedSingle, Bed, Tv, UtensilsCrossed, ChevronsUp, DoorOpen, Square, Crown, type LucideIcon } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CarpetCleaningItemsStepProps {
   data: CarpetCleaningData;
@@ -9,25 +11,56 @@ interface CarpetCleaningItemsStepProps {
   onNext: () => void;
 }
 
-// Carpet items with pricing and icons - room-based naming
-const carpetOptions: { id: string; name: string; size: 'small' | 'medium' | 'large'; description: string; price: number; icon: LucideIcon }[] = [
-  { id: 'rug_small', name: 'Small Rug', size: 'small', description: 'Up to 4 sqm', price: 29, icon: Square },
-  { id: 'rug_medium', name: 'Medium Rug', size: 'medium', description: '4-8 sqm', price: 39, icon: Square },
-  { id: 'rug_large', name: 'Large Rug', size: 'large', description: '8+ sqm', price: 59, icon: Square },
-  { id: 'carpet_single_bedroom', name: 'Single Bedroom', size: 'small', description: 'Single bedroom carpet', price: 39, icon: BedSingle },
-  { id: 'carpet_double_bedroom', name: 'Double Bedroom', size: 'medium', description: 'Double bedroom carpet', price: 59, icon: BedDouble },
-  { id: 'carpet_master_bedroom', name: 'Master Bedroom', size: 'large', description: 'Master bedroom carpet', price: 69, icon: Bed },
-  { id: 'carpet_lounge', name: 'Lounge', size: 'medium', description: 'Living room carpet', price: 79, icon: Tv },
-  { id: 'carpet_dining_room', name: 'Dining Room', size: 'medium', description: 'Dining area carpet', price: 59, icon: UtensilsCrossed },
-  { id: 'stairs', name: 'Staircase', size: 'medium', description: 'Standard staircase', price: 49, icon: ChevronsUp },
-  { id: 'hallway', name: 'Hallway', size: 'small', description: 'Entrance/corridor', price: 19, icon: DoorOpen },
-];
+// Icon mapping for carpet items
+const ICON_MAP: Record<string, LucideIcon> = {
+  'rug_small': Square,
+  'rug_medium': Square,
+  'rug_large': Square,
+  'carpet_single_bedroom': BedSingle,
+  'carpet_double_bedroom': BedDouble,
+  'carpet_master_bedroom': Bed,
+  'carpet_lounge': Tv,
+  'carpet_dining_room': UtensilsCrossed,
+  'stairs': ChevronsUp,
+  'hallway': DoorOpen,
+  'landing': DoorOpen,
+  'carpet_additional': Square,
+};
 
 export const CarpetCleaningItemsStep: React.FC<CarpetCleaningItemsStepProps> = ({
   data,
   onUpdate,
   onNext
 }) => {
+  // Fetch carpet items from database
+  const { data: carpetConfigs } = useQuery({
+    queryKey: ['carpet-cleaning-configs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('end_of_tenancy_field_configs')
+        .select('*')
+        .eq('category', 'carpet')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Transform database configs into options format
+  const carpetOptions = useMemo(() => {
+    if (!carpetConfigs) return [];
+    return carpetConfigs.map(c => ({
+      id: c.option,
+      name: c.label || c.option,
+      size: 'medium' as const,
+      description: '',
+      price: c.value,
+      icon: ICON_MAP[c.option] || Square,
+    }));
+  }, [carpetConfigs]);
+
   const getItemQuantity = (items: CarpetCleaningItem[], id: string) => {
     const item = items.find(i => i.id === id);
     return item?.quantity || 0;
