@@ -49,38 +49,35 @@ const EXTRA_SERVICES = [
 ];
 
 // Carpet items
-const CARPET_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; icon: LucideIcon }[] = [
-  { id: 'rug_small', name: 'Small Rug', size: 'small', price: 29, icon: Square },
-  { id: 'rug_medium', name: 'Medium Rug', size: 'medium', price: 39, icon: Square },
-  { id: 'rug_large', name: 'Large Rug', size: 'large', price: 59, icon: Square },
-  { id: 'carpet_single_bedroom', name: 'Single Bedroom', size: 'small', price: 39, icon: BedSingle },
-  { id: 'carpet_double_bedroom', name: 'Double Bedroom', size: 'medium', price: 59, icon: BedDouble },
-  { id: 'carpet_master_bedroom', name: 'Master Bedroom', size: 'large', price: 69, icon: Bed },
-  { id: 'carpet_lounge', name: 'Lounge', size: 'medium', price: 79, icon: Tv },
-  { id: 'carpet_dining_room', name: 'Dining Room', size: 'medium', price: 59, icon: UtensilsCrossed },
-  { id: 'stairs', name: 'Staircase', size: 'medium', price: 49, icon: ChevronsUp },
-  { id: 'hallway', name: 'Hallway', size: 'small', price: 19, icon: DoorOpen },
+// Carpet items - price is discounted bundle price, originalPrice is standalone price
+const CARPET_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon }[] = [
+  { id: 'rug_small', name: 'Small Rug', size: 'small', price: 25, originalPrice: 29, icon: Square },
+  { id: 'rug_large', name: 'Large Rug', size: 'large', price: 39, originalPrice: 59, icon: Square },
+  { id: 'carpet_bedroom', name: 'Bedroom', size: 'small', price: 39, originalPrice: 59, icon: BedSingle },
+  { id: 'carpet_lounge', name: 'Living Room', size: 'medium', price: 49, originalPrice: 79, icon: Tv },
+  { id: 'carpet_dining_room', name: 'Dining Room', size: 'medium', price: 49, originalPrice: 59, icon: UtensilsCrossed },
+  { id: 'stairs', name: 'Staircase', size: 'medium', price: 39, originalPrice: 49, icon: ChevronsUp },
+  { id: 'hallway', name: 'Hallway', size: 'small', price: 25, originalPrice: 29, icon: DoorOpen },
+  { id: 'landing', name: 'Landing', size: 'small', price: 10, icon: DoorOpen },
+  { id: 'carpet_additional', name: 'Any Additional Room', size: 'medium', price: 39, originalPrice: 49, icon: Square },
 ];
 
-// Upholstery items
-const UPHOLSTERY_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; icon: LucideIcon }[] = [
-  { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', price: 59, icon: Sofa },
-  { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', price: 89, icon: Sofa },
-  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', price: 109, icon: Sofa },
-  { id: 'armchair', name: 'Armchair', size: 'small', price: 39, icon: Armchair },
-  { id: 'dining_chair', name: 'Dining Chair', size: 'small', price: 15, icon: Square },
-  { id: 'ottoman', name: 'Ottoman', size: 'small', price: 29, icon: Square },
-  { id: 'headboard', name: 'Headboard', size: 'medium', price: 45, icon: PanelTop },
-  { id: 'curtains_half', name: 'Curtains (Half)', size: 'small', price: 35, icon: PanelTop },
-  { id: 'curtains_full', name: 'Curtains (Full)', size: 'medium', price: 49, icon: PanelTop },
+// Upholstery items - price is discounted bundle price, originalPrice is standalone price
+const UPHOLSTERY_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon }[] = [
+  { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', price: 49, originalPrice: 59, icon: Sofa },
+  { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', price: 69, originalPrice: 89, icon: Sofa },
+  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', price: 89, originalPrice: 109, icon: Sofa },
+  { id: 'armchair', name: 'Armchair', size: 'small', price: 19, originalPrice: 39, icon: Armchair },
+  { id: 'dining_chair', name: 'Dining Chair', size: 'small', price: 9, originalPrice: 15, icon: Square },
+  { id: 'cushions', name: 'Cushions', size: 'small', price: 5, icon: Square },
+  { id: 'curtains_pair', name: 'Curtains Pair', size: 'small', price: 25, originalPrice: 35, icon: PanelTop },
 ];
 
-// Mattress items
-const MATTRESS_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; icon: LucideIcon }[] = [
-  { id: 'mattress_single', name: 'Single Mattress', size: 'small', price: 35, icon: BedSingle },
-  { id: 'mattress_double', name: 'Double Mattress', size: 'medium', price: 45, icon: BedDouble },
-  { id: 'mattress_king', name: 'King Mattress', size: 'large', price: 55, icon: Bed },
-  { id: 'mattress_superking', name: 'Super King', size: 'large', price: 65, icon: Bed },
+// Mattress items - price is discounted bundle price, originalPrice is standalone price
+const MATTRESS_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon }[] = [
+  { id: 'mattress_single', name: 'Single Mattress', size: 'small', price: 29, originalPrice: 35, icon: BedSingle },
+  { id: 'mattress_double', name: 'Double Mattress', size: 'medium', price: 39, originalPrice: 45, icon: BedDouble },
+  { id: 'mattress_king', name: 'King Mattress', size: 'large', price: 49, originalPrice: 55, icon: Bed },
 ];
 
 const BOTH_SIDES_MULTIPLIER = 1.5;
@@ -250,13 +247,14 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
   };
 
   const renderItemCard = (
-    option: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; icon: LucideIcon },
+    option: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon },
     items: CarpetCleaningItem[],
     updateFn: (id: string, name: string, size: 'small' | 'medium' | 'large', price: number, delta: number) => void
   ) => {
     const quantity = getItemQuantity(items, option.id);
     const isSelected = quantity > 0;
     const IconComponent = option.icon;
+    const hasDiscount = option.originalPrice && option.originalPrice > option.price;
 
     return (
       <button
@@ -314,19 +312,28 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
             <span className="text-sm font-bold text-slate-700 group-hover:text-primary text-center leading-tight transition-colors">
               {option.name}
             </span>
-            <span className="text-base font-bold text-primary mt-1">£{option.price}</span>
+            <div className="flex items-center gap-1 mt-1">
+              {hasDiscount && (
+                <span className="text-sm text-muted-foreground line-through">£{option.originalPrice}</span>
+              )}
+              <span className="text-base font-bold text-primary">£{option.price}</span>
+            </div>
           </div>
         )}
       </button>
     );
   };
 
-  const renderMattressCard = (option: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; icon: LucideIcon }) => {
+  const renderMattressCard = (option: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon }) => {
     const quantity = getItemQuantity(data.mattressItems, option.id);
     const isSelected = quantity > 0;
     const IconComponent = option.icon;
     const isBothSides = bothSides[option.id] || false;
     const displayPrice = isBothSides ? Math.round(option.price * BOTH_SIDES_MULTIPLIER) : option.price;
+    const hasDiscount = option.originalPrice && option.originalPrice > option.price;
+    const displayOriginalPrice = option.originalPrice && isBothSides 
+      ? Math.round(option.originalPrice * BOTH_SIDES_MULTIPLIER) 
+      : option.originalPrice;
 
     return (
       <button
@@ -397,7 +404,12 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
             <span className="text-sm font-bold text-slate-700 group-hover:text-primary text-center leading-tight transition-colors">
               {option.name}
             </span>
-            <span className="text-lg font-bold text-primary mt-2">£{option.price}</span>
+            <div className="flex items-center gap-1 mt-2">
+              {hasDiscount && (
+                <span className="text-sm text-muted-foreground line-through">£{option.originalPrice}</span>
+              )}
+              <span className="text-lg font-bold text-primary">£{option.price}</span>
+            </div>
           </div>
         )}
       </button>
