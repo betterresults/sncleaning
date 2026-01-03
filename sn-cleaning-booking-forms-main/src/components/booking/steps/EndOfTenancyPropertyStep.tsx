@@ -79,19 +79,14 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   // Fetch oven options from database
   const { data: ovenConfigs } = useEndOfTenancyFieldConfigs('oven_cleaning', true);
   
-  // Build oven options from database config, with "No Oven Cleaning" as first option
+  // Build oven options from database config - includes "No Oven Cleaning" with negative value for deduction
   const ovenOptions = React.useMemo(() => {
-    const options = [{ id: 'none', label: 'No Oven Cleaning', price: 0 }];
-    if (ovenConfigs) {
-      ovenConfigs.forEach(config => {
-        options.push({
-          id: config.option,
-          label: config.label || config.option,
-          price: config.value
-        });
-      });
-    }
-    return options;
+    if (!ovenConfigs) return [];
+    return ovenConfigs.map(config => ({
+      id: config.option,
+      label: config.label || config.option,
+      price: config.value
+    }));
   }, [ovenConfigs]);
   
   const isHouseShare = data.propertyType === 'house-share';
