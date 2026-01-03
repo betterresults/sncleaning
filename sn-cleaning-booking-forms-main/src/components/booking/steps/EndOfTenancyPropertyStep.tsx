@@ -502,41 +502,6 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         )}
 
-        {/* Additional Services (hide for house share) */}
-        {!isHouseShare && additionalServicesOptions.length > 0 && (
-          <div className="relative z-[4]">
-            <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Services</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {additionalServicesOptions.map((service) => {
-                const isSelected = data.additionalServices?.includes(service.id);
-                return (
-                  <button
-                    key={service.id}
-                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
-                      isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-card hover:border-primary/50'
-                    }`}
-                    onClick={() => {
-                      const current = data.additionalServices || [];
-                      if (current.includes(service.id)) {
-                        onUpdate({ additionalServices: current.filter(s => s !== service.id) });
-                      } else {
-                        onUpdate({ additionalServices: [...current, service.id] });
-                      }
-                    }}
-                  >
-                    {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
-                    <span className={`text-sm font-bold transition-colors ${
-                      isSelected ? 'text-primary' : 'text-slate-500'
-                    }`}>{service.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <div className="flex justify-end pt-4">
           <Button
             size="lg"
