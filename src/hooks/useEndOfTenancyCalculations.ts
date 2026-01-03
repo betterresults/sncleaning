@@ -167,11 +167,12 @@ export const useEndOfTenancyCalculations = (
     }
 
     // Oven cleaning - stored separately as it's a fixed add-on not affected by percentages
+    // Note: "no_oven_cleaning" has a negative value (-30) to deduct from total since single oven is included in base price
     let ovenCleaningCost = 0;
     let ovenCleaningTime = 0;
-    if (data.ovenType && data.ovenType !== 'none' && data.ovenType !== 'no_oven_cleaning') {
+    if (data.ovenType && data.ovenType !== 'none') {
       const ovenConfig = getConfigValue('oven_cleaning', data.ovenType);
-      ovenCleaningCost = ovenConfig.value;
+      ovenCleaningCost = ovenConfig.value; // Can be negative for "no_oven_cleaning"
       ovenCleaningTime = ovenConfig.time;
       totalTime += ovenCleaningTime;
     }
