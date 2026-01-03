@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { EndOfTenancyBookingData } from '../EndOfTenancyBookingForm';
 import { CarpetCleaningItem } from '../CarpetCleaningForm';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Plus, 
   Minus, 
@@ -24,6 +26,7 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronUp,
+  Crown,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -48,37 +51,35 @@ const EXTRA_SERVICES = [
   { id: 'garage', name: 'Garage Cleaning', price: 59, icon: Car },
 ];
 
-// Carpet items
-// Carpet items - price is discounted bundle price, originalPrice is standalone price
-const CARPET_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon }[] = [
-  { id: 'rug_small', name: 'Small Rug', size: 'small', price: 25, originalPrice: 29, icon: Square },
-  { id: 'rug_large', name: 'Large Rug', size: 'large', price: 39, originalPrice: 59, icon: Square },
-  { id: 'carpet_bedroom', name: 'Bedroom', size: 'small', price: 39, originalPrice: 59, icon: BedSingle },
-  { id: 'carpet_lounge', name: 'Living Room', size: 'medium', price: 49, originalPrice: 79, icon: Tv },
-  { id: 'carpet_dining_room', name: 'Dining Room', size: 'medium', price: 49, originalPrice: 59, icon: UtensilsCrossed },
-  { id: 'stairs', name: 'Staircase', size: 'medium', price: 39, originalPrice: 49, icon: ChevronsUp },
-  { id: 'hallway', name: 'Hallway', size: 'small', price: 25, originalPrice: 29, icon: DoorOpen },
-  { id: 'landing', name: 'Landing', size: 'small', price: 10, icon: DoorOpen },
-  { id: 'carpet_additional', name: 'Any Additional Room', size: 'medium', price: 39, originalPrice: 49, icon: Square },
-];
-
-// Upholstery items - price is discounted bundle price, originalPrice is standalone price
-const UPHOLSTERY_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon }[] = [
-  { id: 'sofa_2seat', name: '2-Seater Sofa', size: 'small', price: 49, originalPrice: 59, icon: Sofa },
-  { id: 'sofa_3seat', name: '3-Seater Sofa', size: 'medium', price: 69, originalPrice: 89, icon: Sofa },
-  { id: 'sofa_corner', name: 'Corner Sofa', size: 'large', price: 89, originalPrice: 109, icon: Sofa },
-  { id: 'armchair', name: 'Armchair', size: 'small', price: 19, originalPrice: 39, icon: Armchair },
-  { id: 'dining_chair', name: 'Dining Chair', size: 'small', price: 9, originalPrice: 15, icon: Square },
-  { id: 'cushions', name: 'Cushions', size: 'small', price: 5, icon: Square },
-  { id: 'curtains_pair', name: 'Curtains Pair', size: 'small', price: 25, originalPrice: 35, icon: PanelTop },
-];
-
-// Mattress items - price is discounted bundle price, originalPrice is standalone price
-const MATTRESS_OPTIONS: { id: string; name: string; size: 'small' | 'medium' | 'large'; price: number; originalPrice?: number; icon: LucideIcon }[] = [
-  { id: 'mattress_single', name: 'Single Mattress', size: 'small', price: 29, originalPrice: 35, icon: BedSingle },
-  { id: 'mattress_double', name: 'Double Mattress', size: 'medium', price: 39, originalPrice: 45, icon: BedDouble },
-  { id: 'mattress_king', name: 'King Mattress', size: 'large', price: 49, originalPrice: 55, icon: Bed },
-];
+// Icon mapping for steam cleaning items
+const ICON_MAP: Record<string, LucideIcon> = {
+  'rug_small': Square,
+  'rug_medium': Square,
+  'rug_large': Square,
+  'carpet_single_bedroom': BedSingle,
+  'carpet_double_bedroom': BedDouble,
+  'carpet_master_bedroom': Bed,
+  'carpet_lounge': Tv,
+  'carpet_dining_room': UtensilsCrossed,
+  'stairs': ChevronsUp,
+  'hallway': DoorOpen,
+  'landing': DoorOpen,
+  'carpet_additional': Square,
+  'sofa_2seat': Sofa,
+  'sofa_3seat': Sofa,
+  'sofa_corner': Sofa,
+  'armchair': Armchair,
+  'dining_chair': Square,
+  'cushions': Square,
+  'curtains_half': PanelTop,
+  'curtains_full': PanelTop,
+  'headboard': Bed,
+  'ottoman': Square,
+  'mattress_single': BedSingle,
+  'mattress_double': BedDouble,
+  'mattress_king': Bed,
+  'mattress_superking': Crown,
+};
 
 const BOTH_SIDES_MULTIPLIER = 1.5;
 
@@ -90,6 +91,62 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
 }) => {
   const [expandedSteamCleaning, setExpandedSteamCleaning] = useState<string[]>([]);
   const [bothSides, setBothSides] = useState<Record<string, boolean>>({});
+
+  // Fetch steam cleaning items from database
+  const { data: steamCleaningConfigs } = useQuery({
+    queryKey: ['end-of-tenancy-steam-cleaning-configs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('end_of_tenancy_field_configs')
+        .select('*')
+        .in('category', ['carpet', 'upholstery', 'mattress'])
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Transform database configs into options format
+  const carpetOptions = useMemo(() => {
+    if (!steamCleaningConfigs) return [];
+    return steamCleaningConfigs
+      .filter(c => c.category === 'carpet')
+      .map(c => ({
+        id: c.option,
+        name: c.label || c.option,
+        size: 'medium' as const,
+        price: c.value,
+        icon: ICON_MAP[c.option] || Square,
+      }));
+  }, [steamCleaningConfigs]);
+
+  const upholsteryOptions = useMemo(() => {
+    if (!steamCleaningConfigs) return [];
+    return steamCleaningConfigs
+      .filter(c => c.category === 'upholstery')
+      .map(c => ({
+        id: c.option,
+        name: c.label || c.option,
+        size: 'medium' as const,
+        price: c.value,
+        icon: ICON_MAP[c.option] || Square,
+      }));
+  }, [steamCleaningConfigs]);
+
+  const mattressOptions = useMemo(() => {
+    if (!steamCleaningConfigs) return [];
+    return steamCleaningConfigs
+      .filter(c => c.category === 'mattress')
+      .map(c => ({
+        id: c.option,
+        name: c.label || c.option,
+        size: 'medium' as const,
+        price: c.value,
+        icon: ICON_MAP[c.option] || Square,
+      }));
+  }, [steamCleaningConfigs]);
 
   // Blinds handlers
   const updateBlindQuantity = (blindsId: string, delta: number) => {
@@ -620,7 +677,7 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
                   Select Carpet Items
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {CARPET_OPTIONS.map(option => renderItemCard(option, data.carpetItems, updateCarpetItem))}
+                  {carpetOptions.map(option => renderItemCard(option, data.carpetItems, updateCarpetItem))}
                 </div>
               </div>
             )}
@@ -667,7 +724,7 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
                   Select Upholstery Items
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {UPHOLSTERY_OPTIONS.map(option => renderItemCard(option, data.upholsteryItems, updateUpholsteryItem))}
+                  {upholsteryOptions.map(option => renderItemCard(option, data.upholsteryItems, updateUpholsteryItem))}
                 </div>
               </div>
             )}
@@ -714,7 +771,7 @@ export const EndOfTenancyExtrasStep: React.FC<EndOfTenancyExtrasStepProps> = ({
                   Select Mattress Items
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {MATTRESS_OPTIONS.map(option => renderMattressCard(option))}
+                  {mattressOptions.map(option => renderMattressCard(option))}
                 </div>
               </div>
             )}
