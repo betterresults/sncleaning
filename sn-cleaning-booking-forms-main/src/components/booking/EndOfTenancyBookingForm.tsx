@@ -24,6 +24,7 @@ export interface EndOfTenancyBookingData {
   furnitureStatus: 'furnished' | 'unfurnished' | 'part-furnished' | '';
   kitchenLivingSeparate: boolean | null;
   additionalRooms: string[];
+  additionalServices: string[]; // Balcony, Garage, Waste Removal, etc.
   ovenType: string;
   
   // House share specific
@@ -125,6 +126,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     furnitureStatus: '',
     kitchenLivingSeparate: null,
     additionalRooms: [],
+    additionalServices: [],
     ovenType: '',
     houseShareAreas: [],
     blindsItems: [],

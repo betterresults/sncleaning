@@ -50,21 +50,18 @@ const FURNITURE_STATUS = [
 ];
 
 const ADDITIONAL_ROOMS = [
-  { id: 'dining-room', label: 'Dining Room', icon: UtensilsCrossed },
+  { id: 'dining', label: 'Dining Room', icon: UtensilsCrossed },
   { id: 'study', label: 'Study Room', icon: BookOpen },
-  { id: 'utility-room', label: 'Utility Room', icon: WashingMachine },
+  { id: 'utility', label: 'Utility Room', icon: WashingMachine },
   { id: 'conservatory', label: 'Conservatory', icon: Trees },
   { id: 'additional-living', label: 'Additional Living Room', icon: Sofa },
   { id: 'basement', label: 'Basement', icon: ArrowDownToLine },
   { id: 'loft', label: 'Loft Room', icon: ArrowUpFromLine },
+  { id: 'toilet', label: 'Toilet', icon: Home },
+  { id: 'other_room', label: 'Any Other Room', icon: Home },
 ];
 
-const HOUSE_SHARE_AREAS = [
-  { id: 'bedroom', label: 'Bedroom' },
-  { id: 'bathroom', label: 'Bathroom' },
-  { id: 'kitchen-shared', label: 'Kitchen (Shared)' },
-  { id: 'living-shared', label: 'Living Room (Shared)' },
-];
+// House share areas - bedrooms are now fetched from database with specific types
 
 // Oven options are now fetched from database
 
@@ -79,6 +76,12 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   // Fetch oven options from database
   const { data: ovenConfigs } = useEndOfTenancyFieldConfigs('oven_cleaning', true);
   
+  // Fetch house share bedroom options from database
+  const { data: houseShareConfigs } = useEndOfTenancyFieldConfigs('house_share_areas', true);
+  
+  // Fetch additional services from database
+  const { data: additionalServicesConfigs } = useEndOfTenancyFieldConfigs('additional_services', true);
+  
   // Build oven options from database config - includes "No Oven Cleaning" with negative value for deduction
   const ovenOptions = React.useMemo(() => {
     if (!ovenConfigs) return [];
@@ -88,6 +91,26 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
       price: config.value
     }));
   }, [ovenConfigs]);
+  
+  // Build house share area options from database
+  const houseShareAreaOptions = React.useMemo(() => {
+    if (!houseShareConfigs) return [];
+    return houseShareConfigs.map(config => ({
+      id: config.option,
+      label: config.label || config.option,
+      price: config.value
+    }));
+  }, [houseShareConfigs]);
+  
+  // Build additional services options from database
+  const additionalServicesOptions = React.useMemo(() => {
+    if (!additionalServicesConfigs) return [];
+    return additionalServicesConfigs.map(config => ({
+      id: config.option,
+      label: config.label || config.option,
+      price: config.value
+    }));
+  }, [additionalServicesConfigs]);
   
   const isHouseShare = data.propertyType === 'house-share';
   
@@ -229,7 +252,7 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">Which areas need cleaning?</h2>
             <div className="grid grid-cols-2 gap-3">
-              {HOUSE_SHARE_AREAS.map((area) => {
+              {houseShareAreaOptions.map((area) => {
                 const isSelected = data.houseShareAreas?.includes(area.id);
                 return (
                   <button
@@ -479,7 +502,41 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         )}
 
-        {/* Continue Button */}
+        {/* Additional Services (hide for house share) */}
+        {!isHouseShare && additionalServicesOptions.length > 0 && (
+          <div className="relative z-[4]">
+            <h2 className="text-2xl font-bold text-slate-700 mb-4">Additional Services</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {additionalServicesOptions.map((service) => {
+                const isSelected = data.additionalServices?.includes(service.id);
+                return (
+                  <button
+                    key={service.id}
+                    className={`h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center gap-2 ${
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border bg-card hover:border-primary/50'
+                    }`}
+                    onClick={() => {
+                      const current = data.additionalServices || [];
+                      if (current.includes(service.id)) {
+                        onUpdate({ additionalServices: current.filter(s => s !== service.id) });
+                      } else {
+                        onUpdate({ additionalServices: [...current, service.id] });
+                      }
+                    }}
+                  >
+                    {isSelected && <CheckCircle className="h-4 w-4 text-primary" />}
+                    <span className={`text-sm font-bold transition-colors ${
+                      isSelected ? 'text-primary' : 'text-slate-500'
+                    }`}>{service.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end pt-4">
           <Button
             size="lg"
