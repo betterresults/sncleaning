@@ -161,6 +161,14 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
+      {/* Additional Services (Balcony, Garage, Waste Removal) */}
+      {calculations.additionalServicesTotal > 0 && (
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-muted-foreground">Additional Services</span>
+          <span className="text-foreground font-semibold">£{calculations.additionalServicesTotal.toFixed(2)}</span>
+        </div>
+      )}
+
       {/* Steam Cleaning */}
       {calculations.steamCleaningTotal > 0 && (
         <div className="space-y-2 mt-3 pt-3 border-t border-border">
@@ -295,6 +303,14 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Extra Services</span>
           <span className="text-foreground font-semibold">£{calculations.extrasTotal.toFixed(2)}</span>
+        </div>
+      )}
+
+      {/* Additional Services (Balcony, Garage, Waste Removal) */}
+      {calculations.additionalServicesTotal > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Additional Services</span>
+          <span className="text-foreground font-semibold">£{calculations.additionalServicesTotal.toFixed(2)}</span>
         </div>
       )}
 
