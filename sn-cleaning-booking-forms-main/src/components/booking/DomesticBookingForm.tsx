@@ -85,6 +85,7 @@ export interface DomesticBookingData {
   hourlyRate: number;
   totalCost: number;
   weeklyCost?: number; // Recurring weekly cost for display
+  regularRecurringCost?: number; // Regular recurring cost synced from summary (for quote tracking)
   
   // Admin pricing overrides
   adminDiscountAmount?: number;
@@ -648,19 +649,8 @@ const DomesticBookingForm: React.FC = () => {
         newData.totalCost = estimatedHours * newData.hourlyRate;
       }
       
-      // Track when totalCost is updated (this is the FINAL calculated cost from summary)
+      // Track when totalCost is updated - pass through values directly from summary (NO RECALCULATION)
       if ('totalCost' in updates && updates.totalCost && updates.totalCost > 0) {
-        // Calculate discount amount for tracking
-        const baseCost = (newData.estimatedHours ?? 0) * newData.hourlyRate;
-        const discountAmount = newData.isFirstTimeCustomer ? updates.totalCost * 0.10 / 0.90 : 0; // Reverse calculate the 10% discount
-        
-        // For recurring bookings, calculate the actual weekly/recurring cost
-        // This is different from totalCost when first deep clean is selected
-        const isRecurringService = ['weekly', 'biweekly', 'monthly'].includes(newData.serviceFrequency);
-        const recurringWeeklyCost = isRecurringService 
-          ? calculations.regularRecurringCost 
-          : undefined;
-        
         trackQuoteCalculated(updates.totalCost, newData.estimatedHours ?? undefined, {
           propertyType: newData.propertyType || undefined,
           bedrooms: parseBedroomsToNumber(newData.bedrooms),
@@ -670,10 +660,11 @@ const DomesticBookingForm: React.FC = () => {
           ovenCleaning: newData.hasOvenCleaning,
           ovenSize: newData.ovenType || undefined,
           postcode: newData.postcode || undefined,
-          weeklyCost: recurringWeeklyCost, // Use actual recurring cost, not first deep clean cost
-          discountAmount: discountAmount > 0 ? Math.round(discountAmount * 100) / 100 : undefined,
+          // Pass through values directly from summary - no recalculation
+          weeklyCost: newData.regularRecurringCost || undefined,
           shortNoticeCharge: newData.shortNoticeCharge || undefined,
           isFirstTimeCustomer: newData.isFirstTimeCustomer,
+          firstDeepClean: newData.wantsFirstDeepClean,
           cleaningProducts: newData.cleaningProducts.length > 0 ? newData.cleaningProducts : undefined,
           equipmentArrangement: newData.equipmentArrangement,
           // Include admin info if in admin mode

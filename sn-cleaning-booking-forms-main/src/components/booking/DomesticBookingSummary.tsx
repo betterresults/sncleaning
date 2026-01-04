@@ -279,6 +279,16 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         updates.shortNoticeCharge = shortNoticeInfo.charge;
       }
       
+      // CRITICAL: Sync regularRecurringCost for quote tracking (no recalculation needed downstream)
+      if (calculations.regularRecurringCost !== data.regularRecurringCost) {
+        updates.regularRecurringCost = calculations.regularRecurringCost;
+      }
+      
+      // Sync wantsFirstDeepClean state for quote tracking
+      if (calculations.wantsFirstDeepClean !== data.wantsFirstDeepClean) {
+        updates.wantsFirstDeepClean = calculations.wantsFirstDeepClean;
+      }
+      
       if (Object.keys(updates).length > 0) {
         onUpdate(updates);
       }
@@ -288,15 +298,18 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     calculations.hourlyRate,
     calculations.equipmentOneTimeCost,
     calculations.ovenCleaningCost,
+    calculations.regularRecurringCost,
+    calculations.wantsFirstDeepClean,
+    calculations.firstDeepCleanCost,
     data.adminHourlyRateOverride,
     data.adminTotalCostOverride,
     data.adminDiscountPercentage,
     data.adminDiscountAmount,
     data.adminRemoveShortNoticeCharge,
+    data.regularRecurringCost,
+    data.wantsFirstDeepClean,
     shortNoticeInfo.charge,
     data.isFirstTimeCustomer,
-    calculations.wantsFirstDeepClean,
-    calculations.firstDeepCleanCost,
   ]);
 
   const renderSummaryContent = () => (
