@@ -305,7 +305,11 @@ const handler = async (req: Request): Promise<Response> => {
       postcode: data.postcode || '',
       property_details: JSON.stringify(propertyDetails),
       service_type: data.serviceType || 'Domestic',
-      cleaning_type: (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : (data.cleaningType || 'Standard Cleaning'),
+      // For Domestic: cleaning_type = frequency (weekly/biweekly/monthly/onetime) OR 'Deep Cleaning' if first deep clean selected
+      // For Airbnb/other: cleaning_type = the actual cleaning type passed from form
+      cleaning_type: (data.serviceType === 'Domestic' || data.serviceType === 'Domestic Cleaning')
+        ? (data.wantsFirstDeepClean ? 'Deep Cleaning' : (data.serviceFrequency || 'onetime'))
+        : (data.cleaningType || 'Standard Cleaning'),
       frequently: data.serviceFrequency || 'onetime',
       date_time: bookingDateTimeStr || null,
       date_only: dateStr || null,

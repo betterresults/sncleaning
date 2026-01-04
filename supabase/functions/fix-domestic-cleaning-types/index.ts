@@ -16,13 +16,13 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find all domestic bookings where cleaning_type is incorrectly set to check-in/check-out
+    // Find all domestic bookings where cleaning_type is incorrectly set to check-in/check-out or Standard Cleaning
     // but should show the frequency (weekly, biweekly, monthly, onetime) or Deep Cleaning
     const { data: bookingsToFix, error: fetchError } = await supabase
       .from('bookings')
       .select('id, service_type, cleaning_type, frequently, additional_details')
-      .eq('service_type', 'Domestic Cleaning')
-      .in('cleaning_type', ['checkin-checkout', 'check-in-checkout', 'check_in_check_out', 'standard_cleaning']);
+      .or('service_type.eq.Domestic,service_type.eq.Domestic Cleaning')
+      .in('cleaning_type', ['checkin-checkout', 'check-in-checkout', 'check_in_check_out', 'standard_cleaning', 'Standard Cleaning', 'Domestic']);
 
     if (fetchError) {
       throw new Error(`Failed to fetch bookings: ${fetchError.message}`);
