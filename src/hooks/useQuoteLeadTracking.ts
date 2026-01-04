@@ -35,6 +35,7 @@ interface QuoteLeadData {
   discountAmount?: number;
   shortNoticeCharge?: number;
   isFirstTimeCustomer?: boolean;
+  firstDeepClean?: boolean;
   recommendedHours?: number;
   status?: 'live' | 'idle' | 'left' | 'completed';
   furthestStep?: string;
@@ -449,6 +450,7 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
         discount_amount: data.discountAmount,
         short_notice_charge: data.shortNoticeCharge,
         is_first_time_customer: data.isFirstTimeCustomer,
+        first_deep_clean: data.firstDeepClean,
         recommended_hours: data.recommendedHours,
         status: data.status || 'live',
         furthest_step: data.furthestStep,
