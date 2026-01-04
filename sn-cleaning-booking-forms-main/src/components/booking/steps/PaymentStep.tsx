@@ -1450,7 +1450,8 @@ useEffect(() => {
             booking_details: {
               address: `${data.houseNumber || ''} ${data.street || ''}, ${data.postcode || ''}`.trim(),
               total_cost: data.totalCost,
-              cleaning_type: data.wantsFirstDeepClean ? 'Deep Cleaning' : 'Standard Cleaning',
+              // For Domestic: cleaning_type = frequency OR 'Deep Cleaning' if first deep clean selected
+              cleaning_type: data.wantsFirstDeepClean ? 'Deep Cleaning' : (data.serviceFrequency || 'onetime'),
               date_time: data.selectedDate?.toISOString()
             },
             collect_only: false,
