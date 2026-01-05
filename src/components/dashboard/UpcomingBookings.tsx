@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,6 +105,7 @@ interface UpcomingBookingsProps {
 
 const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const navigate = useNavigate();
+  const { user, userRole, assignedSources } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -241,18 +243,12 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       }
 
       // Enrich bookings with primary cleaner from cleaner_payments
-      const enrichedBookings = (bookingsData || []).map(booking => ({
+      let enrichedBookings = (bookingsData || []).map(booking => ({
         ...booking,
         primary_cleaner: primaryCleanersMap[booking.id] || null
       }));
 
-      console.log('Fetched data:', {
-        bookings: enrichedBookings.length,
-        cleaners: cleanersData?.length || 0,
-        customers: customersData?.length || 0
-      });
-
-      // Build customer source map
+      // Build customer source map first (needed for sales agent filtering)
       const sourceMap: Record<number, string> = {};
       const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
       const sourcesWithBookings = new Set<string>();
@@ -265,7 +261,33 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           }
         }
       });
-      
+
+      // For sales agents: filter to only their own bookings OR bookings from their assigned sources
+      if (userRole === 'sales_agent' && user?.id) {
+        enrichedBookings = enrichedBookings.filter(booking => {
+          // They can see bookings they created
+          if (booking.created_by_user_id === user.id) return true;
+          
+          // They can see bookings from customers whose source is in their assigned_sources
+          if (assignedSources.length > 0 && booking.customer) {
+            const customerSource = sourceMap[booking.customer];
+            if (customerSource && assignedSources.includes(customerSource)) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
+      }
+
+      console.log('Fetched data:', {
+        bookings: enrichedBookings.length,
+        cleaners: cleanersData?.length || 0,
+        customers: customersData?.length || 0,
+        userRole,
+        assignedSources
+      });
+
       setCustomerSourceMap(sourceMap);
       setAvailableSources(Array.from(sourcesWithBookings).sort());
 

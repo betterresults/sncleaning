@@ -57,13 +57,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import CustomerDirectPaymentDialog from '@/components/payments/CustomerDirectPaymentDialog';
+import { AssignSourcesDialog } from '@/components/admin/AssignSourcesDialog';
 
 interface UserData {
   id: string;
   email: string;
   first_name?: string;
   last_name?: string;
-  role?: 'guest' | 'user' | 'admin' | 'customer';
+  role?: 'guest' | 'user' | 'admin' | 'customer' | 'sales_agent';
   cleaner_id?: number;
   customer_id?: number;
   // Extended for customers view
@@ -75,6 +76,7 @@ interface UserData {
   client_status?: string;
   client_type?: string | null;
   addressCount?: number;
+  assigned_sources?: string[] | null;
 }
 
 interface ModernUsersTableProps {
@@ -127,6 +129,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   
   // Customer detail view state
   const [customerDetailView, setCustomerDetailView] = useState<UserData | null>(null);
+  
+  // Assign sources dialog state (for sales agents)
+  const [assignSourcesDialogOpen, setAssignSourcesDialogOpen] = useState(false);
+  const [selectedAgentForSources, setSelectedAgentForSources] = useState<UserData | null>(null);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -1317,6 +1323,21 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                              )}
                             {!isCustomerView && (
                               <>
+                                {/* Assign Sources button for sales agents */}
+                                {user.role === 'sales_agent' && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedAgentForSources(user);
+                                      setAssignSourcesDialogOpen(true);
+                                    }}
+                                    className="bg-purple-50 hover:bg-purple-100 text-purple-600 border-purple-200"
+                                    title="Assign Customer Sources"
+                                  >
+                                    <Users className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1483,6 +1504,20 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           customerEmail={customerDetailView.email}
         />
       )}
+
+      {/* Assign Sources Dialog for Sales Agents */}
+      <AssignSourcesDialog
+        open={assignSourcesDialogOpen}
+        onOpenChange={setAssignSourcesDialogOpen}
+        agent={selectedAgentForSources ? {
+          user_id: selectedAgentForSources.id,
+          first_name: selectedAgentForSources.first_name || null,
+          last_name: selectedAgentForSources.last_name || null,
+          email: selectedAgentForSources.email,
+          assigned_sources: selectedAgentForSources.assigned_sources || null
+        } : null}
+        onSuccess={fetchUsers}
+      />
       </Card>
     </div>
   );

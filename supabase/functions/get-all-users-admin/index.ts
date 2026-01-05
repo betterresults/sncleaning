@@ -76,6 +76,7 @@ serve(async (req) => {
         role: userRole,
         cleaner_id: profile.cleaner_id,
         customer_id: profile.customer_id,
+        assigned_sources: profile.assigned_sources || [],
         type: 'auth_user'
       }
     }) || []

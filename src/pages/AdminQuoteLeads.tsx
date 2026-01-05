@@ -10,7 +10,7 @@ import { usePageTracking } from '@/hooks/usePageTracking';
 
 const AdminQuoteLeads = () => {
   usePageTracking('Admin Quote Leads');
-  const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
+  const { user, userRole, customerId, cleanerId, assignedSources, loading, signOut } = useAuth();
 
   const handleSignOut = async () => {
     try {
@@ -58,7 +58,8 @@ const AdminQuoteLeads = () => {
               <div className="w-full max-w-7xl mx-auto">
                 <QuoteLeadsView 
                   agentUserId={user?.id} 
-                  isAgent={userRole === 'sales_agent'} 
+                  isAgent={userRole === 'sales_agent'}
+                  agentAssignedSources={assignedSources}
                 />
               </div>
             </main>

@@ -144,9 +144,10 @@ const isLeadIdle = (lead: QuoteLead): boolean => {
 interface QuoteLeadsViewProps {
   agentUserId?: string | null;
   isAgent?: boolean;
+  agentAssignedSources?: string[];
 }
 
-const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) => {
+const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [] }: QuoteLeadsViewProps) => {
   const [leads, setLeads] = useState<QuoteLead[]>([]);
   const [events, setEvents] = useState<FunnelEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,17 +165,12 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) =
   const fetchData = async () => {
     setRefreshing(true);
     try {
-      // Build leads query - filter by agent if specified
+      // Build leads query
       let leadsQuery = supabase
         .from('quote_leads')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100);
-      
-      // If agent, only show their own leads
-      if (isAgent && agentUserId) {
-        leadsQuery = leadsQuery.eq('agent_user_id', agentUserId);
-      }
+        .limit(500);
 
       const [eventsResponse, leadsResponse, profilesResponse] = await Promise.all([
         supabase
@@ -191,11 +187,30 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false }: QuoteLeadsViewProps) =
       if (eventsResponse.error) throw eventsResponse.error;
       if (leadsResponse.error) throw leadsResponse.error;
 
+      let filteredLeadsData = leadsResponse.data || [];
+      
+      // For sales agents: filter to only their own leads OR leads from their assigned sources
+      if (isAgent && agentUserId) {
+        filteredLeadsData = filteredLeadsData.filter(lead => {
+          // They can see leads they created
+          if (lead.agent_user_id === agentUserId) return true;
+          
+          // They can see leads from their assigned sources
+          if (agentAssignedSources.length > 0 && lead.source) {
+            if (agentAssignedSources.includes(lead.source)) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
+      }
+
       setEvents((eventsResponse.data || []).map(e => ({
         ...e,
         event_data: e.event_data as Record<string, unknown> | null
       })));
-      setLeads(leadsResponse.data || []);
+      setLeads(filteredLeadsData);
 
       if (profilesResponse.data) {
         const profilesMap = new Map<string, AdminProfile>();

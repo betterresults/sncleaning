@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -90,6 +91,7 @@ interface PastBookingsListViewProps {
 }
 
 const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, showStatsForAdmin = false }: PastBookingsListViewProps) => {
+  const { user, userRole, assignedSources } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
@@ -281,7 +283,7 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
       setAvailableSources(Array.from(sourcesWithBookings).sort());
 
       // Map cleaner and customer data to bookings
-      const bookingsWithRelations = (bookingsData || []).map((booking: any) => ({
+      let bookingsWithRelations = (bookingsData || []).map((booking: any) => ({
         ...booking,
         cleaners: booking.cleaner 
           ? allCleaners?.find((c) => c.id === booking.cleaner) || null
@@ -290,6 +292,24 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
           ? allCustomers?.find((c) => c.id === booking.customer) || null
           : null
       }));
+
+      // For sales agents: filter to only their own bookings OR bookings from their assigned sources
+      if (userRole === 'sales_agent' && user?.id) {
+        bookingsWithRelations = bookingsWithRelations.filter(booking => {
+          // They can see bookings they created
+          if (booking.created_by_user_id === user.id) return true;
+          
+          // They can see bookings from customers whose source is in their assigned_sources
+          if (assignedSources.length > 0 && booking.customer) {
+            const customerSource = sourceMap[booking.customer];
+            if (customerSource && assignedSources.includes(customerSource)) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
+      }
 
       setBookings(bookingsWithRelations);
     } catch (error) {
