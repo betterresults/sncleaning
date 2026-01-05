@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +37,7 @@ interface CustomersSectionProps {
 }
 
 const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, readOnly = false }: CustomersSectionProps) => {
+  const { user, userRole, assignedSources } = useAuth();
   const [customers, setCustomers] = useState<CustomerData[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<CustomerData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
       if (error) throw error;
 
       // Get booking counts for each customer
-      const processedCustomers = await Promise.all(
+      let processedCustomers = await Promise.all(
         customers?.map(async (customer) => {
           const [{ count: upcomingCount }, { count: pastCount }] = await Promise.all([
             supabase
@@ -92,6 +94,41 @@ const CustomersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, r
           };
         }) || []
       );
+
+      // For sales agents: filter to only customers they can see
+      // They can see customers whose source is in their assigned_sources
+      // OR customers who have bookings created by this agent (we'd need to check bookings)
+      if (userRole === 'sales_agent' && user?.id) {
+        // Get bookings created by this agent to find which customers they can see
+        const { data: agentBookings } = await supabase
+          .from('bookings')
+          .select('customer')
+          .eq('created_by_user_id', user.id);
+        
+        const { data: agentPastBookings } = await supabase
+          .from('past_bookings')
+          .select('customer')
+          .eq('created_by_user_id', user.id);
+        
+        const customerIdsFromAgentBookings = new Set([
+          ...(agentBookings || []).map(b => b.customer).filter(Boolean),
+          ...(agentPastBookings || []).map(b => b.customer).filter(Boolean)
+        ]);
+
+        processedCustomers = processedCustomers.filter(customer => {
+          // They can see customers from bookings they created
+          if (customerIdsFromAgentBookings.has(customer.id)) return true;
+          
+          // They can see customers whose source is in their assigned_sources
+          if (assignedSources.length > 0 && customer.source) {
+            if (assignedSources.includes(customer.source)) {
+              return true;
+            }
+          }
+          
+          return false;
+        });
+      }
 
       setCustomers(processedCustomers);
       setFilteredCustomers(processedCustomers);

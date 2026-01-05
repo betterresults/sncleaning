@@ -2187,6 +2187,7 @@ export type Database = {
         Row: {
           account_holder_name: string | null
           account_number: string | null
+          assigned_sources: string[] | null
           bank_name: string | null
           cleaner_id: number | null
           created_at: string | null
@@ -2206,6 +2207,7 @@ export type Database = {
         Insert: {
           account_holder_name?: string | null
           account_number?: string | null
+          assigned_sources?: string[] | null
           bank_name?: string | null
           cleaner_id?: number | null
           created_at?: string | null
@@ -2225,6 +2227,7 @@ export type Database = {
         Update: {
           account_holder_name?: string | null
           account_number?: string | null
+          assigned_sources?: string[] | null
           bank_name?: string | null
           cleaner_id?: number | null
           created_at?: string | null

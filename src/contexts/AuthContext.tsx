@@ -9,6 +9,7 @@ interface AuthContextType {
   userRole: string | null;
   cleanerId: number | null;
   customerId: number | null;
+  assignedSources: string[];
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -29,19 +30,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<string | null>(null);
   const [cleanerId, setCleanerId] = useState<number | null>(null);
   const [customerId, setCustomerId] = useState<number | null>(null);
+  const [assignedSources, setAssignedSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId: string) => {
     try {
       console.log('Fetching role and relationships for user:', userId);
       
-      // Get user profile with cleaner/customer relationships
+      // Get user profile with cleaner/customer relationships and assigned_sources
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`
           role,
           cleaner_id,
-          customer_id
+          customer_id,
+          assigned_sources
         `)
         .eq('user_id', userId)
         .single();
@@ -71,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: finalRole,
         cleanerId: profileData?.cleaner_id,
         customerId: profileData?.customer_id,
+        assignedSources: profileData?.assigned_sources,
         rawUserRoleData: userRoleData,
         rawProfileData: profileData
       });
@@ -78,6 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole(finalRole);
       setCleanerId(profileData?.cleaner_id || null);
       setCustomerId(profileData?.customer_id || null);
+      setAssignedSources(profileData?.assigned_sources || []);
       
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -85,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole('guest');
       setCleanerId(null);
       setCustomerId(null);
+      setAssignedSources([]);
     }
   };
 
@@ -113,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole(null);
           setCleanerId(null);
           setCustomerId(null);
+          setAssignedSources([]);
           setLoading(false);
         }
       }
@@ -172,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole(null);
       setCleanerId(null);
       setCustomerId(null);
+      setAssignedSources([]);
       
       console.log('AuthContext: Local state cleared');
       
@@ -183,6 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole(null);
       setCleanerId(null);
       setCustomerId(null);
+      setAssignedSources([]);
       throw error; // Re-throw to let caller handle it
     }
   };
@@ -193,6 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userRole,
     cleanerId,
     customerId,
+    assignedSources,
     loading,
     signOut,
   };
