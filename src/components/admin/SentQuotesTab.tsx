@@ -119,10 +119,8 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
       // Filter by agent if specified
       if (isAgent && agentUserId) {
         query = query.eq('agent_user_id', agentUserId);
-      } else {
-        // For admins, show quotes created by any admin/agent
-        query = query.or('created_by_admin_id.not.is.null,agent_user_id.not.is.null');
       }
+      // For admins: show all quotes with short_code (no additional filter needed)
 
       const [quotesResponse, profilesResponse] = await Promise.all([
         query,
@@ -151,7 +149,7 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [agentUserId, isAgent]);
 
   const getAdminName = (adminId: string | null): string => {
     if (!adminId) return '-';
