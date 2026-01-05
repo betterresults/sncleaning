@@ -424,7 +424,7 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
   useEffect(() => {
     fetchData();
     setCurrentPage(1); // Reset to page 1 when filter changes
-  }, [dashboardDateFilter]);
+  }, [dashboardDateFilter, userRole, assignedSources]);
 
   useEffect(() => {
     applyFilters();

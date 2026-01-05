@@ -607,7 +607,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
   useEffect(() => {
     fetchData();
-  }, [sortOrder, dashboardDateFilter, filters.dateFrom, filters.dateTo]);
+  }, [sortOrder, dashboardDateFilter, filters.dateFrom, filters.dateTo, userRole, assignedSources]);
 
   useEffect(() => {
     applyFilters();
