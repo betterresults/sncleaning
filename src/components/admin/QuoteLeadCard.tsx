@@ -141,9 +141,17 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
 
   const handleEditQuote = () => {
     // Determine which form to navigate to based on service type
-    const isAirbnb = lead.service_type?.toLowerCase().includes('airbnb') || 
-                     lead.service_type?.toLowerCase().includes('air bnb');
-    const path = isAirbnb ? '/admin/airbnb' : '/admin/domestic';
+    const serviceTypeLower = lead.service_type?.toLowerCase() || '';
+    const isAirbnb = serviceTypeLower.includes('airbnb') || serviceTypeLower.includes('air bnb');
+    const isCarpet = serviceTypeLower.includes('carpet');
+    
+    let path = '/admin/domestic';
+    if (isAirbnb) {
+      path = '/admin/airbnb';
+    } else if (isCarpet) {
+      path = '/carpet-booking';
+    }
+    
     navigate(`${path}?editQuoteId=${lead.id}`);
   };
 
