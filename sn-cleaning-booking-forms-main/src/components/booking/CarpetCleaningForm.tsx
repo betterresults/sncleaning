@@ -574,6 +574,66 @@ const CarpetCleaningForm: React.FC = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-2 sm:px-4 py-2 max-w-[1400px]">
+        {/* Quote Link Mode: Show Booking Summary at Top for ALL steps */}
+        {isFromQuoteLink && !isAdminMode && currentStep !== 4 && (
+          <div className="mb-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border-2 border-primary/20">
+            <h3 className="text-xl font-bold text-[#185166] mb-4">Your Carpet Cleaning Quote</h3>
+            
+            <div className="space-y-3">
+              {/* Carpet Items */}
+              {bookingData.carpetItems.length > 0 && (
+                <div className="bg-white rounded-xl p-3 border border-gray-200">
+                  <h4 className="font-semibold text-[#185166] text-sm mb-2">Carpets & Rugs</h4>
+                  <ul className="space-y-1 text-sm">
+                    {bookingData.carpetItems.map((item, idx) => (
+                      <li key={idx} className="flex justify-between text-muted-foreground">
+                        <span>{item.quantity}x {item.name}</span>
+                        <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Upholstery Items */}
+              {bookingData.upholsteryItems.length > 0 && (
+                <div className="bg-white rounded-xl p-3 border border-gray-200">
+                  <h4 className="font-semibold text-[#185166] text-sm mb-2">Upholstery</h4>
+                  <ul className="space-y-1 text-sm">
+                    {bookingData.upholsteryItems.map((item, idx) => (
+                      <li key={idx} className="flex justify-between text-muted-foreground">
+                        <span>{item.quantity}x {item.name}</span>
+                        <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Mattress Items */}
+              {bookingData.mattressItems.length > 0 && (
+                <div className="bg-white rounded-xl p-3 border border-gray-200">
+                  <h4 className="font-semibold text-[#185166] text-sm mb-2">Mattresses</h4>
+                  <ul className="space-y-1 text-sm">
+                    {bookingData.mattressItems.map((item, idx) => (
+                      <li key={idx} className="flex justify-between text-muted-foreground">
+                        <span>{item.quantity}x {item.name}{item.bothSides ? ' (Both sides)' : ''}</span>
+                        <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* Total */}
+              <div className="pt-3 border-t border-primary/20 flex justify-between items-center">
+                <span className="font-bold text-[#185166]">Quote Total:</span>
+                <span className="font-bold text-primary text-lg">£{bookingData.totalCost.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="lg:col-span-2">
             <Card className="p-4 sm:p-6 lg:p-8 bg-white border border-border">
