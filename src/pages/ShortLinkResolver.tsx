@@ -111,15 +111,27 @@ const ShortLinkResolver = () => {
         if (serviceType === 'Carpet Cleaning' || serviceType === 'carpet_cleaning' || serviceType.toLowerCase().includes('carpet')) {
           route = '/carpet-cleaning';
           console.log('[ShortLinkResolver] Matched Carpet Cleaning route');
+          console.log('[ShortLinkResolver] data.carpet_items:', data.carpet_items);
+          console.log('[ShortLinkResolver] data.upholstery_items:', data.upholstery_items);
+          console.log('[ShortLinkResolver] data.mattress_items:', data.mattress_items);
+          
           // For carpet cleaning, pass items as JSON in URL params
-          if (data.carpet_items) {
-            params.set('carpetItems', JSON.stringify(data.carpet_items));
+          // Use type assertion since these columns were added after types were generated
+          const carpetItems = (data as any).carpet_items;
+          const upholsteryItems = (data as any).upholstery_items;
+          const mattressItems = (data as any).mattress_items;
+          
+          if (carpetItems && Array.isArray(carpetItems) && carpetItems.length > 0) {
+            params.set('carpetItems', JSON.stringify(carpetItems));
+            console.log('[ShortLinkResolver] Set carpetItems param:', JSON.stringify(carpetItems));
           }
-          if (data.upholstery_items) {
-            params.set('upholsteryItems', JSON.stringify(data.upholstery_items));
+          if (upholsteryItems && Array.isArray(upholsteryItems) && upholsteryItems.length > 0) {
+            params.set('upholsteryItems', JSON.stringify(upholsteryItems));
+            console.log('[ShortLinkResolver] Set upholsteryItems param:', JSON.stringify(upholsteryItems));
           }
-          if (data.mattress_items) {
-            params.set('mattressItems', JSON.stringify(data.mattress_items));
+          if (mattressItems && Array.isArray(mattressItems) && mattressItems.length > 0) {
+            params.set('mattressItems', JSON.stringify(mattressItems));
+            console.log('[ShortLinkResolver] Set mattressItems param:', JSON.stringify(mattressItems));
           }
         } else if (serviceType === 'Airbnb' || serviceType === 'airbnb' || serviceType.toLowerCase().includes('airbnb')) {
           route = '/airbnb-cleaning';
@@ -128,6 +140,8 @@ const ShortLinkResolver = () => {
           route = '/domestic-cleaning';
           console.log('[ShortLinkResolver] Using Domestic route (default)');
         }
+        
+        console.log('[ShortLinkResolver] Final URL params:', params.toString());
 
         // Update status to show they clicked the link
         await supabase
