@@ -57,6 +57,9 @@ export interface CarpetCleaningData {
   hourlyRate: number;
   totalCost: number;
   
+  // First-time customer discount
+  isFirstTimeCustomer?: boolean;
+  
   // Admin pricing overrides
   adminDiscountAmount?: number;
   adminDiscountPercentage?: number;
@@ -116,6 +119,7 @@ const CarpetCleaningForm: React.FC = () => {
     estimatedHours: null,
     hourlyRate: 0,
     totalCost: 0,
+    isFirstTimeCustomer: true, // Default to true for new customers
   });
 
   // Initialize tracking using the shared hook
@@ -149,6 +153,7 @@ const CarpetCleaningForm: React.FC = () => {
       estimatedHours: null,
       hourlyRate: 0,
       totalCost: 0,
+      isFirstTimeCustomer: true,
     });
     setCurrentStep(1);
   };
@@ -205,9 +210,18 @@ const CarpetCleaningForm: React.FC = () => {
           }
           
           if (customerId) {
+            // Check if customer has previous bookings to determine first-time discount
+            const { count } = await supabase
+              .from('bookings')
+              .select('*', { count: 'exact', head: true })
+              .eq('customer', customerId);
+            
+            const hasPreviousBookings = (count || 0) > 0;
+            
             setBookingData(prev => ({
               ...prev,
               customerId: customerId,
+              isFirstTimeCustomer: !hasPreviousBookings,
             }));
           }
         }

@@ -75,6 +75,15 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
 
   const MINIMUM_CHARGE = 99;
 
+  const getFirstTimeDiscount = () => {
+    if (!data.isFirstTimeCustomer) return 0;
+    let subtotal = getItemsSubtotal();
+    if (!(isAdminMode && data.adminRemoveShortNoticeCharge)) {
+      subtotal += shortNoticeInfo.charge;
+    }
+    return subtotal * 0.10; // 10% discount
+  };
+
   const calculateTotal = () => {
     if (data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null && data.adminTotalCostOverride > 0) {
       return data.adminTotalCostOverride;
@@ -84,6 +93,11 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
     
     if (!(isAdminMode && data.adminRemoveShortNoticeCharge)) {
       total += shortNoticeInfo.charge;
+    }
+    
+    // Apply first-time customer discount (10%)
+    if (data.isFirstTimeCustomer) {
+      total -= total * 0.10;
     }
     
     if (isAdminMode && data.adminDiscountPercentage) {
@@ -122,6 +136,7 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
     data.carpetItems,
     data.upholsteryItems,
     data.mattressItems,
+    data.isFirstTimeCustomer,
     data.adminTotalCostOverride,
     data.adminDiscountPercentage,
     data.adminDiscountAmount,
@@ -217,6 +232,14 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
               £{shortNoticeInfo.charge.toFixed(2)}
             </span>
           </div>
+        </div>
+      )}
+      
+      {/* First-Time Customer Discount Display */}
+      {data.isFirstTimeCustomer && getFirstTimeDiscount() > 0 && (
+        <div className="flex justify-between items-center text-green-600 mb-2">
+          <span className="text-sm">First-time customer discount (10%)</span>
+          <span className="text-sm font-semibold">-£{getFirstTimeDiscount().toFixed(2)}</span>
         </div>
       )}
       
