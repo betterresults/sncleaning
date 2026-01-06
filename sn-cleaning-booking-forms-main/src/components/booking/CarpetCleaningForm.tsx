@@ -158,10 +158,128 @@ const CarpetCleaningForm: React.FC = () => {
     setCurrentStep(1);
   };
 
-  // Scroll to top on mount
+  // Scroll to top on mount and parse URL params from quote links
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
+    
+    // Parse carpet items from URL params (from quote links)
+    const carpetItemsParam = searchParams.get('carpetItems');
+    const upholsteryItemsParam = searchParams.get('upholsteryItems');
+    const mattressItemsParam = searchParams.get('mattressItems');
+    const quotedCost = searchParams.get('quotedCost');
+    const firstName = searchParams.get('firstName');
+    const lastName = searchParams.get('lastName');
+    const email = searchParams.get('email');
+    const phone = searchParams.get('phone');
+    const postcode = searchParams.get('postcode');
+    const address = searchParams.get('address');
+    const dateParam = searchParams.get('date');
+    const timeParam = searchParams.get('time');
+    const propertyAccess = searchParams.get('propertyAccess');
+    const accessNotes = searchParams.get('accessNotes');
+    const flexibility = searchParams.get('flexibility');
+    
+    // Check if we have any data to pre-fill
+    const hasQuoteData = carpetItemsParam || upholsteryItemsParam || mattressItemsParam || quotedCost;
+    
+    if (hasQuoteData) {
+      console.log('[CarpetCleaningForm] Pre-filling from quote link params');
+      
+      const updates: Partial<CarpetCleaningData> = {};
+      
+      // Parse items
+      if (carpetItemsParam) {
+        try {
+          updates.carpetItems = JSON.parse(carpetItemsParam);
+          console.log('[CarpetCleaningForm] Parsed carpetItems:', updates.carpetItems);
+        } catch (e) {
+          console.error('Failed to parse carpetItems:', e);
+        }
+      }
+      if (upholsteryItemsParam) {
+        try {
+          updates.upholsteryItems = JSON.parse(upholsteryItemsParam);
+          console.log('[CarpetCleaningForm] Parsed upholsteryItems:', updates.upholsteryItems);
+        } catch (e) {
+          console.error('Failed to parse upholsteryItems:', e);
+        }
+      }
+      if (mattressItemsParam) {
+        try {
+          updates.mattressItems = JSON.parse(mattressItemsParam);
+          console.log('[CarpetCleaningForm] Parsed mattressItems:', updates.mattressItems);
+        } catch (e) {
+          console.error('Failed to parse mattressItems:', e);
+        }
+      }
+      
+      // Parse contact info
+      if (firstName) updates.firstName = firstName;
+      if (lastName) updates.lastName = lastName;
+      if (email) updates.email = email;
+      if (phone) updates.phone = phone;
+      if (postcode) updates.postcode = postcode;
+      if (propertyAccess) updates.propertyAccess = propertyAccess;
+      if (accessNotes) updates.accessNotes = accessNotes;
+      
+      // Parse address components
+      if (address) {
+        const addressParts = address.split(',').map(p => p.trim());
+        if (addressParts.length >= 1) {
+          // Try to split first part into house number and street
+          const firstPart = addressParts[0];
+          const match = firstPart.match(/^(\d+[a-zA-Z]?)\s+(.+)$/);
+          if (match) {
+            updates.houseNumber = match[1];
+            updates.street = match[2];
+          } else {
+            updates.street = firstPart;
+          }
+        }
+        if (addressParts.length >= 2) {
+          updates.city = addressParts[1];
+        }
+      }
+      
+      // Parse date/time
+      if (dateParam) {
+        updates.selectedDate = new Date(dateParam);
+      }
+      if (timeParam) {
+        updates.selectedTime = timeParam;
+      }
+      if (flexibility) {
+        updates.flexibility = flexibility as CarpetCleaningData['flexibility'];
+      }
+      
+      // Parse quoted cost
+      if (quotedCost) {
+        updates.totalCost = parseFloat(quotedCost);
+      }
+      
+      // Update booking data
+      setBookingData(prev => ({ ...prev, ...updates }));
+      
+      // Determine which step to navigate to based on available data
+      const hasCarpetOrUpholsteryItems = (updates.carpetItems && updates.carpetItems.length > 0) || 
+                                          (updates.upholsteryItems && updates.upholsteryItems.length > 0) ||
+                                          (updates.mattressItems && updates.mattressItems.length > 0);
+      const hasScheduleData = updates.selectedDate || updates.selectedTime || flexibility === 'flexible-time';
+      const hasContactData = firstName && email;
+      
+      // Skip to payment step if all data is present
+      if (hasCarpetOrUpholsteryItems && hasScheduleData && hasContactData) {
+        console.log('[CarpetCleaningForm] All data present, skipping to payment step');
+        setCurrentStep(4);
+      } else if (hasCarpetOrUpholsteryItems && hasScheduleData) {
+        console.log('[CarpetCleaningForm] Items and schedule present, going to payment step');
+        setCurrentStep(4);
+      } else if (hasCarpetOrUpholsteryItems) {
+        console.log('[CarpetCleaningForm] Only items present, going to schedule step');
+        setCurrentStep(3);
+      }
+    }
+  }, [searchParams]);
 
   // Check if user is admin AND on admin route
   useEffect(() => {

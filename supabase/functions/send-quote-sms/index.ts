@@ -72,14 +72,14 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Get first name for greeting
     const firstName = customerName ? customerName.split(' ')[0] : '';
-    const greeting = firstName ? `Hi ${firstName}, thank you for choosing SN Cleaning! ` : 'Thank you for choosing SN Cleaning! ';
+    const greeting = firstName ? `Hi ${firstName}, ` : '';
     
-    // Build friendly message - include link if available
+    // Build friendly quote message - this is a QUOTE not a booking confirmation
     let message: string;
     if (quoteUrl) {
-      message = `${greeting}Your ${serviceLabel} quote${locationText} is ${costText}. Review and book here: ${quoteUrl}`;
+      message = `${greeting}Your ${serviceLabel} quote${locationText} is ${costText}. Review your quote and book here: ${quoteUrl} - SN Cleaning`;
     } else {
-      message = `${greeting}Your ${serviceLabel} quote${locationText} is ${costText}. Call us on 0203 576 6888 to book or reply to this message for more info.`;
+      message = `${greeting}Your ${serviceLabel} quote${locationText} is ${costText}. Call us on 0203 576 6888 to discuss or reply for more info. - SN Cleaning`;
     }
 
     console.log('SMS Message:', message);
