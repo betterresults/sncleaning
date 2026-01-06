@@ -274,10 +274,13 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   };
 
   const handleSendQuoteEmail = async () => {
-    if (!email || !email.includes('@')) {
+    const hasEmail = email && email.includes('@');
+    const hasPhone = phone && phone.length >= 10;
+
+    if (!hasEmail && !hasPhone) {
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address.",
+        title: "Missing Contact Info",
+        description: "Please enter an email address or phone number.",
         variant: "destructive",
       });
       return;
@@ -285,48 +288,94 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
 
     setSendingEmail(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-quote-email', {
-        body: {
-          email,
-          quoteData: {
-            totalCost: quoteData.totalCost,
-            estimatedHours: quoteData.estimatedHours,
-            propertyType: quoteData.propertyType,
-            bedrooms: quoteData.bedrooms,
-            bathrooms: quoteData.bathrooms,
-            serviceFrequency: quoteData.serviceFrequency,
-            hasOvenCleaning: quoteData.hasOvenCleaning,
-            ovenType: quoteData.ovenType,
-            selectedDate: quoteData.selectedDate?.toISOString(),
-            selectedTime: quoteData.selectedTime,
-            postcode: quoteData.postcode,
-            shortNoticeCharge: quoteData.shortNoticeCharge,
-            isFirstTimeCustomer: quoteData.isFirstTimeCustomer,
-            discountAmount: quoteData.discountAmount,
-          },
-          sessionId,
-          serviceType,
-        },
-      });
+      let emailSent = false;
+      let smsSent = false;
+      const errors: string[] = [];
 
-      if (error) throw error;
+      // Send email if we have one
+      if (hasEmail) {
+        try {
+          const { data, error } = await supabase.functions.invoke('send-quote-email', {
+            body: {
+              email,
+              quoteData: {
+                totalCost: quoteData.totalCost,
+                estimatedHours: quoteData.estimatedHours,
+                propertyType: quoteData.propertyType,
+                bedrooms: quoteData.bedrooms,
+                bathrooms: quoteData.bathrooms,
+                serviceFrequency: quoteData.serviceFrequency,
+                hasOvenCleaning: quoteData.hasOvenCleaning,
+                ovenType: quoteData.ovenType,
+                selectedDate: quoteData.selectedDate?.toISOString(),
+                selectedTime: quoteData.selectedTime,
+                postcode: quoteData.postcode,
+                shortNoticeCharge: quoteData.shortNoticeCharge,
+                isFirstTimeCustomer: quoteData.isFirstTimeCustomer,
+                discountAmount: quoteData.discountAmount,
+              },
+              sessionId,
+              serviceType,
+            },
+          });
 
-      if (onSaveEmail) {
-        onSaveEmail(email);
+          if (error) throw error;
+          emailSent = true;
+
+          if (onSaveEmail) {
+            onSaveEmail(email);
+          }
+        } catch (error: any) {
+          console.error('Error sending quote email:', error);
+          errors.push('email');
+        }
       }
 
-      toast({
-        title: "Quote Sent",
-        description: `Quote email sent to ${email}`,
-      });
-      
-      setSendStatus('success');
-      onQuoteSent?.(); // Notify parent to reset form for next quote
+      // Send SMS if we have a phone number
+      if (hasPhone) {
+        try {
+          const { data, error } = await supabase.functions.invoke('send-quote-sms', {
+            body: {
+              phoneNumber: phone,
+              customerName: firstName.trim() || quoteData.firstName || '',
+              totalCost: quoteData.totalCost,
+              serviceType,
+              postcode: quoteData.postcode,
+            },
+          });
+
+          if (error) throw error;
+          smsSent = true;
+        } catch (error: any) {
+          console.error('Error sending quote SMS:', error);
+          errors.push('SMS');
+        }
+      }
+
+      if (emailSent || smsSent) {
+        const methods = [];
+        if (emailSent) methods.push('email');
+        if (smsSent) methods.push('SMS');
+        
+        toast({
+          title: "Quote Sent",
+          description: `Quote sent via ${methods.join(' and ')}`,
+        });
+        
+        setSendStatus('success');
+        onQuoteSent?.();
+      } else {
+        toast({
+          title: "Failed to Send",
+          description: `Could not send ${errors.join(' or ')}.`,
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
-      console.error('Error sending quote email:', error);
+      console.error('Error sending quote:', error);
       toast({
         title: "Failed to Send",
-        description: "There was an issue sending the quote email.",
+        description: "There was an issue sending the quote.",
         variant: "destructive",
       });
     } finally {
@@ -776,10 +825,10 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                   <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
                     <Mail className="w-5 h-5 text-white" />
                   </div>
-                  Send Quote Email
+                  Send Quote
                 </DialogTitle>
                 <DialogDescription className="text-white/80 font-light mt-2 leading-relaxed">
-                  Send the pricing quote to the customer's email.
+                  Send the pricing quote via email or SMS.
                 </DialogDescription>
               </DialogHeader>
             </div>
@@ -797,6 +846,18 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="quote-phone" className="text-sm font-medium text-slate-700">Phone Number</Label>
+                <Input
+                  id="quote-phone"
+                  type="tel"
+                  placeholder="07XXX XXXXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="rounded-xl border-slate-200 focus:border-primary focus:ring-primary h-12"
+                />
+              </div>
+
               <div className="flex gap-3">
                 <Button
                   onClick={() => setSelectedOption(null)}
@@ -807,7 +868,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </Button>
                 <Button
                   onClick={handleSendQuoteEmail}
-                  disabled={sendingEmail || !email}
+                  disabled={sendingEmail || (!email && (!phone || phone.length < 10))}
                   className="flex-1 bg-primary hover:bg-primary/90 rounded-xl"
                 >
                   {sendingEmail ? (
@@ -817,7 +878,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                     </>
                   ) : (
                     <>
-                      <Mail className="w-4 h-4 mr-2" />
+                      <Send className="w-4 h-4 mr-2" />
                       Send Quote
                     </>
                   )}
