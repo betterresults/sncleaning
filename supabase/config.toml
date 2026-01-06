@@ -134,3 +134,9 @@ verify_jwt = true
 
 [functions.fix-domestic-cleaning-types]
 verify_jwt = false
+
+[functions.send-quote-sms]
+verify_jwt = false
+
+[functions.send-complete-booking-sms]
+verify_jwt = false
