@@ -103,11 +103,25 @@ const ShortLinkResolver = () => {
 
         // Determine the route based on service type
         const serviceType = data.service_type || 'Domestic';
-        const route = serviceType === 'Domestic' || serviceType === 'domestic' 
-          ? '/domestic-cleaning' 
-          : serviceType === 'Airbnb' || serviceType === 'airbnb'
-            ? '/airbnb-cleaning'
-            : '/domestic-cleaning';
+        let route = '/domestic-cleaning';
+        
+        if (serviceType === 'Domestic' || serviceType === 'domestic') {
+          route = '/domestic-cleaning';
+        } else if (serviceType === 'Airbnb' || serviceType === 'airbnb') {
+          route = '/airbnb-cleaning';
+        } else if (serviceType === 'Carpet Cleaning' || serviceType === 'carpet_cleaning') {
+          route = '/carpet-cleaning';
+          // For carpet cleaning, pass items as JSON in URL params
+          if (data.carpet_items) {
+            params.set('carpetItems', JSON.stringify(data.carpet_items));
+          }
+          if (data.upholstery_items) {
+            params.set('upholsteryItems', JSON.stringify(data.upholstery_items));
+          }
+          if (data.mattress_items) {
+            params.set('mattressItems', JSON.stringify(data.mattress_items));
+          }
+        }
 
         // Update status to show they clicked the link
         await supabase
