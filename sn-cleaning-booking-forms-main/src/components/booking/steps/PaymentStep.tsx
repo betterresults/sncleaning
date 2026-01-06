@@ -1492,8 +1492,141 @@ useEffect(() => {
 
   return (
     <div className="space-y-8">
-      {/* Quote Link Mode: Booking Summary at Top */}
-      {isQuoteLinkMode && !isAdminMode && (
+      {/* Quote Link Mode: Booking Summary at Top - CARPET CLEANING SPECIFIC */}
+      {isQuoteLinkMode && !isAdminMode && subServiceType === 'carpet' && (
+        <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border-2 border-primary/20">
+          <h3 className="text-xl font-bold text-[#185166] mb-4 flex items-center gap-2">
+            <Check className="h-5 w-5 text-green-600" />
+            Your Carpet Cleaning Quote
+          </h3>
+          
+          {/* Carpet Items */}
+          <div className="space-y-4">
+            {/* Carpets Section */}
+            <div className="bg-white rounded-xl p-4 border border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-[#185166]">Carpets & Rugs</h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onBack()}
+                  className="text-primary hover:bg-primary/10 h-8 px-3"
+                >
+                  <Pencil className="h-3 w-3 mr-1" /> Edit
+                </Button>
+              </div>
+              {data.carpetItems && data.carpetItems.length > 0 ? (
+                <ul className="space-y-1 text-sm">
+                  {data.carpetItems.map((item: any, idx: number) => (
+                    <li key={idx} className="flex justify-between text-muted-foreground">
+                      <span>{item.quantity}x {item.name}</span>
+                      <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No carpets selected</p>
+              )}
+            </div>
+            
+            {/* Upholstery Section */}
+            <div className="bg-white rounded-xl p-4 border border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-[#185166]">Upholstery</h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => { onBack(); onBack(); }} 
+                  className="text-primary hover:bg-primary/10 h-8 px-3"
+                >
+                  <Pencil className="h-3 w-3 mr-1" /> Edit
+                </Button>
+              </div>
+              {data.upholsteryItems && data.upholsteryItems.length > 0 ? (
+                <ul className="space-y-1 text-sm">
+                  {data.upholsteryItems.map((item: any, idx: number) => (
+                    <li key={idx} className="flex justify-between text-muted-foreground">
+                      <span>{item.quantity}x {item.name}</span>
+                      <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No upholstery selected - <button onClick={() => { onBack(); onBack(); }} className="text-primary underline">Add items</button></p>
+              )}
+            </div>
+            
+            {/* Mattress Section */}
+            <div className="bg-white rounded-xl p-4 border border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-[#185166]">Mattresses</h4>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => { onBack(); onBack(); }}
+                  className="text-primary hover:bg-primary/10 h-8 px-3"
+                >
+                  <Pencil className="h-3 w-3 mr-1" /> Edit
+                </Button>
+              </div>
+              {data.mattressItems && data.mattressItems.length > 0 ? (
+                <ul className="space-y-1 text-sm">
+                  {data.mattressItems.map((item: any, idx: number) => (
+                    <li key={idx} className="flex justify-between text-muted-foreground">
+                      <span>{item.quantity}x {item.name}{item.bothSides ? ' (Both sides)' : ''}</span>
+                      <span>£{(item.price * item.quantity).toFixed(2)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No mattresses selected - <button onClick={() => { onBack(); onBack(); }} className="text-primary underline">Add items</button></p>
+              )}
+            </div>
+          </div>
+          
+          {/* Schedule and Total */}
+          <div className="mt-4 pt-4 border-t border-primary/20 space-y-3 text-sm">
+            {data.selectedDate && (
+              <div className="flex items-start gap-3">
+                <Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div className="flex-1 flex justify-between">
+                  <div>
+                    <span className="font-medium">Date & Time:</span>{' '}
+                    {data.selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}{' '}
+                    {data.selectedTime && `at ${data.selectedTime}`}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={onBack}
+                    className="text-primary hover:bg-primary/10 h-6 px-2"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            {(data.street || data.houseNumber || data.postcode) && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <span className="font-medium">Address:</span>{' '}
+                  {[data.houseNumber, data.street, data.city, data.postcode].filter(Boolean).join(', ') || data.postcode}
+                </div>
+              </div>
+            )}
+            <div className="pt-3 mt-3 border-t border-primary/20">
+              <div className="flex justify-between items-center text-lg">
+                <span className="font-bold">Total:</span>
+                <span className="font-bold text-primary">£{data.totalCost?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quote Link Mode: Booking Summary at Top - NON-CARPET SERVICES */}
+      {isQuoteLinkMode && !isAdminMode && subServiceType !== 'carpet' && (
         <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border-2 border-primary/20">
           <h3 className="text-xl font-bold text-[#185166] mb-4 flex items-center gap-2">
             <Check className="h-5 w-5 text-green-600" />
