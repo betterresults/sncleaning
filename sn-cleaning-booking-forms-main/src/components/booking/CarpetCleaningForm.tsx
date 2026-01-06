@@ -7,7 +7,8 @@ import { ScheduleStep } from './steps/ScheduleStep';
 import { CarpetCleaningSummary } from './CarpetCleaningSummary';
 import { PaymentStep } from './steps/PaymentStep';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
-import { Layers, Sofa, Calendar, CreditCard, ArrowLeft, Mail } from 'lucide-react';
+import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
+import { Layers, Sofa, Calendar, CreditCard, ArrowLeft, Send } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -90,6 +91,7 @@ const CarpetCleaningForm: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const [showExitPopup, setShowExitPopup] = useState(false);
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   
   const [bookingData, setBookingData] = useState<CarpetCleaningData>({
     carpetItems: [],
@@ -121,6 +123,35 @@ const CarpetCleaningForm: React.FC = () => {
     isAdminMode,
     adminId: adminUserId || undefined,
   });
+
+  // Reset form to initial state - called after sending a quote to prepare for new quote
+  const resetFormForNewQuote = () => {
+    setBookingData({
+      carpetItems: [],
+      upholsteryItems: [],
+      mattressItems: [],
+      selectedDate: null,
+      selectedTime: '',
+      flexibility: '',
+      notes: '',
+      additionalDetails: '',
+      firstName: '',
+      lastName: '',
+      name: '',
+      email: '',
+      phone: '',
+      houseNumber: '',
+      street: '',
+      postcode: '',
+      city: '',
+      propertyAccess: '',
+      accessNotes: '',
+      estimatedHours: null,
+      hourlyRate: 0,
+      totalCost: 0,
+    });
+    setCurrentStep(1);
+  };
 
   // Scroll to top on mount
   useEffect(() => {
@@ -333,7 +364,14 @@ const CarpetCleaningForm: React.FC = () => {
                   <span className="sm:hidden">Carpet Cleaning</span>
                   <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
                 </h1>
-                <div className="w-[140px]" />
+                <Button
+                  variant="default"
+                  onClick={() => setShowQuoteDialog(true)}
+                  className="text-sm font-medium transition-all duration-200 shadow-sm"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Quote
+                </Button>
               </>
             ) : bookingData.customerId ? (
               <>
@@ -454,6 +492,43 @@ const CarpetCleaningForm: React.FC = () => {
         serviceType="Carpet Cleaning"
         onSaveEmail={(email) => updateBookingData({ email })}
       />
+
+      {/* Admin Quote Dialog */}
+      {isAdminMode && (
+        <AdminQuoteDialog
+          open={showQuoteDialog}
+          onOpenChange={setShowQuoteDialog}
+          email={bookingData.email}
+          phone={bookingData.phone}
+          quoteData={{
+            totalCost: bookingData.totalCost,
+            estimatedHours: bookingData.estimatedHours,
+            propertyType: '',
+            bedrooms: '',
+            bathrooms: '',
+            serviceFrequency: '',
+            hasOvenCleaning: false,
+            ovenType: '',
+            selectedDate: bookingData.selectedDate,
+            selectedTime: bookingData.selectedTime,
+            postcode: bookingData.postcode,
+            shortNoticeCharge: bookingData.shortNoticeCharge,
+            firstName: bookingData.firstName,
+            lastName: bookingData.lastName,
+            address: `${bookingData.houseNumber} ${bookingData.street}`.trim(),
+            city: bookingData.city,
+            houseNumber: bookingData.houseNumber,
+            street: bookingData.street,
+            propertyAccess: bookingData.propertyAccess,
+            accessNotes: bookingData.accessNotes,
+          }}
+          sessionId={sessionId}
+          serviceType="Carpet Cleaning"
+          agentUserId={adminUserId || undefined}
+          onSaveEmail={(email) => updateBookingData({ email })}
+          onQuoteSent={resetFormForNewQuote}
+        />
+      )}
     </div>
   );
 };
