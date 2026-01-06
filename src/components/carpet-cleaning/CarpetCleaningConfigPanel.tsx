@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Save, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Save, ChevronDown, ChevronRight, GripVertical } from 'lucide-react';
 import {
   useEndOfTenancyFieldConfigs,
   useCreateEndOfTenancyFieldConfig,
@@ -31,6 +31,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // Categories for carpet cleaning form
 const CARPET_CLEANING_CATEGORIES = ['carpet', 'upholstery', 'mattress'];
@@ -39,6 +56,113 @@ const CATEGORY_LABELS: Record<string, string> = {
   carpet: 'Carpet & Rug Items',
   upholstery: 'Upholstery Items',
   mattress: 'Mattress Items',
+};
+
+// Sortable Item Component
+interface SortableItemProps {
+  config: EndOfTenancyFieldConfig;
+  localChanges: Record<string, Partial<EndOfTenancyFieldConfig>>;
+  getCurrentValue: (configId: string, field: string, defaultValue: any) => any;
+  handleLocalChange: (id: string, field: string, value: any) => void;
+  handleSave: (id: string) => void;
+  deleteConfig: any;
+  updateConfig: any;
+}
+
+const SortableItem: React.FC<SortableItemProps> = ({
+  config,
+  localChanges,
+  getCurrentValue,
+  handleLocalChange,
+  handleSave,
+  deleteConfig,
+  updateConfig,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: config.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg"
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+      >
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="flex-1 grid grid-cols-4 gap-3 items-center">
+        <div>
+          <Label className="text-xs text-muted-foreground">Label</Label>
+          <Input
+            value={getCurrentValue(config.id, 'label', config.label || '')}
+            onChange={(e) => handleLocalChange(config.id, 'label', e.target.value)}
+            className="h-8"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Option Key</Label>
+          <Input
+            value={config.option}
+            disabled
+            className="h-8 bg-muted"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Price (£)</Label>
+          <Input
+            type="number"
+            value={getCurrentValue(config.id, 'value', config.value)}
+            onChange={(e) => handleLocalChange(config.id, 'value', Number(e.target.value))}
+            className="h-8"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground">Time (min)</Label>
+          <Input
+            type="number"
+            value={getCurrentValue(config.id, 'time', config.time || 0)}
+            onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
+            className="h-8"
+          />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        {localChanges[config.id] && (
+          <Button
+            size="sm"
+            onClick={() => handleSave(config.id)}
+            disabled={updateConfig.isPending}
+          >
+            <Save className="h-4 w-4" />
+          </Button>
+        )}
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => deleteConfig.mutate(config.id)}
+          disabled={deleteConfig.isPending}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 export const CarpetCleaningConfigPanel: React.FC = () => {
@@ -66,6 +190,14 @@ export const CarpetCleaningConfigPanel: React.FC = () => {
   const [newLabel, setNewLabel] = useState('');
   const [newValue, setNewValue] = useState(0);
   const [newTime, setNewTime] = useState(0);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const toggleCategory = (category: string) => {
     setOpenCategories((prev) => ({
@@ -99,6 +231,25 @@ export const CarpetCleaningConfigPanel: React.FC = () => {
         const { [id]: _, ...rest } = prev;
         return rest;
       });
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent, category: string) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const categoryItems = groupedConfigs[category] || [];
+      const oldIndex = categoryItems.findIndex((item) => item.id === active.id);
+      const newIndex = categoryItems.findIndex((item) => item.id === over.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(categoryItems, oldIndex, newIndex);
+        
+        // Update display_order for all affected items
+        reordered.forEach((item, index) => {
+          updateConfig.mutate({ id: item.id, display_order: index + 1 });
+        });
+      }
     }
   };
 
@@ -282,75 +433,36 @@ export const CarpetCleaningConfigPanel: React.FC = () => {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {groupedConfigs[category]?.map((config) => (
-                        <div
-                          key={config.id}
-                          className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg"
-                        >
-                          <div className="flex-1 grid grid-cols-4 gap-3 items-center">
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Label</Label>
-                              <Input
-                                value={getCurrentValue(config.id, 'label', config.label || '')}
-                                onChange={(e) => handleLocalChange(config.id, 'label', e.target.value)}
-                                className="h-8"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Option Key</Label>
-                              <Input
-                                value={config.option}
-                                disabled
-                                className="h-8 bg-muted"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Price (£)</Label>
-                              <Input
-                                type="number"
-                                value={getCurrentValue(config.id, 'value', config.value)}
-                                onChange={(e) => handleLocalChange(config.id, 'value', Number(e.target.value))}
-                                className="h-8"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs text-muted-foreground">Time (min)</Label>
-                              <Input
-                                type="number"
-                                value={getCurrentValue(config.id, 'time', config.time || 0)}
-                                onChange={(e) => handleLocalChange(config.id, 'time', Number(e.target.value))}
-                                className="h-8"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            {localChanges[config.id] && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleSave(config.id)}
-                                disabled={updateConfig.isPending}
-                              >
-                                <Save className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteConfig.mutate(config.id)}
-                              disabled={deleteConfig.isPending}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(event) => handleDragEnd(event, category)}
+                    >
+                      <SortableContext
+                        items={groupedConfigs[category]?.map((c) => c.id) || []}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-3">
+                          {groupedConfigs[category]?.map((config) => (
+                            <SortableItem
+                              key={config.id}
+                              config={config}
+                              localChanges={localChanges}
+                              getCurrentValue={getCurrentValue}
+                              handleLocalChange={handleLocalChange}
+                              handleSave={handleSave}
+                              deleteConfig={deleteConfig}
+                              updateConfig={updateConfig}
+                            />
+                          ))}
+                          {(!groupedConfigs[category] || groupedConfigs[category].length === 0) && (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No items configured for this category.
+                            </p>
+                          )}
                         </div>
-                      ))}
-                      {(!groupedConfigs[category] || groupedConfigs[category].length === 0) && (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          No items configured for this category.
-                        </p>
-                      )}
-                    </div>
+                      </SortableContext>
+                    </DndContext>
                   </CardContent>
                 </CollapsibleContent>
               </Card>
