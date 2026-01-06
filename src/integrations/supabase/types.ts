@@ -2284,6 +2284,7 @@ export type Database = {
           bathrooms: number | null
           bedrooms: number | null
           calculated_quote: number | null
+          carpet_items: Json | null
           cleaning_products: string[] | null
           cleaning_type: string | null
           confirmation_sent_at: string | null
@@ -2307,6 +2308,7 @@ export type Database = {
           kitchen: string | null
           last_heartbeat: string | null
           last_name: string | null
+          mattress_items: Json | null
           oven_cleaning: boolean | null
           oven_size: string | null
           page_url: string | null
@@ -2329,6 +2331,7 @@ export type Database = {
           status: string | null
           toilets: number | null
           updated_at: string | null
+          upholstery_items: Json | null
           user_agent: string | null
           user_id: string | null
           utm_campaign: string | null
@@ -2347,6 +2350,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
+          carpet_items?: Json | null
           cleaning_products?: string[] | null
           cleaning_type?: string | null
           confirmation_sent_at?: string | null
@@ -2370,6 +2374,7 @@ export type Database = {
           kitchen?: string | null
           last_heartbeat?: string | null
           last_name?: string | null
+          mattress_items?: Json | null
           oven_cleaning?: boolean | null
           oven_size?: string | null
           page_url?: string | null
@@ -2392,6 +2397,7 @@ export type Database = {
           status?: string | null
           toilets?: number | null
           updated_at?: string | null
+          upholstery_items?: Json | null
           user_agent?: string | null
           user_id?: string | null
           utm_campaign?: string | null
@@ -2410,6 +2416,7 @@ export type Database = {
           bathrooms?: number | null
           bedrooms?: number | null
           calculated_quote?: number | null
+          carpet_items?: Json | null
           cleaning_products?: string[] | null
           cleaning_type?: string | null
           confirmation_sent_at?: string | null
@@ -2433,6 +2440,7 @@ export type Database = {
           kitchen?: string | null
           last_heartbeat?: string | null
           last_name?: string | null
+          mattress_items?: Json | null
           oven_cleaning?: boolean | null
           oven_size?: string | null
           page_url?: string | null
@@ -2455,6 +2463,7 @@ export type Database = {
           status?: string | null
           toilets?: number | null
           updated_at?: string | null
+          upholstery_items?: Json | null
           user_agent?: string | null
           user_id?: string | null
           utm_campaign?: string | null

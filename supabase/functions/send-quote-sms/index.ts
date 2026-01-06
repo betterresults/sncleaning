@@ -13,6 +13,7 @@ interface QuoteSMSRequest {
   totalCost: number;
   serviceType: string;
   postcode?: string;
+  quoteUrl?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -21,13 +22,14 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { phoneNumber, customerName, totalCost, serviceType, postcode }: QuoteSMSRequest = await req.json();
+    const { phoneNumber, customerName, totalCost, serviceType, postcode, quoteUrl }: QuoteSMSRequest = await req.json();
 
     console.log('Sending quote SMS to:', phoneNumber);
     console.log('Customer name:', customerName);
     console.log('Total cost:', totalCost);
     console.log('Service type:', serviceType);
     console.log('Postcode:', postcode);
+    console.log('Quote URL:', quoteUrl);
 
     // Format phone number for Twilio
     let formattedPhone = phoneNumber.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
@@ -72,8 +74,13 @@ const handler = async (req: Request): Promise<Response> => {
     const firstName = customerName ? customerName.split(' ')[0] : '';
     const greeting = firstName ? `Hi ${firstName}, thank you for choosing SN Cleaning! ` : 'Thank you for choosing SN Cleaning! ';
     
-    // Build friendly message
-    const message = `${greeting}Your ${serviceLabel} quote${locationText} is ${costText}. Call us on 0203 576 6888 to book or reply to this message for more info.`;
+    // Build friendly message - include link if available
+    let message: string;
+    if (quoteUrl) {
+      message = `${greeting}Your ${serviceLabel} quote${locationText} is ${costText}. Review and book here: ${quoteUrl}`;
+    } else {
+      message = `${greeting}Your ${serviceLabel} quote${locationText} is ${costText}. Call us on 0203 576 6888 to book or reply to this message for more info.`;
+    }
 
     console.log('SMS Message:', message);
     console.log('Message length:', message.length);

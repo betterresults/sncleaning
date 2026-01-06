@@ -535,6 +535,10 @@ const CarpetCleaningForm: React.FC = () => {
             street: bookingData.street,
             propertyAccess: bookingData.propertyAccess,
             accessNotes: bookingData.accessNotes,
+            // Carpet cleaning items
+            carpetItems: bookingData.carpetItems,
+            upholsteryItems: bookingData.upholsteryItems,
+            mattressItems: bookingData.mattressItems,
           }}
           sessionId={sessionId}
           serviceType="Carpet Cleaning"

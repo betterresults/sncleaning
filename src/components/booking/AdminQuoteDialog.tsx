@@ -14,6 +14,16 @@ import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+interface CarpetCleaningItem {
+  id: string;
+  name: string;
+  type: 'carpet' | 'upholstery' | 'mattress';
+  size?: 'small' | 'medium' | 'large';
+  quantity: number;
+  price: number;
+  bothSides?: boolean;
+}
+
 interface QuoteData {
   totalCost: number;
   estimatedHours: number | null;
@@ -45,6 +55,10 @@ interface QuoteData {
   // Property access
   propertyAccess?: string;
   accessNotes?: string;
+  // Carpet cleaning items
+  carpetItems?: CarpetCleaningItem[];
+  upholsteryItems?: CarpetCleaningItem[];
+  mattressItems?: CarpetCleaningItem[];
 }
 
 interface AdminQuoteDialogProps {
@@ -211,7 +225,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     };
     
     // Build the quote_leads record - always use unique session ID for admin quotes
-    const quoteLeadData = {
+    const quoteLeadData: Record<string, any> = {
       session_id: uniqueSessionId,
       short_code: shortCode,
       agent_user_id: agentUserId,
@@ -257,12 +271,25 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       updated_at: new Date().toISOString(),
     };
     
+    // Add carpet cleaning items if present
+    if (serviceType === 'Carpet Cleaning') {
+      if (quoteData.carpetItems && quoteData.carpetItems.length > 0) {
+        quoteLeadData.carpet_items = quoteData.carpetItems;
+      }
+      if (quoteData.upholsteryItems && quoteData.upholsteryItems.length > 0) {
+        quoteLeadData.upholstery_items = quoteData.upholsteryItems;
+      }
+      if (quoteData.mattressItems && quoteData.mattressItems.length > 0) {
+        quoteLeadData.mattress_items = quoteData.mattressItems;
+      }
+    }
+    
     console.log('[AdminQuoteDialog] Quote lead data to save:', quoteLeadData);
 
     // Insert new quote record (each quote gets a unique session ID)
     const { error } = await supabase
       .from('quote_leads')
-      .insert(quoteLeadData);
+      .insert(quoteLeadData as any);
 
     if (error) {
       console.error('Error saving quote lead:', error);
@@ -288,6 +315,12 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
 
     setSendingEmail(true);
     try {
+      // Save quote data and get short URL (same as complete booking)
+      const quoteUrl = await saveQuoteAndGetShortUrl();
+      console.log('Generated quote short URL:', quoteUrl);
+      
+      const customerName = firstName.trim() || quoteData.firstName || '';
+      
       let emailSent = false;
       let smsSent = false;
       const errors: string[] = [];
@@ -298,6 +331,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
           const { data, error } = await supabase.functions.invoke('send-quote-email', {
             body: {
               email,
+              customerName,
+              quoteUrl,
               quoteData: {
                 totalCost: quoteData.totalCost,
                 estimatedHours: quoteData.estimatedHours,
@@ -313,6 +348,10 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 shortNoticeCharge: quoteData.shortNoticeCharge,
                 isFirstTimeCustomer: quoteData.isFirstTimeCustomer,
                 discountAmount: quoteData.discountAmount,
+                // Carpet cleaning items
+                carpetItems: quoteData.carpetItems,
+                upholsteryItems: quoteData.upholsteryItems,
+                mattressItems: quoteData.mattressItems,
               },
               sessionId,
               serviceType,
@@ -337,10 +376,11 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
           const { data, error } = await supabase.functions.invoke('send-quote-sms', {
             body: {
               phoneNumber: phone,
-              customerName: firstName.trim() || quoteData.firstName || '',
+              customerName,
               totalCost: quoteData.totalCost,
               serviceType,
               postcode: quoteData.postcode,
+              quoteUrl, // Include the short link
             },
           });
 
