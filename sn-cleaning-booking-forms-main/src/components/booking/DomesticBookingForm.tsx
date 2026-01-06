@@ -190,6 +190,54 @@ const DomesticBookingForm: React.FC = () => {
     isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
 
+  // Reset form to initial state - called after sending a quote to prepare for new quote
+  const resetFormForNewQuote = () => {
+    setBookingData({
+      propertyType: '',
+      bedrooms: '',
+      bathrooms: '',
+      toilets: '0',
+      additionalRooms: { toilets: 0, studyRooms: 0, utilityRooms: 0, otherRooms: 0 },
+      propertyFeatures: { separateKitchen: false, livingRoom: false, diningRoom: false },
+      numberOfFloors: 0,
+      serviceFrequency: '',
+      daysPerWeek: 1,
+      wantsFirstDeepClean: false,
+      firstDeepCleanExtraHours: 0,
+      hasOvenCleaning: false,
+      ovenType: '',
+      ovenCleaningScope: 'this-booking',
+      cleaningProducts: ['products'],
+      equipmentArrangement: null,
+      equipmentStorageConfirmed: false,
+      selectedDate: null,
+      selectedTime: '',
+      flexibility: '',
+      notes: '',
+      additionalDetails: '',
+      firstName: '',
+      lastName: '',
+      name: '',
+      email: '',
+      phone: '',
+      houseNumber: '',
+      street: '',
+      postcode: '',
+      city: '',
+      propertyAccess: '',
+      accessNotes: '',
+      estimatedHours: null,
+      estimatedAdditionalHours: null,
+      hourlyRate: 22,
+      totalCost: 0,
+      isFirstTimeCustomer: true,
+    });
+    setCurrentStep(1); // Go back to step 1
+    setStoredQuotePrice(null);
+    setHasModifiedAfterLoad(false);
+    setEditQuoteId(null);
+  };
+
   // Calculate actual total using the same logic as DomesticBookingSummary
   const calculations = useDomesticHardcodedCalculations(bookingData);
   
@@ -1116,6 +1164,7 @@ const DomesticBookingForm: React.FC = () => {
           sessionId={sessionId}
           serviceType="Domestic"
           agentUserId={adminUserId || undefined}
+          onQuoteSent={resetFormForNewQuote}
         />
       )}
 
