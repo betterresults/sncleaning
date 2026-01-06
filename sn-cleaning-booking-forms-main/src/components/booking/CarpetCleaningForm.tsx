@@ -264,15 +264,22 @@ const CarpetCleaningForm: React.FC = () => {
       const hasCarpetOrUpholsteryItems = (updates.carpetItems && updates.carpetItems.length > 0) || 
                                           (updates.upholsteryItems && updates.upholsteryItems.length > 0) ||
                                           (updates.mattressItems && updates.mattressItems.length > 0);
-      const hasScheduleData = updates.selectedDate || updates.selectedTime || flexibility === 'flexible-time';
+      // Schedule data requires either a date+time OR flexible timing
+      const hasScheduleData = (updates.selectedDate && updates.selectedTime) || flexibility === 'flexible-time';
       const hasContactData = firstName && email;
       
-      // Skip to payment step if all data is present
-      if (hasCarpetOrUpholsteryItems && hasScheduleData && hasContactData) {
-        console.log('[CarpetCleaningForm] All data present, skipping to payment step');
-        setCurrentStep(4);
-      } else if (hasCarpetOrUpholsteryItems && hasScheduleData) {
-        console.log('[CarpetCleaningForm] Items and schedule present, going to payment step');
+      console.log('[CarpetCleaningForm] Quote link data check:', {
+        hasCarpetOrUpholsteryItems,
+        hasScheduleData,
+        hasContactData,
+        selectedDate: updates.selectedDate,
+        selectedTime: updates.selectedTime,
+        flexibility
+      });
+      
+      // Only skip to payment step if we have ALL required data including schedule
+      if (hasCarpetOrUpholsteryItems && hasScheduleData) {
+        console.log('[CarpetCleaningForm] Items and schedule present, skipping to payment step');
         setCurrentStep(4);
       } else if (hasCarpetOrUpholsteryItems) {
         console.log('[CarpetCleaningForm] Only items present, going to schedule step');
@@ -505,22 +512,8 @@ const CarpetCleaningForm: React.FC = () => {
                   Send Quote
                 </Button>
               </>
-            ) : bookingData.customerId ? (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.href = '/'}
-                  className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
-                >
-                  ← Back to Account
-                </Button>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 whitespace-nowrap">
-                  <span className="sm:hidden">Carpet Cleaning</span>
-                  <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
-                </h1>
-                <div className="w-[140px]" />
-              </>
             ) : (
+              // For both logged-in customers and guests from quote links - just show title centered
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto whitespace-nowrap">
                 <span className="sm:hidden">Carpet Cleaning</span>
                 <span className="hidden sm:inline">Carpet Cleaning Booking Form</span>
