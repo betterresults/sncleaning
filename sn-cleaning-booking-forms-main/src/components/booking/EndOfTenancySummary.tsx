@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { EndOfTenancyBookingData } from './EndOfTenancyBookingForm';
-import { Home, Clock, Calendar, ChevronDown, ChevronUp, Percent } from 'lucide-react';
+import { Home, Clock, Calendar, ChevronDown, ChevronUp, Percent, Pencil } from 'lucide-react';
 import { useEndOfTenancyCalculations } from '@/hooks/useEndOfTenancyCalculations';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface EndOfTenancySummaryProps {
   data: EndOfTenancyBookingData;
@@ -30,19 +33,46 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSteamExpanded, setIsSteamExpanded] = useState(false);
+  const [isEditingPricing, setIsEditingPricing] = useState(false);
+  const [manualTotalCost, setManualTotalCost] = useState<string>('');
+  const [manualDiscount, setManualDiscount] = useState<string>('');
+  const [waiveShortNotice, setWaiveShortNotice] = useState(false);
 
   // Use the calculation hook with database prices
   const calculations = useEndOfTenancyCalculations(data, data.isFirstTimeCustomer || false);
 
+  // Calculate final total with admin overrides
+  const getDisplayTotal = () => {
+    if (manualTotalCost) {
+      let total = parseFloat(manualTotalCost) || 0;
+      if (manualDiscount) {
+        total -= parseFloat(manualDiscount) || 0;
+      }
+      return total;
+    }
+    
+    let total = calculations.totalCost;
+    if (waiveShortNotice) {
+      total -= calculations.shortNoticeCharge;
+    }
+    if (manualDiscount) {
+      total -= parseFloat(manualDiscount) || 0;
+    }
+    return total;
+  };
+
   // Update parent when total changes
   useEffect(() => {
-    if (onUpdate && !calculations.isLoading && calculations.totalCost !== data.totalCost) {
-      onUpdate({ 
-        totalCost: calculations.totalCost,
-        estimatedHours: calculations.estimatedHours,
-      });
+    if (onUpdate && !calculations.isLoading) {
+      const displayTotal = getDisplayTotal();
+      if (displayTotal !== data.totalCost) {
+        onUpdate({ 
+          totalCost: displayTotal,
+          estimatedHours: calculations.estimatedHours,
+        });
+      }
     }
-  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading]);
+  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice]);
   
   // Format property description
   const getPropertyDescription = () => {
@@ -237,8 +267,50 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       {/* Total */}
       <div className="flex justify-between items-center mt-4 pt-4 border-t-2 border-primary">
         <span className="text-lg font-semibold text-foreground">Total</span>
-        <span className="text-2xl font-bold text-primary">£{calculations.totalCost.toFixed(2)}</span>
+        <span className="text-2xl font-bold text-primary">£{getDisplayTotal().toFixed(2)}</span>
       </div>
+
+      {/* Admin Pricing Controls */}
+      {isAdminMode && isEditingPricing && (
+        <div className="mt-4 pt-4 border-t border-border space-y-3 bg-muted/30 -mx-4 px-4 py-3 rounded-lg">
+          <p className="text-sm font-medium text-foreground">Admin Pricing Controls</p>
+          
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Override Total Cost (£)</label>
+            <Input
+              type="number"
+              placeholder="Leave empty to use calculated price"
+              value={manualTotalCost}
+              onChange={(e) => setManualTotalCost(e.target.value)}
+              className="bg-white"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">Additional Discount (£)</label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={manualDiscount}
+              onChange={(e) => setManualDiscount(e.target.value)}
+              className="bg-white"
+            />
+          </div>
+
+          {calculations.shortNoticeCharge > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="waiveShortNotice"
+                checked={waiveShortNotice}
+                onCheckedChange={(checked) => setWaiveShortNotice(checked === true)}
+              />
+              <label htmlFor="waiveShortNotice" className="text-sm text-muted-foreground">
+                Waive short notice charge (£{calculations.shortNoticeCharge.toFixed(2)})
+              </label>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -344,6 +416,17 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
     <Card className="p-4 sm:p-5 lg:p-6 bg-white sticky top-4 border border-border">
       <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
         <h3 className="text-lg font-semibold text-foreground">Booking Summary</h3>
+        {isAdminMode && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsEditingPricing(!isEditingPricing)}
+            className="text-primary hover:text-primary/80"
+          >
+            <Pencil className="w-4 h-4 mr-1" />
+            {isEditingPricing ? 'Done' : 'Edit'}
+          </Button>
+        )}
       </div>
 
       {getPropertyDescription() && (
@@ -392,7 +475,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         {hasPropertyData && (
           <div className="flex justify-between items-center pt-2 border-t-2 border-primary">
             <span className="text-lg font-semibold text-foreground">Total</span>
-            <span className="text-2xl font-bold text-primary">£{calculations.totalCost.toFixed(2)}</span>
+            <span className="text-2xl font-bold text-primary">£{getDisplayTotal().toFixed(2)}</span>
           </div>
         )}
       </div>
