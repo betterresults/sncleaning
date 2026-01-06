@@ -16,12 +16,15 @@ const ShortLinkResolver = () => {
       }
 
       try {
-        // Look up the quote_lead by short_code
+        // Look up the quote_lead by short_code - explicitly select all columns including carpet items
         const { data, error: fetchError } = await supabase
           .from('quote_leads')
-          .select('*')
+          .select('*, carpet_items, upholstery_items, mattress_items')
           .eq('short_code', shortCode)
           .single();
+
+        console.log('[ShortLinkResolver] Fetched data:', data);
+        console.log('[ShortLinkResolver] Fetch error:', fetchError);
 
         if (fetchError || !data) {
           console.error('Short link lookup error:', fetchError);

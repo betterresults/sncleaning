@@ -118,7 +118,7 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
         .update({
           date_time: dateTimeStr,
           date_only: dateOnly,
-          time_only: timeOnly,
+          // Note: past_bookings doesn't have time_only column
           ...formData
         })
         .eq('id', booking.id);
