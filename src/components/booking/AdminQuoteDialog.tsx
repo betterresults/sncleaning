@@ -562,8 +562,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </div>
               )}
 
-              {/* Warning if property data is missing - customer won't skip to payment */}
-              {(!quoteData.propertyType || !quoteData.bedrooms || !quoteData.bathrooms || !quoteData.serviceFrequency) && (
+              {/* Warning if property data is missing - customer won't skip to payment (not shown for Carpet Cleaning) */}
+              {serviceType !== 'Carpet Cleaning' && (!quoteData.propertyType || !quoteData.bedrooms || !quoteData.bathrooms || !quoteData.serviceFrequency) && (
                 <div className="rounded-xl p-4 border bg-red-50 border-red-200">
                   <div className="flex items-start gap-3">
                     <Home className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -585,7 +585,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
               )}
 
               {/* Warning if date/time not set (unless flexible time selected or override enabled) - customer won't skip to payment */}
-              {quoteData.propertyType && quoteData.bedrooms && quoteData.bathrooms && quoteData.serviceFrequency && 
+              {(serviceType === 'Carpet Cleaning' || (quoteData.propertyType && quoteData.bedrooms && quoteData.bathrooms && quoteData.serviceFrequency)) && 
                (!quoteData.selectedDate || (!quoteData.selectedTime && quoteData.flexibility !== 'flexible-time' && !flexibleTimeOverride)) && (
                 <div className="rounded-xl p-4 border bg-orange-50 border-orange-200">
                   <div className="flex items-start gap-3">
