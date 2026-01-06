@@ -1,15 +1,17 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   User, Mail, Phone, MapPin, Home, Bath, BedDouble, 
   Calendar, Clock, Sparkles, Building2, 
   CheckCircle2, XCircle, AlertCircle, CookingPot, Shirt, 
   Sofa, DoorOpen, Globe, Zap, ArrowRight,
   Timer, Percent, PoundSterling, SprayCan, Wrench, UtensilsCrossed,
-  HelpCircle, Tag
+  HelpCircle, Tag, Pencil
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface QuoteLead {
   id: string;
@@ -108,6 +110,8 @@ const getStepNumber = (step: string | null): number => {
 };
 
 const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelected, onSelect }) => {
+  const navigate = useNavigate();
+  
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return null;
     try {
@@ -133,6 +137,14 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
     } catch {
       return null;
     }
+  };
+
+  const handleEditQuote = () => {
+    // Determine which form to navigate to based on service type
+    const isAirbnb = lead.service_type?.toLowerCase().includes('airbnb') || 
+                     lead.service_type?.toLowerCase().includes('air bnb');
+    const path = isAirbnb ? '/admin/airbnb' : '/admin/domestic';
+    navigate(`${path}?editQuoteId=${lead.id}`);
   };
 
   const isLive = isLeadLive(lead);
@@ -239,7 +251,21 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Edit Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditQuote();
+              }}
+              className="h-8 px-3 gap-1.5 text-xs"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit
+            </Button>
+            
             {/* Quote Amount */}
             {hasQuote && (
               <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full font-bold">
