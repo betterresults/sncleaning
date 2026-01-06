@@ -62,6 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Format service type for display
     const serviceLabel = serviceType === 'Domestic' ? 'domestic cleaning' : 
                         serviceType === 'Airbnb' ? 'Airbnb cleaning' : 
+                        serviceType === 'Carpet Cleaning' ? 'carpet cleaning' :
                         'cleaning';
     
     // Format cost - no brackets
