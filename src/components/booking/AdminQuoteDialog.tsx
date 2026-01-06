@@ -57,6 +57,7 @@ interface AdminQuoteDialogProps {
   serviceType: string;
   agentUserId?: string;
   onSaveEmail?: (email: string) => void;
+  onQuoteSent?: () => void; // Called after a quote is successfully sent - use to reset form
 }
 
 type SendOption = 'quote' | 'complete' | null;
@@ -115,6 +116,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   serviceType,
   agentUserId,
   onSaveEmail,
+  onQuoteSent,
 }) => {
   const [email, setEmail] = useState(initialEmail);
   const [phone, setPhone] = useState(initialPhone || '');
@@ -181,8 +183,13 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const saveQuoteAndGetShortUrl = async (): Promise<string> => {
     const shortCode = generateShortCode();
     
+    // ALWAYS generate a unique session ID for each new quote to prevent mixing
+    // This ensures each quote is independent, even when admin creates multiple quotes in succession
+    const uniqueSessionId = `admin_quote_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+    
     // Log input data for debugging
     console.log('[AdminQuoteDialog] Saving quote data:', {
+      uniqueSessionId, // Log the new unique session ID
       bedrooms: quoteData.bedrooms,
       bathrooms: quoteData.bathrooms,
       propertyType: quoteData.propertyType,
@@ -203,9 +210,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       return isNaN(parsed) ? null : parsed;
     };
     
-    // Build the quote_leads record
+    // Build the quote_leads record - always use unique session ID for admin quotes
     const quoteLeadData = {
-      session_id: sessionId || `admin_${Date.now()}`,
+      session_id: uniqueSessionId,
       short_code: shortCode,
       agent_user_id: agentUserId,
       service_type: serviceType,
@@ -252,10 +259,10 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
     
     console.log('[AdminQuoteDialog] Quote lead data to save:', quoteLeadData);
 
-    // Upsert (update if session exists, insert if not)
+    // Insert new quote record (each quote gets a unique session ID)
     const { error } = await supabase
       .from('quote_leads')
-      .upsert(quoteLeadData, { onConflict: 'session_id' });
+      .insert(quoteLeadData);
 
     if (error) {
       console.error('Error saving quote lead:', error);
@@ -314,6 +321,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       });
       
       setSendStatus('success');
+      onQuoteSent?.(); // Notify parent to reset form for next quote
     } catch (error: any) {
       console.error('Error sending quote email:', error);
       toast({
@@ -410,6 +418,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       // Only show toast for errors, success screen handles success
       if (emailSent || smsSent) {
         setSendStatus('success');
+        onQuoteSent?.(); // Notify parent to reset form for next quote
       } else {
         toast({
           title: "Failed to Send",
@@ -445,6 +454,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
         title: "Preview Link Generated",
         description: "The quote has been saved and opened in a new tab.",
       });
+      onQuoteSent?.(); // Notify parent to reset form for next quote
     } catch (error: any) {
       console.error('Error generating preview link:', error);
       toast({
@@ -467,6 +477,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
         title: "Link Copied!",
         description: "The booking link has been copied to your clipboard.",
       });
+      onQuoteSent?.(); // Notify parent to reset form for next quote
     } catch (error: any) {
       console.error('Error copying link:', error);
       toast({

@@ -176,6 +176,23 @@ const AirbnbBookingForm: React.FC = () => {
     totalCost: 0,
   });
 
+  // Reset form to initial state - called after sending a quote to prepare for new quote
+  const resetFormForNewQuote = () => {
+    setBookingData({
+      propertyType: '', bedrooms: '', bathrooms: '', toilets: '0',
+      additionalRooms: { toilets: 0, studyRooms: 0, utilityRooms: 0, otherRooms: 0 },
+      propertyFeatures: { separateKitchen: false, livingRoom: false, diningRoom: false },
+      numberOfFloors: 0, serviceType: '', alreadyCleaned: null, hasOvenCleaning: false, ovenType: '',
+      cleaningProducts: [], equipmentArrangement: null, equipmentStorageConfirmed: false,
+      linensHandling: '', needsIroning: null, ironingHours: 0, linenPackages: {}, bedSizes: {},
+      extraHours: 0, selectedDate: null, selectedTime: '', flexibility: '', notes: '', additionalDetails: '',
+      sameDayTurnaround: false, firstName: '', lastName: '', name: '', email: '', phone: '',
+      houseNumber: '', street: '', postcode: '', city: '', propertyAccess: '', accessNotes: '',
+      estimatedHours: null, estimatedAdditionalHours: null, hourlyRate: 25, totalCost: 0,
+    });
+    setCurrentStep(1);
+  };
+
   // Prefill from URL parameters (from exit popup email)
   useEffect(() => {
     const hasUrlPrefill = searchParams.get('propertyType') || searchParams.get('bedrooms') || searchParams.get('postcode') || searchParams.get('quotedCost');
@@ -606,6 +623,7 @@ const AirbnbBookingForm: React.FC = () => {
           sessionId={sessionId}
           serviceType="Air BnB"
           agentUserId={adminUserId || undefined}
+          onQuoteSent={resetFormForNewQuote}
         />
       )}
     </div>
