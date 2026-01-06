@@ -11,6 +11,7 @@ import {
   useDeleteEndOfTenancyFieldConfig,
   EndOfTenancyFieldConfig,
 } from '@/hooks/useEndOfTenancyFieldConfigs';
+import { toast } from '@/hooks/use-toast';
 import {
   Select,
   SelectContent,
@@ -103,7 +104,24 @@ export const CarpetCleaningConfigPanel: React.FC = () => {
 
   const handleAddField = () => {
     const categoryToUse = addingToCategory || newCategory;
-    if (!categoryToUse || !newOption) return;
+    
+    if (!categoryToUse) {
+      toast({
+        title: 'Error',
+        description: 'Please select a category',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (!newOption.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter an option key',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const existingConfigs = configs.filter((c) => c.category === categoryToUse);
     const maxDisplayOrder = existingConfigs.length > 0
@@ -112,8 +130,8 @@ export const CarpetCleaningConfigPanel: React.FC = () => {
 
     createConfig.mutate({
       category: categoryToUse,
-      option: newOption.toLowerCase().replace(/\s+/g, '_'),
-      label: newLabel || newOption,
+      option: newOption.trim().toLowerCase().replace(/\s+/g, '_'),
+      label: newLabel.trim() || newOption.trim(),
       value: newValue,
       value_type: 'fixed',
       time: newTime,
