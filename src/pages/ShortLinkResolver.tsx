@@ -103,14 +103,14 @@ const ShortLinkResolver = () => {
 
         // Determine the route based on service type
         const serviceType = data.service_type || 'Domestic';
+        console.log('[ShortLinkResolver] Raw service_type from DB:', JSON.stringify(data.service_type));
+        console.log('[ShortLinkResolver] Using serviceType:', serviceType);
         let route = '/domestic-cleaning';
         
-        if (serviceType === 'Domestic' || serviceType === 'domestic') {
-          route = '/domestic-cleaning';
-        } else if (serviceType === 'Airbnb' || serviceType === 'airbnb') {
-          route = '/airbnb-cleaning';
-        } else if (serviceType === 'Carpet Cleaning' || serviceType === 'carpet_cleaning') {
+        // Check for Carpet Cleaning FIRST (before Domestic) to prevent false matching
+        if (serviceType === 'Carpet Cleaning' || serviceType === 'carpet_cleaning' || serviceType.toLowerCase().includes('carpet')) {
           route = '/carpet-cleaning';
+          console.log('[ShortLinkResolver] Matched Carpet Cleaning route');
           // For carpet cleaning, pass items as JSON in URL params
           if (data.carpet_items) {
             params.set('carpetItems', JSON.stringify(data.carpet_items));
@@ -121,6 +121,12 @@ const ShortLinkResolver = () => {
           if (data.mattress_items) {
             params.set('mattressItems', JSON.stringify(data.mattress_items));
           }
+        } else if (serviceType === 'Airbnb' || serviceType === 'airbnb' || serviceType.toLowerCase().includes('airbnb')) {
+          route = '/airbnb-cleaning';
+          console.log('[ShortLinkResolver] Matched Airbnb route');
+        } else {
+          route = '/domestic-cleaning';
+          console.log('[ShortLinkResolver] Using Domestic route (default)');
         }
 
         // Update status to show they clicked the link
