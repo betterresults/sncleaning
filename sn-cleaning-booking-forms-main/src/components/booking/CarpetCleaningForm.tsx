@@ -95,6 +95,7 @@ const CarpetCleaningForm: React.FC = () => {
   const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [isFromQuoteLink, setIsFromQuoteLink] = useState(false); // Track if customer came from quote link
   
   const [bookingData, setBookingData] = useState<CarpetCleaningData>({
     carpetItems: [],
@@ -260,6 +261,9 @@ const CarpetCleaningForm: React.FC = () => {
       // Update booking data
       setBookingData(prev => ({ ...prev, ...updates }));
       
+      // Mark that this customer came from a quote link - don't show exit popup
+      setIsFromQuoteLink(true);
+      
       // Determine which step to navigate to based on available data
       const hasCarpetOrUpholsteryItems = (updates.carpetItems && updates.carpetItems.length > 0) || 
                                           (updates.upholsteryItems && updates.upholsteryItems.length > 0) ||
@@ -397,9 +401,10 @@ const CarpetCleaningForm: React.FC = () => {
     });
   }, [currentStep, isAdminMode, saveQuoteLead]);
 
-  // Handle browser back button to show exit popup
+  // Handle browser back button to show exit popup (only for organic visitors, not quote link customers)
   useEffect(() => {
-    if (isAdminMode) return;
+    // Don't show exit popup for admins or customers from quote links
+    if (isAdminMode || isFromQuoteLink) return;
     
     const handlePopState = (e: PopStateEvent) => {
       if (bookingData.totalCost > 0) {
@@ -413,7 +418,7 @@ const CarpetCleaningForm: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isAdminMode, bookingData.totalCost]);
+  }, [isAdminMode, isFromQuoteLink, bookingData.totalCost]);
 
   const nextStep = () => {
     if (currentStep < steps.length) {
