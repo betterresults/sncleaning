@@ -177,7 +177,13 @@ export const CarpetCleaningConfigPanel: React.FC = () => {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
-                  <Select value={addingToCategory || newCategory} onValueChange={(v) => setNewCategory(v)}>
+                  <Select 
+                    value={addingToCategory || newCategory} 
+                    onValueChange={(v) => {
+                      setNewCategory(v);
+                      if (addingToCategory) setAddingToCategory(v);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
