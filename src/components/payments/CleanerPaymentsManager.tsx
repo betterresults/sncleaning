@@ -123,8 +123,8 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
 
   const handleSave = async () => {
     try {
-      if (booking.is_standalone && booking.payment_id) {
-        // Update cleaner_payments for standalone payments
+      // Always update cleaner_payments since it's the source of truth
+      if (booking.payment_id) {
         const { error } = await supabase
           .from('cleaner_payments')
           .update({
@@ -134,8 +134,10 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
           .eq('id', booking.payment_id);
 
         if (error) throw error;
-      } else {
-        // Update past_bookings for regular bookings
+      }
+      
+      // Also update past_bookings for regular bookings (not standalone)
+      if (!booking.is_standalone && booking.id > 0) {
         const { error } = await supabase
           .from('past_bookings')
           .update({
@@ -144,7 +146,10 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
           })
           .eq('id', booking.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating past_bookings:', error);
+          // Don't throw - cleaner_payments is source of truth
+        }
       }
       
       toast.success('Payment updated successfully');
