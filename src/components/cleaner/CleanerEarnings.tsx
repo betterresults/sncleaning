@@ -203,6 +203,7 @@ const CleanerEarnings = () => {
       console.log('Fetched cleaner payments:', paymentsData?.length || 0);
 
       // Get booking details from past_bookings for display
+      // Filter out cancelled bookings
       const bookingIds = paymentsData?.map(p => p.booking_id) || [];
       
       let pastBookingsMap: Record<number, any> = {};
@@ -210,7 +211,8 @@ const CleanerEarnings = () => {
         const { data: pastBookingsData } = await supabase
           .from('past_bookings')
           .select('id, date_time, cleaning_type, booking_status, first_name, last_name')
-          .in('id', bookingIds);
+          .in('id', bookingIds)
+          .or('booking_status.is.null,booking_status.neq.cancelled');
         
         if (pastBookingsData) {
           pastBookingsMap = pastBookingsData.reduce((acc, pb) => {
@@ -220,19 +222,21 @@ const CleanerEarnings = () => {
         }
       }
 
-      // Map payments to BookingEarning format
-      const completedBookings: BookingEarning[] = (paymentsData || []).map(payment => {
-        const pastBooking = pastBookingsMap[payment.booking_id] || {};
-        return {
-          id: payment.booking_id,
-          date_time: pastBooking.date_time || payment.created_at,
-          cleaner_pay: Number(payment.calculated_pay) || 0,
-          cleaning_type: pastBooking.cleaning_type || 'Cleaning',
-          booking_status: pastBooking.booking_status || 'completed',
-          first_name: pastBooking.first_name || '',
-          last_name: pastBooking.last_name || ''
-        };
-      });
+      // Map payments to BookingEarning format - only include bookings that exist in past_bookings
+      const completedBookings: BookingEarning[] = (paymentsData || [])
+        .filter(payment => pastBookingsMap[payment.booking_id]) // Only include if in past_bookings
+        .map(payment => {
+          const pastBooking = pastBookingsMap[payment.booking_id];
+          return {
+            id: payment.booking_id,
+            date_time: pastBooking.date_time || payment.created_at,
+            cleaner_pay: Number(payment.calculated_pay) || 0,
+            cleaning_type: pastBooking.cleaning_type || 'Cleaning',
+            booking_status: pastBooking.booking_status || 'completed',
+            first_name: pastBooking.first_name || '',
+            last_name: pastBooking.last_name || ''
+          };
+        });
       
       // Get payment period info
       const paymentInfo = getPaymentPeriodInfo();
@@ -289,15 +293,16 @@ const CleanerEarnings = () => {
         .order('created_at', { ascending: false });
 
       if (paymentsData) {
-        // Get booking details from past_bookings for dates
+        // Get booking details from past_bookings for dates - filter out cancelled
         const bookingIds = paymentsData.map(p => p.booking_id);
         let pastBookingsMap: Record<number, any> = {};
         
         if (bookingIds.length > 0) {
           const { data: pastBookingsData } = await supabase
             .from('past_bookings')
-            .select('id, date_time')
-            .in('id', bookingIds);
+            .select('id, date_time, booking_status')
+            .in('id', bookingIds)
+            .or('booking_status.is.null,booking_status.neq.cancelled');
           
           if (pastBookingsData) {
             pastBookingsMap = pastBookingsData.reduce((acc, pb) => {
@@ -307,19 +312,21 @@ const CleanerEarnings = () => {
           }
         }
 
-        // Map to BookingEarning format for period calculation
-        const completedBookings: BookingEarning[] = paymentsData.map(payment => {
-          const pastBooking = pastBookingsMap[payment.booking_id] || {};
-          return {
-            id: payment.booking_id,
-            date_time: pastBooking.date_time || payment.created_at,
-            cleaner_pay: Number(payment.calculated_pay) || 0,
-            cleaning_type: '',
-            booking_status: 'completed',
-            first_name: '',
-            last_name: ''
-          };
-        });
+        // Map to BookingEarning format for period calculation - only include bookings in past_bookings
+        const completedBookings: BookingEarning[] = paymentsData
+          .filter(payment => pastBookingsMap[payment.booking_id])
+          .map(payment => {
+            const pastBooking = pastBookingsMap[payment.booking_id];
+            return {
+              id: payment.booking_id,
+              date_time: pastBooking.date_time || payment.created_at,
+              cleaner_pay: Number(payment.calculated_pay) || 0,
+              cleaning_type: '',
+              booking_status: 'completed',
+              first_name: '',
+              last_name: ''
+            };
+          });
 
         const newPeriodData = calculatePeriodData(completedBookings, value);
         setPeriodData(newPeriodData);
