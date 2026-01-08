@@ -503,7 +503,7 @@ const CleanerPastBookings = () => {
                         id="dateFrom"
                         type="date"
                         value={filters.dateFrom}
-                        onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                        onChange={(e) => setFilters({...filters, dateFrom: e.target.value, timePeriod: 'all'})}
                         className="h-9"
                       />
                     </div>
@@ -514,7 +514,7 @@ const CleanerPastBookings = () => {
                         id="dateTo"
                         type="date"
                         value={filters.dateTo}
-                        onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                        onChange={(e) => setFilters({...filters, dateTo: e.target.value, timePeriod: 'all'})}
                         className="h-9"
                       />
                     </div>
