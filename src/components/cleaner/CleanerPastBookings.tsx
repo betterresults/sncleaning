@@ -67,7 +67,7 @@ const CleanerPastBookings = () => {
     dateFrom: '',
     dateTo: '',
     customerSearch: '',
-    timePeriod: 'all', // Default to 'all' so cleaners see all their completed bookings
+    timePeriod: 'current-month',
     bookingIdSearch: '',
   });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
