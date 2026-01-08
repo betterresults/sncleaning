@@ -205,12 +205,11 @@ const CleanerPastBookings = () => {
     try {
       console.log('Fetching past bookings for cleaner ID:', currentCleanerId);
       
-      // Get completed payments for this cleaner from cleaner_payments
+      // Get all payments for this cleaner from cleaner_payments (not just completed)
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('cleaner_payments')
         .select('*')
         .eq('cleaner_id', currentCleanerId)
-        .eq('status', 'completed')
         .order('created_at', { ascending: false });
 
       if (paymentsError) {
@@ -223,7 +222,7 @@ const CleanerPastBookings = () => {
       const bookingIds = paymentsData?.map(p => p.booking_id) || [];
       
       if (bookingIds.length === 0) {
-        console.log('No completed payments found for cleaner');
+        console.log('No payments found for cleaner');
         setBookings([]);
         setLoading(false);
         return;
