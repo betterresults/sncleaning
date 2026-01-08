@@ -186,13 +186,12 @@ const CleanerEarnings = () => {
 
       console.log('Fetching earnings for cleaner ID:', currentCleanerId);
 
-      // Get all completed payments for this cleaner from cleaner_payments table
+      // Get all payments for this cleaner from cleaner_payments table
       // This includes both primary assignments AND co-cleaner assignments
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('cleaner_payments')
         .select('*')
         .eq('cleaner_id', currentCleanerId)
-        .eq('status', 'completed')
         .order('created_at', { ascending: false });
 
       if (paymentsError) {
@@ -282,12 +281,11 @@ const CleanerEarnings = () => {
     
     // Recalculate data for the selected period
     if (currentCleanerId) {
-      // Get all completed payments for this cleaner from cleaner_payments
+      // Get all payments for this cleaner from cleaner_payments
       const { data: paymentsData } = await supabase
         .from('cleaner_payments')
         .select('*')
         .eq('cleaner_id', currentCleanerId)
-        .eq('status', 'completed')
         .order('created_at', { ascending: false });
 
       if (paymentsData) {
