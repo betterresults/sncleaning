@@ -61,18 +61,23 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
     return total;
   };
 
-  // Update parent when total changes
+  // Update parent when total changes - sync the calculated total to parent
+  // This ensures the correct price is used during booking submission
   useEffect(() => {
     if (onUpdate && !calculations.isLoading) {
       const displayTotal = getDisplayTotal();
-      if (displayTotal !== data.totalCost) {
+      // Only update if the values are actually different (with small tolerance for floating point)
+      const totalDiff = Math.abs(displayTotal - (data.totalCost || 0));
+      const hoursDiff = Math.abs(calculations.estimatedHours - (data.estimatedHours || 0));
+      if (totalDiff > 0.01 || hoursDiff > 0.01) {
+        console.log('[EndOfTenancySummary] Syncing totalCost to parent:', displayTotal, 'estimatedHours:', calculations.estimatedHours);
         onUpdate({ 
           totalCost: displayTotal,
           estimatedHours: calculations.estimatedHours,
         });
       }
     }
-  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice]);
+  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice, data.totalCost, data.estimatedHours]);
   
   // Format property description
   const getPropertyDescription = () => {
