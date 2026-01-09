@@ -85,7 +85,7 @@ const CleanerBookingCard = ({
           )}
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-green-600">£{booking.cleaner_pay || 0}</div>
+          <div className="text-2xl font-bold text-green-600">£{Number(booking.cleaner_pay || 0).toFixed(2)}</div>
           <div className="text-xs text-muted-foreground">Your earnings</div>
         </div>
       </div>
