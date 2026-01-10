@@ -360,10 +360,11 @@ export default function AddRecurringBooking() {
       // Generate a unique recurring group ID for this booking series
       const recurringGroupId = crypto.randomUUID();
       
-      // Determine interval based on frequency
+      // Determine interval based on frequency (case-insensitive)
+      const freq = formData.frequently.toLowerCase().replace('-', '');
       let interval = '7'; // Default to weekly
-      if (formData.frequently === 'bi-weekly' || formData.frequently === 'biweekly') interval = '14';
-      if (formData.frequently === 'monthly') interval = '30';
+      if (freq === 'biweekly') interval = '14';
+      if (freq === 'monthly') interval = '30';
 
       // Get current user and their role for tracking
       const { data: { user } } = await supabase.auth.getUser();

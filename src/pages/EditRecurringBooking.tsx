@@ -249,10 +249,11 @@ export default function EditRecurringBooking() {
   const performUpdate = async () => {
     setLoading(true);
     try {
-      // Determine interval based on frequency
+      // Determine interval based on frequency (case-insensitive)
+      const freq = formData.frequently.toLowerCase().replace('-', '');
       let interval = '7'; // Default to weekly
-      if (formData.frequently === 'bi-weekly' || formData.frequently === 'biweekly') interval = '14';
-      if (formData.frequently === 'monthly') interval = '30';
+      if (freq === 'biweekly') interval = '14';
+      if (freq === 'monthly') interval = '30';
 
       const submitData = {
         customer: parseInt(formData.client),
