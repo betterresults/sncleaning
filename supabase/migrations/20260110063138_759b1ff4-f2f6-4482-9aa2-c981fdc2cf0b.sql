@@ -1,0 +1,209 @@
+-- Fix generate_recurring_bookings to respect interval for bi-weekly and monthly services
+-- The bug: after creating a booking, it moves by 1 day instead of jumping by the interval
+CREATE OR REPLACE FUNCTION public.generate_recurring_bookings()
+ RETURNS void
+ LANGUAGE plpgsql
+ SET search_path = public
+AS $$
+DECLARE
+    rs RECORD;
+    booking_date date;
+    booking_datetime timestamptz;
+    day_name text;
+    addr RECORD;
+    latest_inserted_date date;
+    loop_counter integer;
+    max_iterations integer := 60; 
+    bookings_created integer := 0;
+    existing_booking_id bigint;
+    services_resumed integer := 0;
+    booking_created_this_iteration boolean;
+    days_array text[];
+    current_day text;
+    services_skipped integer := 0;
+BEGIN
+    RAISE NOTICE 'Starting generate_recurring_bookings function at %', NOW();
+    
+    -- First, check for services that should be automatically resumed
+    UPDATE public.recurring_services 
+    SET postponed = false, resume_date = null 
+    WHERE postponed = true 
+      AND resume_date IS NOT NULL 
+      AND resume_date <= CURRENT_DATE;
+    
+    GET DIAGNOSTICS services_resumed = ROW_COUNT;
+    IF services_resumed > 0 THEN
+        RAISE NOTICE 'Automatically resumed % postponed services', services_resumed;
+    END IF;
+    
+    -- Now process services that are not postponed and are confirmed
+    FOR rs IN 
+        SELECT * 
+        FROM public.recurring_services
+        WHERE postponed IS DISTINCT FROM TRUE
+        AND confirmed = TRUE
+        AND start_date IS NOT NULL
+        AND start_time IS NOT NULL
+        AND interval IS NOT NULL
+        AND days_of_the_week IS NOT NULL
+        AND recurring_group_id IS NOT NULL
+    LOOP
+        RAISE NOTICE 'Processing recurring service ID: % for % with interval % days', rs.id, rs.days_of_the_week, rs.interval;
+        
+        -- Split days_of_the_week by comma to handle multiple days
+        days_array := string_to_array(LOWER(TRIM(rs.days_of_the_week)), ',');
+        
+        -- Trim each day in the array
+        FOR i IN 1..array_length(days_array, 1) LOOP
+            days_array[i] := TRIM(days_array[i]);
+        END LOOP;
+        
+        loop_counter := 0;
+        latest_inserted_date := NULL;
+        
+        -- Check if start_date booking already exists without recurring_group_id
+        SELECT id INTO existing_booking_id
+        FROM public.bookings 
+        WHERE customer = rs.customer
+        AND date_time::date = rs.start_date
+        AND (recurring_group_id IS NULL OR recurring_group_id != rs.recurring_group_id);
+        
+        IF existing_booking_id IS NOT NULL THEN
+            UPDATE public.bookings 
+            SET recurring_group_id = rs.recurring_group_id
+            WHERE id = existing_booking_id;
+            RAISE NOTICE 'Updated existing booking % with recurring_group_id %', existing_booking_id, rs.recurring_group_id;
+        END IF;
+        
+        -- Determine starting date for new bookings
+        booking_date := COALESCE(rs.was_created_until + (rs.interval || ' days')::interval, rs.start_date, CURRENT_DATE);
+        
+        IF booking_date < CURRENT_DATE THEN
+            booking_date := CURRENT_DATE;
+        END IF;
+
+        -- Generate bookings for the next 8 weeks (56 days)
+        WHILE booking_date <= CURRENT_DATE + INTERVAL '56 days' AND loop_counter < max_iterations LOOP
+            loop_counter := loop_counter + 1;
+            booking_created_this_iteration := false;
+            
+            day_name := LOWER(TRIM(to_char(booking_date, 'Day')));
+            
+            -- Check if current day matches ANY of the configured days
+            IF day_name = ANY(days_array) THEN
+                IF NOT EXISTS (
+                    SELECT 1 FROM public.bookings 
+                    WHERE customer = rs.customer
+                    AND date_time::date = booking_date
+                    AND recurring_group_id = rs.recurring_group_id
+                ) THEN
+                    
+                    booking_datetime := booking_date + rs.start_time;
+
+                    -- Get address
+                    SELECT address, postcode INTO addr
+                    FROM public.addresses 
+                    WHERE id = rs.address;
+                    
+                    IF addr.address IS NOT NULL THEN
+                        INSERT INTO public.bookings (
+                            customer, cleaning_type, date_time, address, postcode,
+                            cleaner, hours_required, total_hours, cleaning_cost_per_hour, total_cost,
+                            cleaner_rate, cleaner_pay, payment_method, booking_status,
+                            recurring_group_id, date_only, time_only, send_notification_email,
+                            frequently, created_by_source
+                        )
+                        VALUES (
+                            rs.customer,
+                            rs.cleaning_type, 
+                            booking_datetime, 
+                            addr.address, 
+                            addr.postcode,
+                            rs.cleaner,
+                            rs.hours::numeric, 
+                            rs.hours::numeric, 
+                            rs.cost_per_hour, 
+                            rs.total_cost,
+                            rs.cleaner_rate, 
+                            CASE WHEN rs.cleaner_rate IS NOT NULL THEN rs.hours::numeric * rs.cleaner_rate ELSE NULL END,
+                            rs.payment_method, 
+                            'active',
+                            rs.recurring_group_id,
+                            booking_date, 
+                            rs.start_time::time, 
+                            false,
+                            rs.frequently,
+                            'recurring_auto'
+                        )
+                        RETURNING id INTO existing_booking_id;
+
+                        -- Create cleaner_payments entry if cleaner is assigned
+                        IF rs.cleaner IS NOT NULL AND existing_booking_id IS NOT NULL THEN
+                            INSERT INTO cleaner_payments (
+                                booking_id,
+                                cleaner_id,
+                                payment_type,
+                                hourly_rate,
+                                hours_assigned,
+                                calculated_pay,
+                                is_primary,
+                                status
+                            ) VALUES (
+                                existing_booking_id,
+                                rs.cleaner,
+                                'hourly',
+                                rs.cleaner_rate,
+                                rs.hours::numeric,
+                                COALESCE(rs.hours::numeric * rs.cleaner_rate, 0),
+                                true,
+                                'assigned'
+                            );
+                            RAISE NOTICE 'Created cleaner_payment for booking %', existing_booking_id;
+                        END IF;
+
+                        bookings_created := bookings_created + 1;
+                        latest_inserted_date := booking_date;
+                        booking_created_this_iteration := true;
+                        
+                        RAISE NOTICE 'CREATED booking for % (Service % - Day: %)', booking_date, rs.id, day_name;
+                    END IF;
+                ELSE
+                    RAISE NOTICE 'SKIPPED booking for % - already exists (Service %)', booking_date, rs.id;
+                    -- Even if booking exists, we should skip ahead by interval for non-weekly
+                    booking_created_this_iteration := true;
+                END IF;
+            END IF;
+
+            -- KEY FIX: After processing a matching day, jump by the interval for bi-weekly/monthly
+            -- For weekly services with multiple days, we need to continue daily iteration
+            IF booking_created_this_iteration AND rs.interval > 7 THEN
+                -- For bi-weekly (14) or monthly (30), skip ahead by interval
+                booking_date := booking_date + (rs.interval || ' days')::interval;
+                RAISE NOTICE 'Jumping ahead by % days to %', rs.interval, booking_date;
+            ELSE
+                -- For weekly or when no booking was created, move to next day
+                booking_date := booking_date + INTERVAL '1 day';
+            END IF;
+        END LOOP;
+
+        IF latest_inserted_date IS NOT NULL THEN
+            UPDATE public.recurring_services
+            SET was_created_until = latest_inserted_date
+            WHERE id = rs.id;
+        END IF;
+    END LOOP;
+    
+    -- Log how many services were skipped due to missing start_time
+    SELECT COUNT(*) INTO services_skipped 
+    FROM public.recurring_services 
+    WHERE postponed IS DISTINCT FROM TRUE
+    AND confirmed = TRUE
+    AND start_time IS NULL;
+    
+    IF services_skipped > 0 THEN
+        RAISE NOTICE 'Skipped % services with missing start_time (flexible time - needs manual confirmation)', services_skipped;
+    END IF;
+    
+    RAISE NOTICE 'Function completed. Resumed % services, Created % bookings total, Skipped % services without start_time', services_resumed, bookings_created, services_skipped;
+END;
+$$;
