@@ -165,6 +165,10 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
       setError(null);
 
       // Build the query with date filtering
+      // For upcoming bookings, always filter from today onwards if no specific filter is provided
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      
       let bookingsQuery = supabase
         .from('bookings')
         .select(`
@@ -177,15 +181,20 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           )
         `);
 
-      // Apply dashboard date filter first
+      // Apply dashboard date filter OR default to today onwards
       if (dashboardDateFilter) {
         bookingsQuery = bookingsQuery
           .gte('date_time', dashboardDateFilter.dateFrom)
           .lte('date_time', dashboardDateFilter.dateTo);
+      } else {
+        // Default: show bookings from today onwards (upcoming only)
+        bookingsQuery = bookingsQuery
+          .gte('date_time', todayStart.toISOString());
       }
 
       const { data: bookingsData, error: bookingsError } = await bookingsQuery
-        .order('date_time', { ascending: sortOrder === 'asc' });
+        .order('date_time', { ascending: sortOrder === 'asc' })
+        .limit(500); // Limit for performance
 
       if (bookingsError) {
         console.error('Error fetching bookings:', bookingsError);
