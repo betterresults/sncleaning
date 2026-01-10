@@ -254,30 +254,19 @@ Postcode: ${booking.postcode || 'N/A'}`;
       serviceName = 'Cleaning Service';
     }
 
-    // Determine if hourly or fixed price
-    let invoiceItem: any;
-    const hasHourlyRate = booking.cleaning_cost_per_hour && parseFloat(booking.cleaning_cost_per_hour) > 0;
-    const hasTotalHours = booking.total_hours && parseFloat(booking.total_hours) > 0;
-
-    if (hasHourlyRate && hasTotalHours) {
-      // Hourly rate service
-      invoiceItem = {
-        name: serviceName,
-        description: '',
-        price: parseFloat(booking.cleaning_cost_per_hour),
-        quantity: parseFloat(booking.total_hours)
-      };
-      console.log('Using hourly rate:', invoiceItem);
-    } else {
-      // Fixed price service
-      invoiceItem = {
-        name: serviceName,
-        description: '',
-        price: parseFloat(booking.total_cost || 0),
-        quantity: 1
-      };
-      console.log('Using fixed price:', invoiceItem);
-    }
+    // ALWAYS use total_cost as the invoice amount
+    // total_cost is the source of truth - it includes all calculations, discounts, etc.
+    // cleaning_cost_per_hour and total_hours are just metadata, not for invoice calculation
+    const totalCost = parseFloat(booking.total_cost || 0);
+    const hoursDescription = booking.total_hours ? `Hours: ${booking.total_hours}` : '';
+    
+    const invoiceItem = {
+      name: serviceName,
+      description: hoursDescription,
+      price: totalCost,
+      quantity: 1
+    };
+    console.log('Invoice item (using total_cost):', invoiceItem);
 
     const invoiceData: any = {
       customer: customerId,
