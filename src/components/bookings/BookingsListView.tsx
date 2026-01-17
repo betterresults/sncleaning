@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AuthorizeRemainingAmountDialog } from '@/components/payments/AuthorizeRemainingAmountDialog';
 import { UpcomingBookingsFilters } from '@/components/bookings/UpcomingBookingsFilters';
+import DomesticBookingDetails from '@/components/bookings/DomesticBookingDetails';
 
 import EditBookingDialog from '../dashboard/EditBookingDialog';
 import AssignCleanerDialog from '../dashboard/AssignCleanerDialog';
@@ -53,6 +54,10 @@ interface Booking {
   same_day?: boolean;
   sub_cleaners_count?: number;
   sub_cleaners_total_pay?: number;
+  // Additional fields for domestic booking details
+  property_details?: string | null;
+  oven_size?: string | null;
+  access?: string | null;
   cleaners?: {
     id: number;
     first_name: string;
@@ -171,6 +176,9 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
         .select(`
           *,
           time_only,
+          property_details,
+          oven_size,
+          access,
           cleaners!bookings_cleaner_fkey (
             id,
             first_name,
@@ -716,222 +724,236 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
             }`}
           >
             {/* Desktop Layout */}
-            <div className="hidden lg:grid lg:grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
-              {/* Time Box */}
-              <div className="bg-primary/10 h-full flex items-center justify-center">
-                <div className="text-center py-4">
-                  <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingWeekday ? `${bookingWeekday} · ${bookingDate}` : bookingDate}</div>
-                  <div className={`text-2xl font-bold ${isFlexibleTime ? 'text-orange-500' : 'text-primary'} mt-1`} title={isFlexibleTime ? 'Customer requested flexible arrival time' : undefined}>
-                    {bookingTime}
-                  </div>
-                  {booking.total_hours && (
-                    <div className="text-sm font-semibold text-muted-foreground mt-1">
-                      {booking.total_hours}h
+            <div className="hidden lg:block">
+              <div className="grid lg:grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
+                {/* Time Box */}
+                <div className="bg-primary/10 h-full flex items-center justify-center">
+                  <div className="text-center py-4">
+                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingWeekday ? `${bookingWeekday} · ${bookingDate}` : bookingDate}</div>
+                    <div className={`text-2xl font-bold ${isFlexibleTime ? 'text-orange-500' : 'text-primary'} mt-1`} title={isFlexibleTime ? 'Customer requested flexible arrival time' : undefined}>
+                      {bookingTime}
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Customer Name */}
-              <div className="py-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-foreground leading-tight">
-                    {booking.first_name} {booking.last_name}
-                  </h3>
-                  <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
-                  {customersWithPaymentMethods.has(booking.customer) && (
-                    <span title="Payment method on file">
-                      <CreditCard className="h-4 w-4 text-green-600" />
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="p-1 hover:bg-accent rounded-md transition-colors">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{booking.phone_number}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            navigator.clipboard.writeText(booking.phone_number);
-                            toast({
-                              title: "Copied",
-                              description: "Phone number copied to clipboard",
-                            });
-                          }}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
+                    {booking.total_hours && (
+                      <div className="text-sm font-semibold text-muted-foreground mt-1">
+                        {booking.total_hours}h
                       </div>
-                    </PopoverContent>
-                  </Popover>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className="p-1 hover:bg-accent rounded-md transition-colors">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{booking.email}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => {
-                            navigator.clipboard.writeText(booking.email);
-                            toast({
-                              title: "Copied",
-                              description: "Email copied to clipboard",
-                            });
-                          }}
-                        >
-                          <Copy className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              {/* Address */}
-              <div className="py-4 min-w-0">
-                <div className="flex items-start gap-1.5 text-base text-foreground">
-                  <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
-                  <div className="leading-tight min-w-0">
-                    <div className="font-medium truncate">{booking.address}</div>
-                    <div className="font-medium truncate">{booking.postcode}</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Service Type Badge */}
-              <div className="py-4">
-                <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full flex flex-col items-center`}>
-                  <span>{serviceLabel}</span>
-                  <span className="text-xs italic font-normal mt-0.5">{cleaningLabel}</span>
-                </Badge>
-              </div>
-
-              {/* Cleaner Info - Clickable */}
-              <div className="py-4">
-                {!isUnsigned ? (
-                  <button 
-                    onClick={() => handleAssignCleaner(booking.id)}
-                    className="space-y-1 hover:bg-accent/50 rounded-lg p-2 -m-2 transition-colors text-left w-full"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="font-medium truncate">{cleanerName}</span>
-                      {(booking.sub_cleaners_count ?? 0) > 0 && (
-                        <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
-                          <Users className="w-3 h-3" />
-                          +{booking.sub_cleaners_count}
-                        </Badge>
-                      )}
-                    </div>
-                    {(booking.cleaner_pay || booking.sub_cleaners_total_pay) && (
-                      <p className="text-sm font-medium text-muted-foreground pl-9">
-                        £{((booking.cleaner_pay || 0) + (booking.sub_cleaners_total_pay || 0)).toFixed(2)}
-                      </p>
                     )}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleAssignCleaner(booking.id)}
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5 cursor-pointer">
-                      Unassigned
-                    </Badge>
-                  </button>
-                )}
-              </div>
+                  </div>
+                </div>
 
-              {/* Payment Status & Total Cost */}
-              <div className="py-4 flex items-center justify-end gap-2 pr-2">
-                <PaymentStatusIndicator 
-                  status={booking.payment_status}
-                  paymentMethod={booking.payment_method}
-                  isClickable={true}
-                  onClick={() => handlePaymentAction(booking)}
-                  size="md"
-                />
-                <span className="text-2xl font-bold" style={{ color: '#18A5A5' }}>
-                  £{booking.total_cost?.toFixed(2) || '0.00'}
-                </span>
-              </div>
+                {/* Customer Name */}
+                <div className="py-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-foreground leading-tight">
+                      {booking.first_name} {booking.last_name}
+                    </h3>
+                    <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
+                    {customersWithPaymentMethods.has(booking.customer) && (
+                      <span title="Payment method on file">
+                        <CreditCard className="h-4 w-4 text-green-600" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="p-1 hover:bg-accent rounded-md transition-colors">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{booking.phone_number}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={() => {
+                              navigator.clipboard.writeText(booking.phone_number);
+                              toast({
+                                title: "Copied",
+                                description: "Phone number copied to clipboard",
+                              });
+                            }}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="p-1 hover:bg-accent rounded-md transition-colors">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{booking.email}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={() => {
+                              navigator.clipboard.writeText(booking.email);
+                              toast({
+                                title: "Copied",
+                                description: "Email copied to clipboard",
+                              });
+                            }}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
 
-              {/* Actions */}
-              <div className="bg-accent/30 h-full flex items-center justify-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      className="h-8 w-8 p-0 hover:bg-accent"
-                      onClick={(e) => e.stopPropagation()}
+                {/* Address */}
+                <div className="py-4 min-w-0">
+                  <div className="flex items-start gap-1.5 text-base text-foreground">
+                    <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
+                    <div className="leading-tight min-w-0">
+                      <div className="font-medium truncate">{booking.address}</div>
+                      <div className="font-medium truncate">{booking.postcode}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Type Badge */}
+                <div className="py-4">
+                  <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full flex flex-col items-center`}>
+                    <span>{serviceLabel}</span>
+                    <span className="text-xs italic font-normal mt-0.5">{cleaningLabel}</span>
+                  </Badge>
+                </div>
+
+                {/* Cleaner Info - Clickable */}
+                <div className="py-4">
+                  {!isUnsigned ? (
+                    <button 
+                      onClick={() => handleAssignCleaner(booking.id)}
+                      className="space-y-1 hover:bg-accent/50 rounded-lg p-2 -m-2 transition-colors text-left w-full"
                     >
-                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
-                    <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Assign Cleaner
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
-                      <Repeat className="w-4 h-4 mr-2" />
-                      Make Recurring
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
-                      <Send className="w-4 h-4 mr-2" />
-                      Send Email
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleViewInvoice(booking)}>
-                      <FileText className="w-4 h-4 mr-2" />
-                      View Invoice
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-medium truncate">{cleanerName}</span>
+                        {(booking.sub_cleaners_count ?? 0) > 0 && (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            +{booking.sub_cleaners_count}
+                          </Badge>
+                        )}
+                      </div>
+                      {(booking.cleaner_pay || booking.sub_cleaners_total_pay) && (
+                        <p className="text-sm font-medium text-muted-foreground pl-9">
+                          £{((booking.cleaner_pay || 0) + (booking.sub_cleaners_total_pay || 0)).toFixed(2)}
+                        </p>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAssignCleaner(booking.id)}
+                      className="hover:opacity-80 transition-opacity"
+                    >
+                      <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5 cursor-pointer">
+                        Unassigned
+                      </Badge>
+                    </button>
+                  )}
+                </div>
 
-              {/* Hidden but functional */}
-              <div className="hidden">
-                <AuthorizeRemainingAmountDialog
-                  booking={booking}
-                  onSuccess={fetchData}
+                {/* Payment Status & Total Cost */}
+                <div className="py-4 flex items-center justify-end gap-2 pr-2">
+                  <PaymentStatusIndicator 
+                    status={booking.payment_status}
+                    paymentMethod={booking.payment_method}
+                    isClickable={true}
+                    onClick={() => handlePaymentAction(booking)}
+                    size="md"
+                  />
+                  <span className="text-2xl font-bold" style={{ color: '#18A5A5' }}>
+                    £{booking.total_cost?.toFixed(2) || '0.00'}
+                  </span>
+                </div>
+
+                {/* Actions */}
+                <div className="bg-accent/30 h-full flex items-center justify-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        className="h-8 w-8 p-0 hover:bg-accent"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
+                      <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Assign Cleaner
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
+                        <Repeat className="w-4 h-4 mr-2" />
+                        Make Recurring
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
+                        <Send className="w-4 h-4 mr-2" />
+                        Send Email
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewInvoice(booking)}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Invoice
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
+                        <DollarSign className="w-4 h-4 mr-2" />
+                        {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Hidden but functional */}
+                <div className="hidden">
+                  <AuthorizeRemainingAmountDialog
+                    booking={booking}
+                    onSuccess={fetchData}
+                  />
+                </div>
+              </div>
+              
+              {/* Domestic Booking Details Section - Desktop */}
+              <div className="px-4 pb-4">
+                <DomesticBookingDetails
+                  propertyDetails={booking.property_details}
+                  additionalDetails={booking.additional_details}
+                  ovenSize={booking.oven_size}
+                  access={booking.access}
+                  frequently={booking.frequently}
+                  serviceType={booking.service_type}
                 />
               </div>
             </div>
@@ -1138,6 +1160,16 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                   £{booking.total_cost?.toFixed(2) || '0.00'}
                 </span>
               </div>
+              
+              {/* Domestic Booking Details Section - Mobile */}
+              <DomesticBookingDetails
+                propertyDetails={booking.property_details}
+                additionalDetails={booking.additional_details}
+                ovenSize={booking.oven_size}
+                access={booking.access}
+                frequently={booking.frequently}
+                serviceType={booking.service_type}
+              />
             </div>
           </div>
         );
