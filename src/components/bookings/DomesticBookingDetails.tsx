@@ -10,6 +10,7 @@ interface DomesticBookingDetailsProps {
   access?: string | null;
   frequently?: string | null;
   serviceType?: string | null;
+  cleaningType?: string | null;
   totalHours?: number | null;
   recommendedHours?: number | null;
   hoursRequired?: number | null;
@@ -143,6 +144,7 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
   access,
   frequently,
   serviceType,
+  cleaningType,
   totalHours,
   recommendedHours,
   hoursRequired,
@@ -285,26 +287,31 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger className="w-full">
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border-t border-border/30">
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Quick summary badges */}
-            {hasFirstDeepClean && (
-              <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 font-medium">
+        <div className="flex items-center justify-between px-4 py-2 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border-t border-border/30 overflow-hidden">
+          <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1 overflow-hidden">
+            {/* Cleaning type badge (deep clean, weekly, biweekly, etc.) */}
+            {hasFirstDeepClean ? (
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 font-medium flex-shrink-0">
                 <Sparkles className="h-3 w-3 mr-1" />
                 First Deep Clean
               </Badge>
+            ) : cleaningType && (
+              <Badge variant="outline" className="text-xs px-2 py-0.5 font-medium flex-shrink-0">
+                {cleaningType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+              </Badge>
             )}
-            {summaryItems.map((item, idx) => (
-              <span key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            {/* Summary items - compact */}
+            {summaryItems.slice(0, 3).map((item, idx) => (
+              <span key={idx} className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
                 <span className="text-primary">{item.icon}</span>
                 <span className="font-medium">{item.value}</span>
               </span>
             ))}
-            {detailItems.length > 4 && (
-              <span className="text-xs text-muted-foreground">+{detailItems.length - 4} more</span>
+            {detailItems.length > 3 && (
+              <span className="text-xs text-muted-foreground flex-shrink-0">+{detailItems.length - 3} more</span>
             )}
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0 ml-2">
             <span>{isOpen ? 'Less' : 'Details'}</span>
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
@@ -312,12 +319,12 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
       </CollapsibleTrigger>
       
       <CollapsibleContent>
-        <div className="px-4 py-3 bg-muted/20 border-t border-border/20">
+        <div className="px-4 py-3 bg-muted/20 border-t border-border/20 overflow-hidden">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {detailItems.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">{item.icon}</span>
-                <div className="min-w-0">
+              <div key={idx} className="flex items-start gap-2 min-w-0">
+                <span className="text-primary mt-0.5 flex-shrink-0">{item.icon}</span>
+                <div className="min-w-0 overflow-hidden">
                   <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
                   <div className="text-sm text-foreground truncate">{item.value}</div>
                 </div>

@@ -731,91 +731,93 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
           >
             {/* Desktop Layout - Redesigned for clarity */}
             <div className="hidden lg:block">
-              {/* Main Row */}
-              <div className="flex items-stretch">
-                {/* Time Box */}
-                <div className="bg-primary/10 w-24 flex-shrink-0 flex items-center justify-center py-4">
-                  <div className="text-center">
-                    <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{bookingWeekday}</div>
-                    <div className="text-xs text-muted-foreground font-medium">{bookingDate}</div>
-                    <div className={`text-xl font-bold mt-1 ${isFlexibleTime ? 'text-orange-500' : 'text-primary'}`} title={isFlexibleTime ? 'Flexible arrival' : undefined}>
-                      {bookingTime}
-                    </div>
-                    {booking.total_hours && (
-                      <div className="text-sm font-bold text-primary/80 mt-0.5">
-                        {booking.total_hours}h
+                {/* Main Row */}
+                <div className="flex items-stretch">
+                  {/* Time Box - Larger, more prominent */}
+                  <div className="bg-primary/10 w-28 flex-shrink-0 flex items-center justify-center py-5">
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{bookingWeekday}</div>
+                      <div className="text-sm text-foreground font-semibold">{bookingDate}</div>
+                      <div className={`text-2xl font-bold mt-1 ${isFlexibleTime ? 'text-orange-500' : 'text-primary'}`} title={isFlexibleTime ? 'Flexible arrival' : undefined}>
+                        {bookingTime}
                       </div>
-                    )}
+                      {booking.total_hours && (
+                        <div className="text-sm font-bold text-primary/80 mt-0.5">
+                          {booking.total_hours}h
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Main Content */}
-                <div className="flex-1 flex items-center px-4 py-3 gap-6">
-                  {/* Customer Info */}
-                  <div className="min-w-[160px] max-w-[200px]">
-                    <div className="flex items-center gap-1.5">
+                  {/* Main Content */}
+                  <div className="flex-1 flex items-center px-4 py-3 gap-5 min-w-0">
+                    {/* Customer Info */}
+                    <div className="min-w-[160px] max-w-[200px]">
                       <h3 className="text-base font-bold text-foreground truncate">
                         {booking.first_name} {booking.last_name}
                       </h3>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {booking.has_photos && <Camera className="h-3.5 w-3.5 text-green-600" />}
+                      {/* Icons row - all same size */}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="p-1 hover:bg-accent rounded transition-colors">
+                              <Phone className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">{booking.phone_number}</span>
+                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.phone_number); toast({ title: "Copied" }); }}>
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button className="p-1 hover:bg-accent rounded transition-colors">
+                              <Mail className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm">{booking.email}</span>
+                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.email); toast({ title: "Copied" }); }}>
+                                <Copy className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
                         {customersWithPaymentMethods.has(booking.customer) && (
-                          <span title="Card on file"><CreditCard className="h-3.5 w-3.5 text-green-600" /></span>
+                          <span title="Card on file" className="p-1">
+                            <CreditCard className="w-4 h-4 text-green-600" />
+                          </span>
+                        )}
+                        {booking.has_photos && (
+                          <span title="Has photos" className="p-1">
+                            <Camera className="w-4 h-4 text-green-600" />
+                          </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="p-1 hover:bg-accent rounded transition-colors">
-                            <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{booking.phone_number}</span>
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.phone_number); toast({ title: "Copied" }); }}>
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="p-1 hover:bg-accent rounded transition-colors">
-                            <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">{booking.email}</span>
-                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.email); toast({ title: "Copied" }); }}>
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
 
-                  {/* Address */}
-                  <div className="flex-1 min-w-0 max-w-[280px]">
-                    <div className="flex items-start gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 mt-0.5 text-primary flex-shrink-0" />
-                      <div className="text-sm leading-tight min-w-0">
-                        <div className="font-medium text-foreground truncate">{booking.address}</div>
-                        <div className="text-muted-foreground font-medium">{booking.postcode}</div>
+                    {/* Address */}
+                    <div className="flex-1 min-w-0 max-w-[260px]">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                        <div className="text-sm leading-tight min-w-0">
+                          <div className="font-medium text-foreground truncate">{booking.address}</div>
+                          <div className="text-muted-foreground font-medium">{booking.postcode}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Service Badge */}
-                  <div className="flex-shrink-0">
-                    <Badge className={`${serviceBadgeColor} text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
-                      {serviceLabel}
-                      {cleaningLabel && <span className="font-normal opacity-80 ml-1">• {cleaningLabel}</span>}
-                    </Badge>
-                  </div>
+                    {/* Service Badge - Just service type, no cleaning type */}
+                    <div className="flex-shrink-0">
+                      <Badge className={`${serviceBadgeColor} text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
+                        {serviceLabel}
+                      </Badge>
+                    </div>
 
                   {/* Cleaner */}
                   <div className="min-w-[130px] flex-shrink-0">
@@ -889,6 +891,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                 access={booking.access}
                 frequently={booking.frequently}
                 serviceType={booking.service_type}
+                cleaningType={booking.cleaning_type}
                 totalHours={booking.total_hours}
                 recommendedHours={booking.recommended_hours}
                 hoursRequired={booking.hours_required}
@@ -902,19 +905,20 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
             </div>
 
             {/* Mobile & Tablet Layout */}
-            <div className="lg:hidden p-4 space-y-3">
+            <div className="lg:hidden p-4 space-y-3 overflow-hidden">
               {/* Row 1: Time, Customer, Actions */}
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  {/* Time Box - Compact */}
-                  <div className="bg-primary/10 rounded-xl px-3 py-2 min-w-[70px]">
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Time Box - Larger, more prominent */}
+                  <div className="bg-primary/10 rounded-xl px-3 py-2.5 min-w-[80px] flex-shrink-0">
                     <div className="text-center">
-                      <div className="text-xs text-muted-foreground font-medium">{bookingWeekday ? `${bookingWeekday} · ${bookingDate}` : bookingDate}</div>
-                      <div className={`text-lg font-bold ${isFlexibleTime ? 'text-orange-500' : 'text-primary'} mt-0.5`} title={isFlexibleTime ? 'Customer requested flexible arrival time' : undefined}>
+                      <div className="text-xs text-muted-foreground font-semibold uppercase">{bookingWeekday}</div>
+                      <div className="text-sm text-foreground font-semibold">{bookingDate}</div>
+                      <div className={`text-xl font-bold ${isFlexibleTime ? 'text-orange-500' : 'text-primary'} mt-0.5`} title={isFlexibleTime ? 'Flexible arrival' : undefined}>
                         {bookingTime}
                       </div>
                       {booking.total_hours && (
-                        <div className="text-xs font-semibold text-muted-foreground">
+                        <div className="text-xs font-bold text-primary/80">
                           {booking.total_hours}h
                         </div>
                       )}
@@ -922,40 +926,22 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                   </div>
                   
                   {/* Customer Name */}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-foreground">
-                        {booking.first_name} {booking.last_name}
-                      </h3>
-                      <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
-                      {customersWithPaymentMethods.has(booking.customer) && (
-                        <span title="Payment method on file">
-                          <CreditCard className="h-4 w-4 text-green-600" />
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
+                  <div className="min-w-0">
+                    <h3 className="text-base font-bold text-foreground truncate">
+                      {booking.first_name} {booking.last_name}
+                    </h3>
+                    {/* Icons row - all same size, under name */}
+                    <div className="flex items-center gap-2 mt-1.5">
                       <Popover>
                         <PopoverTrigger asChild>
                           <button className="p-1 hover:bg-accent rounded-md transition-colors">
-                            <Phone className="w-3 h-3 text-muted-foreground" />
+                            <Phone className="w-4 h-4 text-muted-foreground" />
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-3">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{booking.phone_number}</span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {
-                                navigator.clipboard.writeText(booking.phone_number);
-                                toast({
-                                  title: "Copied",
-                                  description: "Phone number copied to clipboard",
-                                });
-                              }}
-                            >
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.phone_number); toast({ title: "Copied" }); }}>
                               <Copy className="w-3 h-3" />
                             </Button>
                           </div>
@@ -964,29 +950,28 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                       <Popover>
                         <PopoverTrigger asChild>
                           <button className="p-1 hover:bg-accent rounded-md transition-colors">
-                            <Mail className="w-3 h-3 text-muted-foreground" />
+                            <Mail className="w-4 h-4 text-muted-foreground" />
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-3">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">{booking.email}</span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {
-                                navigator.clipboard.writeText(booking.email);
-                                toast({
-                                  title: "Copied",
-                                  description: "Email copied to clipboard",
-                                });
-                              }}
-                            >
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.email); toast({ title: "Copied" }); }}>
                               <Copy className="w-3 h-3" />
                             </Button>
                           </div>
                         </PopoverContent>
                       </Popover>
+                      {customersWithPaymentMethods.has(booking.customer) && (
+                        <span title="Card on file" className="p-1">
+                          <CreditCard className="w-4 h-4 text-green-600" />
+                        </span>
+                      )}
+                      {booking.has_photos && (
+                        <span title="Has photos" className="p-1">
+                          <Camera className="w-4 h-4 text-green-600" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1058,8 +1043,9 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
 
               {/* Row 3: Service Badge & Cleaner - Clickable */}
               <div className="flex flex-wrap items-center gap-3">
+                {/* Service badge - just service type, no cleaning type */}
                 <Badge className={`${serviceBadgeColor} text-xs px-2 py-1 rounded-full`}>
-                  {serviceLabel} - {cleaningLabel}
+                  {serviceLabel}
                 </Badge>
                 
                 {!isUnsigned ? (
@@ -1112,6 +1098,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                 access={booking.access}
                 frequently={booking.frequently}
                 serviceType={booking.service_type}
+                cleaningType={booking.cleaning_type}
                 totalHours={booking.total_hours}
                 recommendedHours={booking.recommended_hours}
                 hoursRequired={booking.hours_required}
