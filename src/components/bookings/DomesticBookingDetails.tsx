@@ -281,52 +281,57 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
   // If no details, don't render anything
   if (detailItems.length === 0) return null;
 
-  // Create summary for collapsed state
-  const summaryItems = detailItems.slice(0, 4);
+  // Handle toggle - prevent page refresh
+  const handleToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(!isOpen);
+  };
   
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="w-full">
-        <div className="flex items-center justify-between px-4 py-2 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border-t border-border/30 overflow-hidden">
-          <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1 overflow-hidden">
+      <CollapsibleTrigger asChild>
+        <button 
+          type="button"
+          onClick={handleToggle}
+          className="w-full flex items-center justify-between px-4 py-2.5 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border-t border-border/30"
+        >
+          <div className="flex items-center gap-3 flex-wrap min-w-0 flex-1">
             {/* Cleaning type badge (deep clean, weekly, biweekly, etc.) */}
-            {hasFirstDeepClean ? (
+            {hasFirstDeepClean && (
               <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 font-medium flex-shrink-0">
-                <Sparkles className="h-3 w-3 mr-1" />
+                <Sparkles className="h-3.5 w-3.5 mr-1" />
                 First Deep Clean
               </Badge>
-            ) : cleaningType && (
+            )}
+            {cleaningType && !hasFirstDeepClean && (
               <Badge variant="outline" className="text-xs px-2 py-0.5 font-medium flex-shrink-0">
                 {cleaningType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
               </Badge>
             )}
-            {/* Summary items - compact */}
-            {summaryItems.slice(0, 3).map((item, idx) => (
-              <span key={idx} className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+            {/* Show ALL items inline - no "+X more" */}
+            {detailItems.map((item, idx) => (
+              <span key={idx} className="flex items-center gap-1.5 text-sm text-muted-foreground flex-shrink-0">
                 <span className="text-primary">{item.icon}</span>
                 <span className="font-medium">{item.value}</span>
               </span>
             ))}
-            {detailItems.length > 3 && (
-              <span className="text-xs text-muted-foreground flex-shrink-0">+{detailItems.length - 3} more</span>
-            )}
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0 ml-2">
-            <span>{isOpen ? 'Less' : 'Details'}</span>
+          <div className="flex items-center gap-1 text-sm text-muted-foreground flex-shrink-0 ml-3">
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
-        </div>
+        </button>
       </CollapsibleTrigger>
       
       <CollapsibleContent>
-        <div className="px-4 py-3 bg-muted/20 border-t border-border/20 overflow-hidden">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="px-4 py-3 bg-muted/20 border-t border-border/20">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {detailItems.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-2 min-w-0">
+              <div key={idx} className="flex items-start gap-2.5">
                 <span className="text-primary mt-0.5 flex-shrink-0">{item.icon}</span>
-                <div className="min-w-0 overflow-hidden">
+                <div className="min-w-0">
                   <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
-                  <div className="text-sm text-foreground truncate">{item.value}</div>
+                  <div className="text-sm text-foreground">{item.value}</div>
                 </div>
               </div>
             ))}
