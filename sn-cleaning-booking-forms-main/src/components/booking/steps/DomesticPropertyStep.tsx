@@ -642,23 +642,40 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
       {data.cleaningProducts.includes('equipment') && <div>
           <h2 className="text-2xl font-bold text-slate-700 mb-4">Equipment arrangement</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(equipmentArrangementConfigs.length > 0 ? equipmentArrangementConfigs : [{
-          option: 'oneoff',
-          label: 'One-off delivery'
-        }, {
-          option: 'ongoing',
-          label: 'Leave at property'
-        }]).map((opt: any) => {
-          const isSelected = data.equipmentArrangement === opt.option;
-          return <button key={opt.option} className={`group relative h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
-            equipmentArrangement: opt.option
-          })}>
-                  {isSelected && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
-                  <span className={`text-base font-bold transition-colors text-center px-2 ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
-                </button>;
-        })}
-          </div>
+          {/* Ongoing equipment is only available for weekly cleaning with 6+ hours per week */}
+          {(() => {
+            const daysPerWeek = data.daysPerWeek || 1;
+            const hoursPerVisit = calculations.totalHours || 0;
+            const totalWeeklyHours = data.serviceFrequency === 'weekly' ? daysPerWeek * hoursPerVisit : 0;
+            const canShowOngoing = data.serviceFrequency === 'weekly' && totalWeeklyHours >= 6;
+            
+            // Filter equipment options based on eligibility
+            const availableOptions = (equipmentArrangementConfigs.length > 0 ? equipmentArrangementConfigs : [{
+              option: 'oneoff',
+              label: 'One-off delivery'
+            }, {
+              option: 'ongoing',
+              label: 'Leave at property'
+            }]).filter((opt: any) => {
+              // Always show oneoff, only show ongoing if eligible
+              if (opt.option === 'ongoing') return canShowOngoing;
+              return true;
+            });
+            
+            return (
+              <div className={`grid grid-cols-1 ${availableOptions.length > 1 ? 'md:grid-cols-2' : ''} gap-3`}>
+                {availableOptions.map((opt: any) => {
+                  const isSelected = data.equipmentArrangement === opt.option;
+                  return <button key={opt.option} className={`group relative h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => onUpdate({
+                    equipmentArrangement: opt.option
+                  })}>
+                    {isSelected && <CheckCircle className="h-5 w-5 text-primary mb-1" />}
+                    <span className={`text-base font-bold transition-colors text-center px-2 ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{opt.label}</span>
+                  </button>;
+                })}
+              </div>
+            );
+          })()}
 
           {data.equipmentArrangement === 'ongoing' && <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
               <label className="flex items-start gap-3 cursor-pointer">
