@@ -729,15 +729,15 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                 : 'bg-card'
             }`}
           >
-            {/* Desktop Layout - Redesigned for clarity */}
+            {/* Desktop Layout - 5 Equal Columns */}
             <div className="hidden lg:block">
                 {/* Main Row */}
                 <div className="flex items-stretch">
-                  {/* Time Box - Larger, more prominent */}
-                  <div className="bg-primary/10 w-28 flex-shrink-0 flex items-center justify-center py-5">
+                  {/* Date/Time Box - Larger, more prominent */}
+                  <div className="bg-primary/10 w-32 flex-shrink-0 flex items-center justify-center py-4">
                     <div className="text-center">
-                      <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{bookingWeekday}</div>
-                      <div className="text-sm text-foreground font-semibold">{bookingDate}</div>
+                      <div className="text-lg font-bold text-foreground">{booking.date_time ? format(new Date(booking.date_time), 'EEEE') : ''}</div>
+                      <div className="text-base font-semibold text-foreground">{booking.date_time ? format(new Date(booking.date_time), 'd MMMM') : 'N/A'}</div>
                       <div className={`text-2xl font-bold mt-1 ${isFlexibleTime ? 'text-orange-500' : 'text-primary'}`} title={isFlexibleTime ? 'Flexible arrival' : undefined}>
                         {bookingTime}
                       </div>
@@ -749,15 +749,15 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                     </div>
                   </div>
 
-                  {/* Main Content */}
-                  <div className="flex-1 flex items-center px-4 py-3 gap-5 min-w-0">
-                    {/* Customer Info */}
-                    <div className="min-w-[160px] max-w-[200px]">
+                  {/* Main Content - 5 Equal Columns */}
+                  <div className="flex-1 grid grid-cols-5 items-center py-3 min-w-0">
+                    {/* Column 1: Customer Info */}
+                    <div className="px-4">
                       <h3 className="text-base font-bold text-foreground truncate">
                         {booking.first_name} {booking.last_name}
                       </h3>
-                      {/* Icons row - all same size */}
-                      <div className="flex items-center gap-2 mt-1.5">
+                      {/* Icons row - all same size (w-4 h-4) */}
+                      <div className="flex items-center gap-2 mt-2">
                         <Popover>
                           <PopoverTrigger asChild>
                             <button className="p-1 hover:bg-accent rounded transition-colors">
@@ -801,87 +801,92 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                       </div>
                     </div>
 
-                    {/* Address */}
-                    <div className="flex-1 min-w-0 max-w-[260px]">
+                    {/* Column 2: Address - Multiple lines, same style */}
+                    <div className="px-4">
                       <div className="flex items-start gap-2">
                         <MapPin className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
-                        <div className="text-sm leading-tight min-w-0">
-                          <div className="font-medium text-foreground truncate">{booking.address}</div>
-                          <div className="text-muted-foreground font-medium">{booking.postcode}</div>
+                        <div className="min-w-0">
+                          <div className="text-sm text-foreground leading-snug">{booking.address}</div>
+                          <div className="text-sm text-foreground">{booking.postcode}</div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Service Badge - Just service type, no cleaning type */}
-                    <div className="flex-shrink-0">
+                    {/* Column 3: Service Type + Frequency */}
+                    <div className="px-4">
                       <Badge className={`${serviceBadgeColor} text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
                         {serviceLabel}
                       </Badge>
+                      {booking.frequently && (
+                        <div className="text-sm text-muted-foreground mt-1.5 capitalize">
+                          {booking.frequently.replace(/_/g, ' ')}
+                        </div>
+                      )}
                     </div>
 
-                  {/* Cleaner */}
-                  <div className="min-w-[130px] flex-shrink-0">
-                    {!isUnsigned ? (
-                      <button onClick={() => handleAssignCleaner(booking.id)} className="flex items-center gap-2 hover:bg-accent/50 rounded-lg p-1.5 -m-1.5 transition-colors">
-                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="text-left min-w-0">
-                          <div className="text-sm font-medium truncate">{cleanerName}</div>
-                          {(booking.cleaner_pay || booking.sub_cleaners_total_pay) ? (
-                            <div className="text-xs text-muted-foreground">£{((booking.cleaner_pay || 0) + (booking.sub_cleaners_total_pay || 0)).toFixed(2)}</div>
-                          ) : null}
-                        </div>
-                        {(booking.sub_cleaners_count ?? 0) > 0 && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">+{booking.sub_cleaners_count}</Badge>
-                        )}
-                      </button>
-                    ) : (
-                      <button onClick={() => handleAssignCleaner(booking.id)} className="hover:opacity-80">
-                        <Badge variant="destructive" className="text-xs font-medium px-2.5 py-1">Unassigned</Badge>
-                      </button>
-                    )}
+                    {/* Column 4: Cleaner + Pay */}
+                    <div className="px-4">
+                      {!isUnsigned ? (
+                        <button onClick={() => handleAssignCleaner(booking.id)} className="flex items-center gap-2 hover:bg-accent/50 rounded-lg p-1.5 -m-1.5 transition-colors">
+                          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="text-left min-w-0">
+                            <div className="text-sm font-medium truncate">{cleanerName}</div>
+                            {(booking.cleaner_pay || booking.sub_cleaners_total_pay) ? (
+                              <div className="text-sm text-muted-foreground">£{((booking.cleaner_pay || 0) + (booking.sub_cleaners_total_pay || 0)).toFixed(2)}</div>
+                            ) : null}
+                          </div>
+                          {(booking.sub_cleaners_count ?? 0) > 0 && (
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">+{booking.sub_cleaners_count}</Badge>
+                          )}
+                        </button>
+                      ) : (
+                        <button onClick={() => handleAssignCleaner(booking.id)} className="hover:opacity-80">
+                          <Badge variant="destructive" className="text-xs font-medium px-2.5 py-1">Unassigned</Badge>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Column 5: Payment & Cost */}
+                    <div className="px-4 flex items-center gap-3">
+                      <PaymentStatusIndicator 
+                        status={booking.payment_status}
+                        paymentMethod={booking.payment_method}
+                        isClickable={true}
+                        onClick={() => handlePaymentAction(booking)}
+                        size="sm"
+                      />
+                      <span className="text-xl font-bold text-primary">
+                        £{booking.total_cost?.toFixed(2) || '0.00'}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Payment & Cost */}
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <PaymentStatusIndicator 
-                      status={booking.payment_status}
-                      paymentMethod={booking.payment_method}
-                      isClickable={true}
-                      onClick={() => handlePaymentAction(booking)}
-                      size="sm"
-                    />
-                    <span className="text-xl font-bold text-primary min-w-[80px] text-right">
-                      £{booking.total_cost?.toFixed(2) || '0.00'}
-                    </span>
+                  {/* Actions - Green area */}
+                  <div className="w-10 flex-shrink-0 bg-accent/20 flex items-center justify-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button type="button" variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
+                        <DropdownMenuItem onClick={() => handleEdit(booking.id)}><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDuplicate(booking)}><Copy className="w-4 h-4 mr-2" />Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}><UserPlus className="w-4 h-4 mr-2" />Assign Cleaner</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}><Repeat className="w-4 h-4 mr-2" />Make Recurring</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSendEmail(booking)}><Send className="w-4 h-4 mr-2" />Send Email</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleViewInvoice(booking)}><FileText className="w-4 h-4 mr-2" />View Invoice</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handlePaymentAction(booking)}><DollarSign className="w-4 h-4 mr-2" />{booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600"><X className="w-4 h-4 mr-2" />Cancel</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="w-10 flex-shrink-0 bg-accent/20 flex items-center justify-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button type="button" variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
-                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
-                      <DropdownMenuItem onClick={() => handleEdit(booking.id)}><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(booking)}><Copy className="w-4 h-4 mr-2" />Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}><UserPlus className="w-4 h-4 mr-2" />Assign Cleaner</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}><Repeat className="w-4 h-4 mr-2" />Make Recurring</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSendEmail(booking)}><Send className="w-4 h-4 mr-2" />Send Email</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleViewInvoice(booking)}><FileText className="w-4 h-4 mr-2" />View Invoice</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handlePaymentAction(booking)}><DollarSign className="w-4 h-4 mr-2" />{booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600"><X className="w-4 h-4 mr-2" />Cancel</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
               
               {/* Expandable Domestic Booking Details */}
               <DomesticBookingDetails
