@@ -163,23 +163,12 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       }
     }
 
-    // DOMESTIC-SPECIFIC EQUIPMENT PRICING
-    // One-time equipment charge for domestic is £15 (different from Airbnb)
-    const DOMESTIC_EQUIPMENT_ONETIME_CHARGE = 15;
-    const DOMESTIC_EQUIPMENT_ONGOING_CHARGE = 2.8; // Per hour addition
-
+    // EQUIPMENT PRICING - Use database config values
     let equipmentValue = 0;
     if (bookingData.cleaningProducts && Array.isArray(bookingData.cleaningProducts) && bookingData.cleaningProducts.includes('equipment')) {
       if (bookingData.equipmentArrangement) {
-        // Use domestic-specific pricing instead of database config
-        if (bookingData.equipmentArrangement.toLowerCase() === 'oneoff' || bookingData.equipmentArrangement.toLowerCase() === 'one-off') {
-          equipmentValue = DOMESTIC_EQUIPMENT_ONETIME_CHARGE;
-        } else if (bookingData.equipmentArrangement.toLowerCase() === 'ongoing') {
-          equipmentValue = DOMESTIC_EQUIPMENT_ONGOING_CHARGE;
-        } else {
-          // Fallback to config if different arrangement type
-          equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
-        }
+        // Get value from database config (equipment arrangement category)
+        equipmentValue = getConfigValue('equipment arrangement', bookingData.equipmentArrangement);
       }
     }
 
