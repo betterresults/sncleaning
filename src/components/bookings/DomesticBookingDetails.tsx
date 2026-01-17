@@ -1,6 +1,7 @@
-import React from 'react';
-import { Home, Bath, Key, Sparkles, Calendar, Package, Flame, FileText, Droplets } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, Bath, Key, Sparkles, Calendar, Package, Flame, FileText, Droplets, Clock, ChevronDown, ChevronUp, Shirt } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface DomesticBookingDetailsProps {
   propertyDetails?: string | null;
@@ -9,25 +10,46 @@ interface DomesticBookingDetailsProps {
   access?: string | null;
   frequently?: string | null;
   serviceType?: string | null;
+  totalHours?: number | null;
+  recommendedHours?: number | null;
+  hoursRequired?: number | null;
+  ironingHours?: number | null;
 }
 
 interface ParsedPropertyDetails {
   propertyType?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  toilets?: number;
-  kitchens?: string;
-  receptionRooms?: number;
-  additionalRooms?: string[];
+  bedrooms?: string | number;
+  bathrooms?: string | number;
+  toilets?: string | number;
+  additionalRooms?: {
+    toilets?: number;
+    studyRooms?: number;
+    utilityRooms?: number;
+    otherRooms?: number;
+  };
+  propertyFeatures?: {
+    separateKitchen?: boolean;
+    livingRoom?: boolean;
+    diningRoom?: boolean;
+  };
+}
+
+interface FirstDeepCleanInfo {
+  enabled?: boolean;
+  extraHours?: number;
+  hours?: number;
+  cost?: number;
+  regularRecurringCost?: number;
 }
 
 interface ParsedAdditionalDetails {
-  firstDeepClean?: boolean;
+  serviceFrequency?: string;
+  firstDeepClean?: FirstDeepCleanInfo;
   ovenCleaning?: boolean;
   ovenSize?: string;
   equipmentArrangement?: string;
   cleaningProducts?: string[];
-  accessMethod?: string;
+  access?: { method?: string; notes?: string };
   notes?: string;
   ironingHours?: number;
 }
@@ -37,16 +59,7 @@ const parsePropertyDetails = (detailsString?: string | null): ParsedPropertyDeta
   if (!detailsString) return {};
   
   try {
-    const parsed = JSON.parse(detailsString);
-    return {
-      propertyType: parsed.property_type || parsed.propertyType,
-      bedrooms: parsed.bedrooms,
-      bathrooms: parsed.bathrooms,
-      toilets: parsed.toilets,
-      kitchens: parsed.kitchen || parsed.kitchens,
-      receptionRooms: parsed.reception_rooms || parsed.receptionRooms,
-      additionalRooms: parsed.additional_rooms || parsed.additionalRooms || [],
-    };
+    return JSON.parse(detailsString);
   } catch {
     return {};
   }
@@ -56,18 +69,13 @@ const parsePropertyDetails = (detailsString?: string | null): ParsedPropertyDeta
 const parseAdditionalDetails = (detailsString?: string | null): ParsedAdditionalDetails => {
   if (!detailsString) return {};
   
+  // Check if it's just a payment note, not actual details
+  if (detailsString.startsWith('Payment captured') || detailsString.startsWith('Payment')) {
+    return {};
+  }
+  
   try {
-    const parsed = JSON.parse(detailsString);
-    return {
-      firstDeepClean: parsed.first_deep_clean || parsed.firstDeepClean || parsed.isFirstDeepClean,
-      ovenCleaning: parsed.oven_cleaning || parsed.ovenCleaning,
-      ovenSize: parsed.oven_size || parsed.ovenSize,
-      equipmentArrangement: parsed.equipment_arrangement || parsed.equipmentArrangement,
-      cleaningProducts: parsed.cleaning_products || parsed.cleaningProducts || [],
-      accessMethod: parsed.access || parsed.accessMethod || parsed.property_access,
-      notes: parsed.notes || parsed.customer_notes || parsed.accessNotes,
-      ironingHours: parsed.ironing_hours || parsed.ironingHours,
-    };
+    return JSON.parse(detailsString);
   } catch {
     return {};
   }
@@ -79,6 +87,7 @@ const formatFrequency = (frequency?: string | null): string => {
   const freqMap: Record<string, string> = {
     'weekly': 'Weekly',
     'biweekly': 'Biweekly',
+    'bi-weekly': 'Biweekly',
     'fortnightly': 'Fortnightly',
     'monthly': 'Monthly',
     'one_off': 'One-off',
@@ -113,36 +122,11 @@ const formatEquipment = (equipment?: string): string => {
   return equipMap[equipment.toLowerCase()] || equipment;
 };
 
-// Format oven size
-const formatOvenSize = (size?: string): string => {
-  if (!size) return '';
-  const ovenMap: Record<string, string> = {
-    'single': 'Single Oven',
-    'double': 'Double Oven',
-    'range': 'Range Cooker',
-  };
-  return ovenMap[size.toLowerCase()] || size;
-};
-
-// Format cleaning products
-const formatCleaningProducts = (products?: string[]): string => {
-  if (!products || products.length === 0) return '';
-  
-  const productMap: Record<string, string> = {
-    'customer_provides': 'Customer provides',
-    'cleaner_brings': 'Cleaner brings',
-    'equipment': 'Equipment needed',
-  };
-  
-  return products
-    .map(p => productMap[p] || p)
-    .join(', ');
-};
-
 // Format access method
 const formatAccessMethod = (access?: string): string => {
   if (!access) return '';
   const accessMap: Record<string, string> = {
+    'meet': 'Meet customer',
     'meet_customer': 'Meet customer',
     'key_safe': 'Key safe',
     'concierge': 'Concierge',
@@ -159,10 +143,16 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
   access,
   frequently,
   serviceType,
+  totalHours,
+  recommendedHours,
+  hoursRequired,
+  ironingHours,
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
   // Only show for domestic cleaning
   const isDomestic = serviceType?.toLowerCase().includes('domestic') || 
-                     serviceType?.toLowerCase().includes('regular') ||
+                     serviceType?.toLowerCase().includes('standard') ||
                      serviceType?.toLowerCase() === 'domestic_cleaning';
 
   if (!isDomestic) return null;
@@ -170,102 +160,173 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
   const property = parsePropertyDetails(propertyDetails);
   const additional = parseAdditionalDetails(additionalDetails);
   
-  // Merge access from different sources
-  const accessMethod = access || additional.accessMethod;
-  const ovenSizeValue = ovenSize || additional.ovenSize;
+  // Extract values
+  const accessMethod = access || additional.access?.method;
+  const freq = additional.serviceFrequency || frequently;
+  const hasFirstDeepClean = additional.firstDeepClean?.enabled;
+  const deepCleanHours = additional.firstDeepClean?.hours || totalHours;
+  const regularHours = recommendedHours || (totalHours && additional.firstDeepClean?.extraHours ? 
+    totalHours - additional.firstDeepClean.extraHours : null);
+  const equipmentArrangement = additional.equipmentArrangement;
+  const accessNotes = additional.access?.notes;
+  
+  // Build detail items
+  const detailItems: { icon: React.ReactNode; label: string; value: string }[] = [];
+  
+  // Property info
+  if (property.propertyType || property.bedrooms) {
+    const beds = property.bedrooms ? `${property.bedrooms} Bed ` : '';
+    const type = formatPropertyType(property.propertyType);
+    if (beds || type) {
+      detailItems.push({ 
+        icon: <Home className="h-3.5 w-3.5" />, 
+        label: 'Property', 
+        value: `${beds}${type}`.trim() 
+      });
+    }
+  }
+  
+  // Bathrooms
+  if (property.bathrooms && Number(property.bathrooms) > 0) {
+    detailItems.push({ 
+      icon: <Bath className="h-3.5 w-3.5" />, 
+      label: 'Bathrooms', 
+      value: `${property.bathrooms}` 
+    });
+  }
+  
+  // Frequency
+  if (freq) {
+    detailItems.push({ 
+      icon: <Calendar className="h-3.5 w-3.5" />, 
+      label: 'Frequency', 
+      value: formatFrequency(freq) 
+    });
+  }
+  
+  // Hours - First Deep Clean
+  if (hasFirstDeepClean && deepCleanHours) {
+    detailItems.push({ 
+      icon: <Clock className="h-3.5 w-3.5" />, 
+      label: 'First Clean', 
+      value: `${deepCleanHours}h (Deep Clean)` 
+    });
+    if (regularHours && regularHours !== deepCleanHours) {
+      detailItems.push({ 
+        icon: <Clock className="h-3.5 w-3.5" />, 
+        label: 'Regular', 
+        value: `${regularHours}h` 
+      });
+    }
+  } else if (totalHours || hoursRequired) {
+    // Regular hours display if not first deep clean
+    const hours = totalHours || hoursRequired;
+    if (hours && !detailItems.find(i => i.label === 'First Clean')) {
+      // Only add if we haven't already added hours info
+      detailItems.push({ 
+        icon: <Clock className="h-3.5 w-3.5" />, 
+        label: 'Hours', 
+        value: `${hours}h` 
+      });
+    }
+  }
+  
+  // Ironing hours
+  if (ironingHours && ironingHours > 0) {
+    detailItems.push({ 
+      icon: <Shirt className="h-3.5 w-3.5" />, 
+      label: 'Ironing', 
+      value: `${ironingHours}h` 
+    });
+  }
+  
+  // Access method
+  if (accessMethod) {
+    detailItems.push({ 
+      icon: <Key className="h-3.5 w-3.5" />, 
+      label: 'Access', 
+      value: formatAccessMethod(accessMethod) 
+    });
+  }
+  
+  // Equipment
+  if (equipmentArrangement) {
+    detailItems.push({ 
+      icon: <Package className="h-3.5 w-3.5" />, 
+      label: 'Equipment', 
+      value: formatEquipment(equipmentArrangement) 
+    });
+  }
+  
+  // Oven cleaning
+  if (ovenSize) {
+    detailItems.push({ 
+      icon: <Flame className="h-3.5 w-3.5" />, 
+      label: 'Oven', 
+      value: ovenSize.charAt(0).toUpperCase() + ovenSize.slice(1) 
+    });
+  }
+  
+  // Notes
+  if (accessNotes) {
+    detailItems.push({ 
+      icon: <FileText className="h-3.5 w-3.5" />, 
+      label: 'Notes', 
+      value: accessNotes 
+    });
+  }
 
-  // Check if we have any data to display
-  const hasPropertyData = property.propertyType || property.bedrooms || property.bathrooms;
-  const hasServiceData = frequently || additional.firstDeepClean || additional.ovenCleaning || 
-                         additional.equipmentArrangement || (additional.cleaningProducts && additional.cleaningProducts.length > 0);
-  const hasNotes = additional.notes;
+  // If no details, don't render anything
+  if (detailItems.length === 0) return null;
 
-  if (!hasPropertyData && !hasServiceData && !accessMethod && !hasNotes) return null;
-
+  // Create summary for collapsed state
+  const summaryItems = detailItems.slice(0, 4);
+  
   return (
-    <div className="mt-3 pt-3 border-t border-border/50">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Property Details Column */}
-        {hasPropertyData && (
-          <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Property</h4>
-            <div className="space-y-1.5">
-              {property.propertyType && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Home className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-foreground">
-                    {property.bedrooms ? `${property.bedrooms} Bed ` : ''}
-                    {formatPropertyType(property.propertyType)}
-                  </span>
-                </div>
-              )}
-              {property.bathrooms && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Bath className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-foreground">{property.bathrooms} Bathroom{property.bathrooms > 1 ? 's' : ''}</span>
-                </div>
-              )}
-              {accessMethod && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Key className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-foreground">{formatAccessMethod(accessMethod)}</span>
-                </div>
-              )}
-            </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger className="w-full">
+        <div className="flex items-center justify-between px-4 py-2 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer border-t border-border/30">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Quick summary badges */}
+            {hasFirstDeepClean && (
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5 font-medium">
+                <Sparkles className="h-3 w-3 mr-1" />
+                First Deep Clean
+              </Badge>
+            )}
+            {summaryItems.map((item, idx) => (
+              <span key={idx} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="text-primary">{item.icon}</span>
+                <span className="font-medium">{item.value}</span>
+              </span>
+            ))}
+            {detailItems.length > 4 && (
+              <span className="text-xs text-muted-foreground">+{detailItems.length - 4} more</span>
+            )}
           </div>
-        )}
-
-        {/* Service Details Column */}
-        {hasServiceData && (
-          <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Service</h4>
-            <div className="space-y-1.5">
-              {frequently && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-foreground">{formatFrequency(frequently)}</span>
-                </div>
-              )}
-              {additional.firstDeepClean && (
-                <Badge variant="secondary" className="bg-amber-100 text-amber-800 text-xs px-2 py-0.5">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  First Deep Clean
-                </Badge>
-              )}
-              {(additional.cleaningProducts && additional.cleaningProducts.length > 0) && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Droplets className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-foreground">{formatCleaningProducts(additional.cleaningProducts)}</span>
-                </div>
-              )}
-              {additional.equipmentArrangement && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Package className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-foreground">{formatEquipment(additional.equipmentArrangement)}</span>
-                </div>
-              )}
-              {(additional.ovenCleaning || ovenSizeValue) && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Flame className="h-3.5 w-3.5 text-orange-500" />
-                  <span className="text-foreground">{formatOvenSize(ovenSizeValue) || 'Oven Cleaning'}</span>
-                </div>
-              )}
-            </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span>{isOpen ? 'Less' : 'Details'}</span>
+            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
-        )}
-
-        {/* Notes Column */}
-        {hasNotes && (
-          <div className="space-y-2">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes</h4>
-            <div className="flex items-start gap-2 text-sm">
-              <FileText className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-              <span className="text-foreground line-clamp-3">{additional.notes}</span>
-            </div>
+        </div>
+      </CollapsibleTrigger>
+      
+      <CollapsibleContent>
+        <div className="px-4 py-3 bg-muted/20 border-t border-border/20">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {detailItems.map((item, idx) => (
+              <div key={idx} className="flex items-start gap-2">
+                <span className="text-primary mt-0.5">{item.icon}</span>
+                <div className="min-w-0">
+                  <div className="text-xs text-muted-foreground font-medium">{item.label}</div>
+                  <div className="text-sm text-foreground truncate">{item.value}</div>
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 

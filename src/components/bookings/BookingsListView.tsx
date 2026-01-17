@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, Clock, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText, CreditCard, Users } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText, CreditCard, Users } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import InvoilessInvoiceDialog from '@/components/payments/InvoilessInvoiceDialog';
@@ -46,6 +46,9 @@ interface Booking {
   cleaner_pay: number | null;
   cleaner_rate?: number | null;
   total_hours: number | null;
+  hours_required?: number | null;
+  recommended_hours?: number | null;
+  ironing_hours?: number | null;
   linen_management?: boolean;
   additional_details?: string;
   frequently?: string;
@@ -179,6 +182,9 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
           property_details,
           oven_size,
           access,
+          hours_required,
+          recommended_hours,
+          ironing_hours,
           cleaners!bookings_cleaner_fkey (
             id,
             first_name,
@@ -723,238 +729,175 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                 : 'bg-card'
             }`}
           >
-            {/* Desktop Layout */}
+            {/* Desktop Layout - Redesigned for clarity */}
             <div className="hidden lg:block">
-              <div className="grid lg:grid-cols-[100px_1fr_2fr_15%_16%_15%_40px] items-center gap-3 p-0">
+              {/* Main Row */}
+              <div className="flex items-stretch">
                 {/* Time Box */}
-                <div className="bg-primary/10 h-full flex items-center justify-center">
-                  <div className="text-center py-4">
-                    <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{bookingWeekday ? `${bookingWeekday} · ${bookingDate}` : bookingDate}</div>
-                    <div className={`text-2xl font-bold ${isFlexibleTime ? 'text-orange-500' : 'text-primary'} mt-1`} title={isFlexibleTime ? 'Customer requested flexible arrival time' : undefined}>
+                <div className="bg-primary/10 w-24 flex-shrink-0 flex items-center justify-center py-4">
+                  <div className="text-center">
+                    <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{bookingWeekday}</div>
+                    <div className="text-xs text-muted-foreground font-medium">{bookingDate}</div>
+                    <div className={`text-xl font-bold mt-1 ${isFlexibleTime ? 'text-orange-500' : 'text-primary'}`} title={isFlexibleTime ? 'Flexible arrival' : undefined}>
                       {bookingTime}
                     </div>
                     {booking.total_hours && (
-                      <div className="text-sm font-semibold text-muted-foreground mt-1">
+                      <div className="text-sm font-bold text-primary/80 mt-0.5">
                         {booking.total_hours}h
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Customer Name */}
-                <div className="py-4">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-foreground leading-tight">
-                      {booking.first_name} {booking.last_name}
-                    </h3>
-                    <Camera className={`h-4 w-4 ${booking.has_photos ? 'text-green-600' : 'text-gray-400'}`} />
-                    {customersWithPaymentMethods.has(booking.customer) && (
-                      <span title="Payment method on file">
-                        <CreditCard className="h-4 w-4 text-green-600" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="p-1 hover:bg-accent rounded-md transition-colors">
-                          <Phone className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{booking.phone_number}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0"
-                            onClick={() => {
-                              navigator.clipboard.writeText(booking.phone_number);
-                              toast({
-                                title: "Copied",
-                                description: "Phone number copied to clipboard",
-                              });
-                            }}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="p-1 hover:bg-accent rounded-md transition-colors">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{booking.email}</span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0"
-                            onClick={() => {
-                              navigator.clipboard.writeText(booking.email);
-                              toast({
-                                title: "Copied",
-                                description: "Email copied to clipboard",
-                              });
-                            }}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-
-                {/* Address */}
-                <div className="py-4 min-w-0">
-                  <div className="flex items-start gap-1.5 text-base text-foreground">
-                    <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
-                    <div className="leading-tight min-w-0">
-                      <div className="font-medium truncate">{booking.address}</div>
-                      <div className="font-medium truncate">{booking.postcode}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Service Type Badge */}
-                <div className="py-4">
-                  <Badge className={`${serviceBadgeColor} text-sm font-medium px-3 py-1.5 rounded-full flex flex-col items-center`}>
-                    <span>{serviceLabel}</span>
-                    <span className="text-xs italic font-normal mt-0.5">{cleaningLabel}</span>
-                  </Badge>
-                </div>
-
-                {/* Cleaner Info - Clickable */}
-                <div className="py-4">
-                  {!isUnsigned ? (
-                    <button 
-                      onClick={() => handleAssignCleaner(booking.id)}
-                      className="space-y-1 hover:bg-accent/50 rounded-lg p-2 -m-2 transition-colors text-left w-full"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gray-400 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="font-medium truncate">{cleanerName}</span>
-                        {(booking.sub_cleaners_count ?? 0) > 0 && (
-                          <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            +{booking.sub_cleaners_count}
-                          </Badge>
+                {/* Main Content */}
+                <div className="flex-1 flex items-center px-4 py-3 gap-6">
+                  {/* Customer Info */}
+                  <div className="min-w-[160px] max-w-[200px]">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-base font-bold text-foreground truncate">
+                        {booking.first_name} {booking.last_name}
+                      </h3>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {booking.has_photos && <Camera className="h-3.5 w-3.5 text-green-600" />}
+                        {customersWithPaymentMethods.has(booking.customer) && (
+                          <span title="Card on file"><CreditCard className="h-3.5 w-3.5 text-green-600" /></span>
                         )}
                       </div>
-                      {(booking.cleaner_pay || booking.sub_cleaners_total_pay) && (
-                        <p className="text-sm font-medium text-muted-foreground pl-9">
-                          £{((booking.cleaner_pay || 0) + (booking.sub_cleaners_total_pay || 0)).toFixed(2)}
-                        </p>
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleAssignCleaner(booking.id)}
-                      className="hover:opacity-80 transition-opacity"
-                    >
-                      <Badge variant="destructive" className="text-sm font-medium px-3 py-1.5 cursor-pointer">
-                        Unassigned
-                      </Badge>
-                    </button>
-                  )}
-                </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="p-1 hover:bg-accent rounded transition-colors">
+                            <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{booking.phone_number}</span>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.phone_number); toast({ title: "Copied" }); }}>
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="p-1 hover:bg-accent rounded transition-colors">
+                            <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">{booking.email}</span>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { navigator.clipboard.writeText(booking.email); toast({ title: "Copied" }); }}>
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
 
-                {/* Payment Status & Total Cost */}
-                <div className="py-4 flex items-center justify-end gap-2 pr-2">
-                  <PaymentStatusIndicator 
-                    status={booking.payment_status}
-                    paymentMethod={booking.payment_method}
-                    isClickable={true}
-                    onClick={() => handlePaymentAction(booking)}
-                    size="md"
-                  />
-                  <span className="text-2xl font-bold" style={{ color: '#18A5A5' }}>
-                    £{booking.total_cost?.toFixed(2) || '0.00'}
-                  </span>
+                  {/* Address */}
+                  <div className="flex-1 min-w-0 max-w-[280px]">
+                    <div className="flex items-start gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 mt-0.5 text-primary flex-shrink-0" />
+                      <div className="text-sm leading-tight min-w-0">
+                        <div className="font-medium text-foreground truncate">{booking.address}</div>
+                        <div className="text-muted-foreground font-medium">{booking.postcode}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Service Badge */}
+                  <div className="flex-shrink-0">
+                    <Badge className={`${serviceBadgeColor} text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap`}>
+                      {serviceLabel}
+                      {cleaningLabel && <span className="font-normal opacity-80 ml-1">• {cleaningLabel}</span>}
+                    </Badge>
+                  </div>
+
+                  {/* Cleaner */}
+                  <div className="min-w-[130px] flex-shrink-0">
+                    {!isUnsigned ? (
+                      <button onClick={() => handleAssignCleaner(booking.id)} className="flex items-center gap-2 hover:bg-accent/50 rounded-lg p-1.5 -m-1.5 transition-colors">
+                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="text-left min-w-0">
+                          <div className="text-sm font-medium truncate">{cleanerName}</div>
+                          {(booking.cleaner_pay || booking.sub_cleaners_total_pay) ? (
+                            <div className="text-xs text-muted-foreground">£{((booking.cleaner_pay || 0) + (booking.sub_cleaners_total_pay || 0)).toFixed(2)}</div>
+                          ) : null}
+                        </div>
+                        {(booking.sub_cleaners_count ?? 0) > 0 && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">+{booking.sub_cleaners_count}</Badge>
+                        )}
+                      </button>
+                    ) : (
+                      <button onClick={() => handleAssignCleaner(booking.id)} className="hover:opacity-80">
+                        <Badge variant="destructive" className="text-xs font-medium px-2.5 py-1">Unassigned</Badge>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Payment & Cost */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <PaymentStatusIndicator 
+                      status={booking.payment_status}
+                      paymentMethod={booking.payment_method}
+                      isClickable={true}
+                      onClick={() => handlePaymentAction(booking)}
+                      size="sm"
+                    />
+                    <span className="text-xl font-bold text-primary min-w-[80px] text-right">
+                      £{booking.total_cost?.toFixed(2) || '0.00'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="bg-accent/30 h-full flex items-center justify-center">
+                <div className="w-10 flex-shrink-0 bg-accent/20 flex items-center justify-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        className="h-8 w-8 p-0 hover:bg-accent"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <Button type="button" variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                         <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 z-50 bg-popover">
-                      <DropdownMenuItem onClick={() => handleEdit(booking.id)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDuplicate(booking)}>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Duplicate
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Assign Cleaner
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}>
-                        <Repeat className="w-4 h-4 mr-2" />
-                        Make Recurring
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSendEmail(booking)}>
-                        <Send className="w-4 h-4 mr-2" />
-                        Send Email
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleViewInvoice(booking)}>
-                        <FileText className="w-4 h-4 mr-2" />
-                        View Invoice
-                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(booking.id)}><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDuplicate(booking)}><Copy className="w-4 h-4 mr-2" />Duplicate</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleAssignCleaner(booking.id)}><UserPlus className="w-4 h-4 mr-2" />Assign Cleaner</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}><Repeat className="w-4 h-4 mr-2" />Make Recurring</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSendEmail(booking)}><Send className="w-4 h-4 mr-2" />Send Email</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleViewInvoice(booking)}><FileText className="w-4 h-4 mr-2" />View Invoice</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
-                        <DollarSign className="w-4 h-4 mr-2" />
-                        {booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}
-                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePaymentAction(booking)}><DollarSign className="w-4 h-4 mr-2" />{booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600">
-                        <X className="w-4 h-4 mr-2" />
-                        Cancel
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleCancel(booking.id)} className="text-orange-600"><X className="w-4 h-4 mr-2" />Cancel</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="text-red-600"><Trash2 className="w-4 h-4 mr-2" />Delete</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-
-                {/* Hidden but functional */}
-                <div className="hidden">
-                  <AuthorizeRemainingAmountDialog
-                    booking={booking}
-                    onSuccess={fetchData}
-                  />
-                </div>
               </div>
               
-              {/* Domestic Booking Details Section - Desktop */}
-              <div className="px-4 pb-4">
-                <DomesticBookingDetails
-                  propertyDetails={booking.property_details}
-                  additionalDetails={booking.additional_details}
-                  ovenSize={booking.oven_size}
-                  access={booking.access}
-                  frequently={booking.frequently}
-                  serviceType={booking.service_type}
-                />
+              {/* Expandable Domestic Booking Details */}
+              <DomesticBookingDetails
+                propertyDetails={booking.property_details}
+                additionalDetails={booking.additional_details}
+                ovenSize={booking.oven_size}
+                access={booking.access}
+                frequently={booking.frequently}
+                serviceType={booking.service_type}
+                totalHours={booking.total_hours}
+                recommendedHours={booking.recommended_hours}
+                hoursRequired={booking.hours_required}
+                ironingHours={booking.ironing_hours}
+              />
+              
+              {/* Hidden */}
+              <div className="hidden">
+                <AuthorizeRemainingAmountDialog booking={booking} onSuccess={fetchData} />
               </div>
             </div>
 
@@ -1169,6 +1112,10 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                 access={booking.access}
                 frequently={booking.frequently}
                 serviceType={booking.service_type}
+                totalHours={booking.total_hours}
+                recommendedHours={booking.recommended_hours}
+                hoursRequired={booking.hours_required}
+                ironingHours={booking.ironing_hours}
               />
             </div>
           </div>
