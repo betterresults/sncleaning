@@ -340,7 +340,9 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
 
   const filteredLeads = timeFilteredLeads
     .filter(lead => {
-      if (statusFilter === 'email_sent') {
+      if (statusFilter === 'converted') {
+        if (!lead.converted_booking_id) return false;
+      } else if (statusFilter === 'email_sent') {
         if (!lead.quote_email_sent) return false;
       } else if (statusFilter === 'idle') {
         if (!isLeadIdle(lead)) return false;
@@ -598,11 +600,12 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
               <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
                 <div className="flex flex-wrap gap-2 items-center">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[140px] bg-white rounded-xl border-gray-200">
+                    <SelectTrigger className="w-[160px] bg-white rounded-xl border-gray-200">
                       <SelectValue placeholder="All Statuses" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
                       <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="converted">Converted to Booking</SelectItem>
                       <SelectItem value="email_sent">Email Sent</SelectItem>
                       <SelectItem value="live">Live</SelectItem>
                       <SelectItem value="idle">Idle</SelectItem>
