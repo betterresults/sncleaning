@@ -679,9 +679,11 @@ const DomesticBookingForm: React.FC = () => {
     }
     
     setBookingData(prev => {
+      // Note: ovenType is intentionally excluded because oven cleaning is priced separately
+      // and should not affect base cleaning hours (per useDomesticHardcodedCalculations.ts)
       const timeAffectingKeys: (keyof DomesticBookingData)[] = [
         'propertyType', 'bedrooms', 'bathrooms', 'toilets', 'additionalRooms', 'propertyFeatures',
-        'numberOfFloors', 'serviceFrequency', 'ovenType'
+        'numberOfFloors', 'serviceFrequency'
       ];
       const affectsTime = Object.keys(updates).some(k => timeAffectingKeys.includes(k as keyof DomesticBookingData));
 
