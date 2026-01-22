@@ -80,6 +80,7 @@ import ShortLinkResolver from "./pages/ShortLinkResolver";
 import NotFound from "./pages/NotFound";
 import AdminAgentTasks from "./pages/AdminAgentTasks";
 import AgentTasks from "./pages/AgentTasks";
+import PhotoManagement from "./pages/PhotoManagement";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
 import InstallPrompt from "./components/InstallPrompt";
@@ -210,6 +211,7 @@ const App = () => (
                      <Route path="/coverage" element={<CheckCoverage />} />
                      <Route path="/admin-agent-tasks" element={<AdminAgentTasks />} />
                      <Route path="/agent-tasks" element={<AgentTasks />} />
+                     <Route path="/admin-photo-management" element={<PhotoManagement />} />
                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
             </Routes>
