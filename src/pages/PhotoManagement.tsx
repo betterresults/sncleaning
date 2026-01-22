@@ -216,8 +216,8 @@ const PhotoManagement = () => {
   const handleShareFolder = async (folder: PhotoFolder, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Generate a shareable URL with folder info
-    const baseUrl = window.location.origin;
+    // Use production domain for shareable URLs
+    const baseUrl = 'https://account.sncleaningservices.co.uk';
     const shareUrl = `${baseUrl}/photos/${groupBy}/${encodeURIComponent(folder.key)}`;
     
     try {
