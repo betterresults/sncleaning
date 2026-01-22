@@ -8,18 +8,21 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import { supabase } from '@/integrations/supabase/client';
-import { Folder, Image, Search, Calendar, MapPin, User, ChevronRight, ArrowLeft, Download, Eye } from 'lucide-react';
+import { Folder, Image, Search, Calendar, MapPin, User, ChevronRight, ArrowLeft, Download, Eye, Share2, Copy, Check } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import StaffGuard from '@/components/StaffGuard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 interface PhotoFolder {
   key: string;
   label: string;
   count: number;
   subLabel?: string;
+  postcodes?: string[];
+  dates?: string[];
 }
 
 interface CleaningPhoto {
@@ -40,6 +43,7 @@ type GroupBy = 'date' | 'postcode' | 'customer' | 'cleaner';
 
 const PhotoManagement = () => {
   const { user, userRole, signOut } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [folders, setFolders] = useState<PhotoFolder[]>([]);
   const [photos, setPhotos] = useState<CleaningPhoto[]>([]);
@@ -48,6 +52,7 @@ const PhotoManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhoto, setSelectedPhoto] = useState<CleaningPhoto | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   
   // Customer/Cleaner name caches
   const [customerNames, setCustomerNames] = useState<Record<number, string>>({});
@@ -138,10 +143,21 @@ const PhotoManagement = () => {
         grouped.get(key)!.push(photo);
       });
 
-      // Convert to folder array
-      const folderList: PhotoFolder[] = Array.from(grouped.entries()).map(([key, photos]) => {
+      // Convert to folder array with additional context
+      const folderList: PhotoFolder[] = Array.from(grouped.entries()).map(([key, folderPhotos]) => {
         let label = key;
-        let subLabel = `${photos.length} photos`;
+        let subLabel = `${folderPhotos.length} photos`;
+        
+        // Get unique postcodes for this folder
+        const uniquePostcodes = [...new Set(folderPhotos.map(p => p.postcode).filter(Boolean))];
+        // Get unique dates for this folder
+        const uniqueDates = [...new Set(folderPhotos.map(p => {
+          try {
+            return format(parseISO(p.booking_date), 'dd MMM');
+          } catch {
+            return p.booking_date;
+          }
+        }))];
         
         switch (groupBy) {
           case 'date':
@@ -159,7 +175,14 @@ const PhotoManagement = () => {
             break;
         }
         
-        return { key, label, count: photos.length, subLabel };
+        return { 
+          key, 
+          label, 
+          count: folderPhotos.length, 
+          subLabel,
+          postcodes: groupBy !== 'postcode' ? uniquePostcodes : undefined,
+          dates: groupBy === 'postcode' ? uniqueDates : undefined
+        };
       });
 
       // Sort folders
@@ -184,8 +207,34 @@ const PhotoManagement = () => {
     const query = searchQuery.toLowerCase();
     return folders.filter(f => 
       f.label.toLowerCase().includes(query) || 
-      f.key.toLowerCase().includes(query)
+      f.key.toLowerCase().includes(query) ||
+      f.postcodes?.some(p => p.toLowerCase().includes(query)) ||
+      f.subLabel?.toLowerCase().includes(query)
     );
+  };
+
+  const handleShareFolder = async (folder: PhotoFolder, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Generate a shareable URL with folder info
+    const baseUrl = window.location.origin;
+    const shareUrl = `${baseUrl}/photos/${groupBy}/${encodeURIComponent(folder.key)}`;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedId(folder.key);
+      toast({
+        title: "Link copied!",
+        description: "Share URL has been copied to clipboard",
+      });
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy link to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   const getFolderPhotos = () => {
@@ -333,11 +382,25 @@ const PhotoManagement = () => {
                       // Folder grid view
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {getFilteredFolders().map((folder) => (
-                          <button
+                          <div
                             key={folder.key}
+                            className="relative flex flex-col items-center p-4 rounded-xl border border-border hover:border-primary hover:bg-accent transition-all group cursor-pointer"
                             onClick={() => setSelectedFolder(folder.key)}
-                            className="flex flex-col items-center p-4 rounded-xl border border-border hover:border-primary hover:bg-accent transition-all group"
                           >
+                            {/* Share button */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                              onClick={(e) => handleShareFolder(folder, e)}
+                            >
+                              {copiedId === folder.key ? (
+                                <Check className="h-3.5 w-3.5 text-green-500" />
+                              ) : (
+                                <Share2 className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                            
                             <div className="relative mb-2">
                               <Folder className="h-16 w-16 text-amber-500 group-hover:text-amber-600 transition-colors" fill="currentColor" />
                               <span className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-xs font-medium px-1.5 py-0.5 rounded-full">
@@ -346,7 +409,39 @@ const PhotoManagement = () => {
                             </div>
                             <span className="text-sm font-medium text-center line-clamp-2">{folder.label}</span>
                             <span className="text-xs text-muted-foreground mt-1">{folder.subLabel}</span>
-                          </button>
+                            
+                            {/* Postcodes tags */}
+                            {folder.postcodes && folder.postcodes.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2 justify-center">
+                                {folder.postcodes.slice(0, 3).map((pc) => (
+                                  <span key={pc} className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                                    {pc}
+                                  </span>
+                                ))}
+                                {folder.postcodes.length > 3 && (
+                                  <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                                    +{folder.postcodes.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Dates tags for postcode grouping */}
+                            {folder.dates && folder.dates.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2 justify-center">
+                                {folder.dates.slice(0, 2).map((date) => (
+                                  <span key={date} className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                                    {date}
+                                  </span>
+                                ))}
+                                {folder.dates.length > 2 && (
+                                  <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                                    +{folder.dates.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         ))}
                         
                         {getFilteredFolders().length === 0 && (
