@@ -7,13 +7,22 @@ import { ScheduleStep } from './steps/ScheduleStep';
 import { EndOfTenancySummary } from './EndOfTenancySummary';
 import { PaymentStep } from './steps/PaymentStep';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
-import { Home, Sparkles, Calendar, CreditCard, ArrowLeft } from 'lucide-react';
+import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
+import { Home, Sparkles, Calendar, CreditCard, ArrowLeft, Send } from 'lucide-react';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { CarpetCleaningItem } from './CarpetCleaningForm';
+
+// Helper function to convert bedroom string to number (studio = 0)
+const parseBedroomsToNumber = (bedrooms: string | undefined): number | undefined => {
+  if (!bedrooms) return undefined;
+  if (bedrooms === 'studio') return 0;
+  const parsed = parseInt(bedrooms);
+  return isNaN(parsed) ? undefined : parsed;
+};
 
 export interface EndOfTenancyBookingData {
   // Property details - Step 1
@@ -117,6 +126,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const [showExitPopup, setShowExitPopup] = useState(false);
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
   
   const [bookingData, setBookingData] = useState<EndOfTenancyBookingData>({
     propertyType: '',
@@ -188,11 +198,55 @@ const EndOfTenancyBookingForm: React.FC = () => {
     };
   }, []);
 
-  // Initialize tracking using the shared hook
-  const { saveQuoteLead, markCompleted, sessionId } = useQuoteLeadTracking('End of Tenancy', {
+  // Initialize tracking using the shared hook - include all tracking functions
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('End of Tenancy', {
     isAdminMode,
     adminId: adminUserId || undefined,
   });
+
+  // Reset form for new quote (called after quote is sent)
+  const resetFormForNewQuote = useCallback(() => {
+    setBookingData({
+      propertyType: '',
+      bedrooms: '',
+      bathrooms: '',
+      propertyCondition: '',
+      furnitureStatus: '',
+      kitchenLivingSeparate: null,
+      additionalRooms: [],
+      additionalServices: [],
+      ovenType: '',
+      houseShareAreas: [],
+      blindsItems: [],
+      extraServices: [],
+      wantsSteamCleaning: false,
+      carpetItems: [],
+      upholsteryItems: [],
+      mattressItems: [],
+      selectedDate: null,
+      selectedTime: '',
+      flexibility: '',
+      notes: '',
+      additionalDetails: '',
+      firstName: '',
+      lastName: '',
+      name: '',
+      email: '',
+      phone: '',
+      houseNumber: '',
+      street: '',
+      postcode: '',
+      city: '',
+      propertyAccess: '',
+      accessNotes: '',
+      estimatedHours: null,
+      hourlyRate: HOURLY_RATE,
+      totalCost: 0,
+      isFirstTimeCustomer: true,
+    });
+    setCurrentStep(1);
+    setShowQuoteDialog(false);
+  }, []);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -309,27 +363,41 @@ const EndOfTenancyBookingForm: React.FC = () => {
       if (!isAdminMode) {
         const stepNames = ['property', 'extras', 'schedule', 'payment'];
         const stepName = stepNames[currentStep - 1] || 'property';
-        saveQuoteLead({
-          serviceType: 'End of Tenancy',
-          propertyType: newData.propertyType,
-          bedrooms: newData.bedrooms ? (newData.bedrooms === 'studio' ? 0 : parseInt(newData.bedrooms)) : undefined,
-          bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
-          ovenSize: newData.ovenType,
-          calculatedQuote: newData.totalCost,
-          selectedDate: newData.selectedDate || undefined,
-          selectedTime: newData.selectedTime,
-          firstName: newData.firstName,
-          lastName: newData.lastName,
-          email: newData.email,
-          phone: newData.phone,
-          postcode: newData.postcode,
-          furthestStep: stepName,
-          shortNoticeCharge: newData.shortNoticeCharge,
-        });
+        
+        // Track when totalCost is updated
+        if ('totalCost' in updates && updates.totalCost && updates.totalCost > 0) {
+          trackQuoteCalculated(updates.totalCost, newData.estimatedHours ?? undefined, {
+            propertyType: newData.propertyType || undefined,
+            bedrooms: parseBedroomsToNumber(newData.bedrooms),
+            bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
+            ovenSize: newData.ovenType || undefined,
+            postcode: newData.postcode || undefined,
+            shortNoticeCharge: newData.shortNoticeCharge || undefined,
+            isFirstTimeCustomer: newData.isFirstTimeCustomer,
+          });
+        }
+        
+        // Track contact info updates
+        if ('firstName' in updates || 'email' in updates || 'phone' in updates || 'postcode' in updates) {
+          saveQuoteLead({
+            firstName: newData.firstName || undefined,
+            lastName: newData.lastName || undefined,
+            email: newData.email || undefined,
+            phone: newData.phone || undefined,
+            postcode: newData.postcode || undefined,
+            propertyType: newData.propertyType || undefined,
+            bedrooms: parseBedroomsToNumber(newData.bedrooms),
+            bathrooms: newData.bathrooms ? parseInt(newData.bathrooms) : undefined,
+            ovenSize: newData.ovenType || undefined,
+            selectedDate: newData.selectedDate || undefined,
+            selectedTime: newData.selectedTime || undefined,
+            furthestStep: stepName,
+          });
+        }
       }
       return newData;
     });
-  }, [currentStep, isAdminMode, saveQuoteLead, calculateTotals]);
+  }, [currentStep, isAdminMode, saveQuoteLead, trackQuoteCalculated, calculateTotals]);
 
   // Handle browser back button to show exit popup
   useEffect(() => {
@@ -351,6 +419,15 @@ const EndOfTenancyBookingForm: React.FC = () => {
 
   const nextStep = () => {
     if (currentStep < steps.length) {
+      const nextStepKey = steps[currentStep]?.key || `step_${currentStep + 1}`;
+      // Track step progression
+      if (!isAdminMode) {
+        trackStep(nextStepKey, {
+          propertyType: bookingData.propertyType || undefined,
+          bedrooms: parseBedroomsToNumber(bookingData.bedrooms),
+          calculatedQuote: bookingData.totalCost || undefined,
+        });
+      }
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -429,13 +506,20 @@ const EndOfTenancyBookingForm: React.FC = () => {
                   className="text-sm font-medium hover:bg-accent/50 transition-all duration-200 shadow-sm"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
+                  Back to Services
                 </Button>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 whitespace-nowrap">
                   <span className="sm:hidden">End of Tenancy</span>
                   <span className="hidden sm:inline">End of Tenancy Cleaning</span>
                 </h1>
-                <div className="w-[140px]" />
+                <Button
+                  variant="outline"
+                  onClick={() => setShowQuoteDialog(true)}
+                  className="text-sm font-medium border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 shadow-sm"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Send to Customer
+                </Button>
               </>
             ) : bookingData.customerId ? (
               <>
@@ -555,9 +639,56 @@ const EndOfTenancyBookingForm: React.FC = () => {
           mattressItems: bookingData.mattressItems,
         }}
         onSaveEmail={(email) => {
+          markQuoteEmailSent(email);
           updateBookingData({ email });
+          sessionStorage.setItem('quote_email_sent', 'true');
         }}
       />
+
+      {/* Admin Quote Dialog */}
+      {isAdminMode && (
+        <AdminQuoteDialog
+          open={showQuoteDialog}
+          onOpenChange={setShowQuoteDialog}
+          email={bookingData.email || bookingData.selectedCustomer?.email || ''}
+          phone={bookingData.phone || bookingData.selectedCustomer?.phone || ''}
+          quoteData={{
+            totalCost: bookingData.totalCost,
+            estimatedHours: bookingData.estimatedHours,
+            propertyType: bookingData.propertyType,
+            bedrooms: bookingData.bedrooms,
+            bathrooms: bookingData.bathrooms,
+            serviceFrequency: '', // End of Tenancy doesn't have frequency
+            hasOvenCleaning: !!bookingData.ovenType,
+            ovenType: bookingData.ovenType,
+            selectedDate: bookingData.selectedDate,
+            selectedTime: bookingData.selectedTime,
+            flexibility: bookingData.flexibility,
+            postcode: bookingData.postcode,
+            shortNoticeCharge: bookingData.shortNoticeCharge,
+            isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
+            discountAmount: bookingData.isFirstTimeCustomer ? bookingData.totalCost * 0.10 / 0.90 : 0,
+            firstName: bookingData.firstName,
+            lastName: bookingData.lastName,
+            phone: bookingData.phone,
+            // Address fields
+            houseNumber: bookingData.houseNumber,
+            street: bookingData.street,
+            city: bookingData.city,
+            // Property access
+            propertyAccess: bookingData.propertyAccess,
+            accessNotes: bookingData.accessNotes,
+            // Steam cleaning items
+            carpetItems: bookingData.carpetItems,
+            upholsteryItems: bookingData.upholsteryItems,
+            mattressItems: bookingData.mattressItems,
+          }}
+          sessionId={sessionId}
+          serviceType="End of Tenancy"
+          agentUserId={adminUserId || undefined}
+          onQuoteSent={resetFormForNewQuote}
+        />
+      )}
     </div>
   );
 };
