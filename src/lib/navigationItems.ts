@@ -1,4 +1,4 @@
-import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList, MessageSquareText, XCircle, FileText, Sparkles } from 'lucide-react';
+import { Briefcase, Calendar, History, DollarSign, MapPin, MessageCircle, Settings, Plus, Users, Home, BarChart3, Repeat, CreditCard, Shield, UserCheck, UserPlus, Package, TrendingUp, Activity, Bell, CheckSquare, TestTube, Shirt, Target, Map, ClipboardList, MessageSquareText, XCircle, FileText, Sparkles, Image } from 'lucide-react';
 
 export const cleanerNavigation = [
   {
@@ -256,6 +256,11 @@ export const adminNavigation = [
         title: "Quote Leads",
         url: "/admin-quote-leads",
         icon: Target,
+      },
+      {
+        title: "Photo Management",
+        url: "/admin-photo-management",
+        icon: Image,
       },
     ],
   },
