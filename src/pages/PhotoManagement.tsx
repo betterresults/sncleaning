@@ -216,9 +216,40 @@ const PhotoManagement = () => {
   const handleShareFolder = async (folder: PhotoFolder, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    // Use production domain for shareable URLs
+    // Find photos in this folder to get the actual storage folder name
+    const folderPhotos = photos.filter(photo => {
+      switch (groupBy) {
+        case 'date':
+          return photo.booking_date === folder.key;
+        case 'postcode':
+          return (photo.postcode || 'Unknown') === folder.key;
+        case 'customer':
+          return String(photo.customer_id) === folder.key;
+        case 'cleaner':
+          return String(photo.cleaner_id) === folder.key;
+        default:
+          return false;
+      }
+    });
+    
+    if (folderPhotos.length === 0) {
+      toast({
+        title: "No photos",
+        description: "Cannot share an empty folder",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Extract the storage folder name from the first photo's file_path
+    // Format: "110703_N193QJ_2025-11-06_12/after/photo.jpg" -> "110703_N193QJ_2025-11-06_12"
+    const firstPhotoPath = folderPhotos[0].file_path;
+    const storageFolderMatch = firstPhotoPath.match(/^([^\/]+)\//);
+    const storageFolderName = storageFolderMatch ? storageFolderMatch[1] : firstPhotoPath.split('/')[0];
+    
+    // Use production domain with the actual storage folder name
     const baseUrl = 'https://account.sncleaningservices.co.uk';
-    const shareUrl = `${baseUrl}/photos/${groupBy}/${encodeURIComponent(folder.key)}`;
+    const shareUrl = `${baseUrl}/photos/${encodeURIComponent(storageFolderName)}`;
     
     try {
       await navigator.clipboard.writeText(shareUrl);
