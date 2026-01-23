@@ -354,10 +354,14 @@ const EndOfTenancyBookingForm: React.FC = () => {
     setBookingData(prev => {
       const newData = { ...prev, ...updates };
       
-      // Recalculate totals
-      const { estimatedHours, totalCost } = calculateTotals(newData);
-      newData.estimatedHours = estimatedHours;
-      newData.totalCost = totalCost;
+      // Only recalculate totals if NOT explicitly provided in updates
+      // This allows EndOfTenancySummary to sync the correct database-calculated values
+      // without them being overwritten by the simple estimate calculation
+      if (!('totalCost' in updates) && !('estimatedHours' in updates)) {
+        const { estimatedHours, totalCost } = calculateTotals(newData);
+        newData.estimatedHours = estimatedHours;
+        newData.totalCost = totalCost;
+      }
       
       // Save to tracking (non-admin only)
       if (!isAdminMode) {
