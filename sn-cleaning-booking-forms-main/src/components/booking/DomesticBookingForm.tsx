@@ -319,6 +319,23 @@ const DomesticBookingForm: React.FC = () => {
     return calculations.totalHours;
   }, [calculations]);
 
+  // CRITICAL: Sync calculatedTotal to bookingData.totalCost when in quote link mode
+  // This is necessary because the DomesticBookingSummary (which normally does this sync) is hidden in quote link mode
+  useEffect(() => {
+    if (isQuoteLinkMode && calculatedTotal > 0) {
+      const tolerance = 0.01;
+      if (Math.abs((bookingData.totalCost || 0) - calculatedTotal) > tolerance) {
+        console.log('[DomesticBookingForm] Quote link mode - syncing totalCost:', { 
+          current: bookingData.totalCost, 
+          correct: calculatedTotal,
+          storedQuotePrice,
+          hasModifiedAfterLoad
+        });
+        setBookingData(prev => ({ ...prev, totalCost: calculatedTotal }));
+      }
+    }
+  }, [isQuoteLinkMode, calculatedTotal, bookingData.totalCost, storedQuotePrice, hasModifiedAfterLoad]);
+
   // Resume from saved quote lead OR prefill from URL parameters
   useEffect(() => {
     const resumeSessionId = searchParams.get('resume');
