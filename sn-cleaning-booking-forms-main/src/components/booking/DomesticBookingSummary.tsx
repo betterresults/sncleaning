@@ -677,7 +677,9 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         </div>
       )}
 
+      {/* Desktop only: Total and recurring preview - Mobile has its own header above */}
       {data.serviceFrequency && (
+        <div className="hidden lg:block">
         <div className="mt-4 space-y-3">
           
           {/* Quoted price badge - show when using admin override */}
@@ -795,6 +797,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
               </div>
             </div>
           )}
+        </div>
         </div>
       )}
     </Card>
