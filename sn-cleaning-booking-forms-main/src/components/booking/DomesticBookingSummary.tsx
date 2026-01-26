@@ -513,8 +513,65 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         </div>
       )}
 
-      {/* Mobile: Collapsible details */}
+      {/* Mobile: Show total prominently first, then collapsible details */}
       <div className="lg:hidden">
+        {/* Mobile Total - Always visible at top */}
+        {data.serviceFrequency && (calculations.totalHours ?? 0) > 0 && (
+          <div className="mb-4 p-4 bg-primary/5 rounded-xl border border-primary/20">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-foreground">
+                {calculations.wantsFirstDeepClean ? 'First Clean' : 'Total'}
+              </span>
+              <div className="text-right">
+                {data.isFirstTimeCustomer && !(data.adminTotalCostOverride && data.adminTotalCostOverride > 0) && (
+                  <span className="text-sm text-muted-foreground line-through mr-2">
+                    £{calculateSubtotalBeforeFirstTimeDiscount().toFixed(2)}
+                  </span>
+                )}
+                <span className="text-2xl font-bold text-primary">
+                  £{calculateTotal().toFixed(2)}
+                </span>
+              </div>
+            </div>
+            {/* Recurring preview for mobile */}
+            {data.serviceFrequency && data.serviceFrequency !== 'onetime' && (
+              <div className="mt-2 pt-2 border-t border-primary/10 flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {calculations.wantsFirstDeepClean ? 'Then' : 'Upcoming'} {data.serviceFrequency === 'weekly' ? 'weekly' : data.serviceFrequency === 'biweekly' ? 'bi-weekly' : 'monthly'}
+                </span>
+                <span className="font-semibold text-foreground">
+                  £{(() => {
+                    if (calculations.wantsFirstDeepClean) {
+                      let recurringTotal = calculations.regularRecurringCost;
+                      if (data.isFirstTimeCustomer) recurringTotal = recurringTotal * 0.90;
+                      if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
+                        recurringTotal = recurringTotal * data.daysPerWeek;
+                      }
+                      return Math.max(0, recurringTotal).toFixed(2);
+                    }
+                    let recurringTotal = calculateSubtotalBeforeFirstTimeDiscount();
+                    if (data.ovenCleaningScope === 'this-booking' && calculations.ovenCleaningCost > 0) {
+                      recurringTotal -= calculations.ovenCleaningCost;
+                    }
+                    if (calculations.equipmentOneTimeCost > 0) {
+                      recurringTotal -= calculations.equipmentOneTimeCost;
+                    }
+                    if (calculations.shortNoticeCharge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge)) {
+                      recurringTotal -= calculations.shortNoticeCharge;
+                    }
+                    if (data.isFirstTimeCustomer) recurringTotal = recurringTotal * 0.90;
+                    if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
+                      recurringTotal = recurringTotal * data.daysPerWeek;
+                    }
+                    return Math.max(0, recurringTotal).toFixed(2);
+                  })()}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Mobile: Collapsible details */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex items-center justify-between w-full py-2 text-primary"
