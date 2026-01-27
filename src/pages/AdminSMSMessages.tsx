@@ -570,14 +570,14 @@ const AdminSMSMessages = () => {
           userRole={userRole}
           onSignOut={handleSignOut}
         />
-        <div className="flex flex-1 w-full">
+        <div className="flex flex-1 w-full h-[calc(100vh-64px)] overflow-hidden">
           <UnifiedSidebar 
             navigationItems={navigation}
             user={user}
             onSignOut={handleSignOut}
           />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 max-w-full overflow-hidden h-[calc(100vh-64px)] flex flex-col">
+          <SidebarInset className="flex-1 overflow-hidden">
+            <main className="h-full p-4 max-w-full overflow-hidden flex flex-col">
               <div className="max-w-7xl mx-auto w-full flex flex-col h-full">
                 {/* Unread Messages Alert Banner */}
                 {(() => {
@@ -618,9 +618,9 @@ const AdminSMSMessages = () => {
                   );
                 })()}
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-hidden">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
                   {/* Conversations List */}
-                  <Card className={`lg:col-span-1 flex flex-col ${selectedThread ? 'hidden lg:flex' : 'flex'}`}>
+                  <Card className={`lg:col-span-1 flex flex-col overflow-hidden ${selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
@@ -813,7 +813,7 @@ const AdminSMSMessages = () => {
                   </Card>
 
                   {/* Chat Area */}
-                  <Card className={`lg:col-span-2 flex flex-col overflow-hidden h-full ${!selectedThread ? 'hidden lg:flex' : 'flex'}`}>
+                  <Card className={`lg:col-span-2 flex flex-col overflow-hidden ${!selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     {selectedThread ? (
                       <>
                         <CardHeader className="pb-3 border-b flex-shrink-0">
