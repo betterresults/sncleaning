@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User } from 'lucide-react';
+import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User, UserSearch, Calendar, MapPin, Clock, ExternalLink } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
   Dialog,
@@ -22,6 +22,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 interface Customer {
   id: number;
@@ -53,9 +60,31 @@ interface ConversationThread {
   messages: SMSConversation[];
 }
 
+interface CustomerLookupResult {
+  customer: {
+    id: number;
+    full_name: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    phone: string | null;
+  } | null;
+  bookings: Array<{
+    id: number;
+    service_type: string | null;
+    date_time: string | null;
+    address: string | null;
+    postcode: string | null;
+    total_cost: number | null;
+    total_hours: number | null;
+    booking_status: string | null;
+  }>;
+}
+
 const AdminSMSMessages = () => {
   const { user, userRole, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [threads, setThreads] = useState<ConversationThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<ConversationThread | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -69,12 +98,79 @@ const AdminSMSMessages = () => {
   const [manualPhone, setManualPhone] = useState('');
   const [manualName, setManualName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Customer lookup state
+  const [showCustomerLookup, setShowCustomerLookup] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupResult, setLookupResult] = useState<CustomerLookupResult | null>(null);
 
   const handleSignOut = async () => {
     try {
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+  
+  // Lookup customer and their bookings by phone number
+  const lookupCustomerByPhone = async (phoneNumber: string) => {
+    setLookupLoading(true);
+    setLookupResult(null);
+    
+    try {
+      // Normalize phone number for lookup
+      const normalizedPhone = phoneNumber.replace(/^\+/, '').slice(-10);
+      
+      // Find customer by phone
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('id, full_name, first_name, last_name, email, phone')
+        .or(`phone.ilike.%${normalizedPhone}%,whatsapp.ilike.%${normalizedPhone}%`)
+        .limit(1)
+        .maybeSingle();
+      
+      if (customerError) throw customerError;
+      
+      let bookings: CustomerLookupResult['bookings'] = [];
+      
+      if (customerData) {
+        // Get bookings for this customer
+        const { data: bookingData, error: bookingError } = await supabase
+          .from('bookings')
+          .select('id, service_type, date_time, address, postcode, total_cost, total_hours, booking_status')
+          .eq('customer', customerData.id)
+          .order('date_time', { ascending: false })
+          .limit(10);
+        
+        if (bookingError) throw bookingError;
+        bookings = bookingData || [];
+      } else {
+        // Try to find bookings by phone number directly
+        const { data: bookingData, error: bookingError } = await supabase
+          .from('bookings')
+          .select('id, service_type, date_time, address, postcode, total_cost, total_hours, booking_status, first_name, last_name, email')
+          .ilike('phone_number', `%${normalizedPhone}%`)
+          .order('date_time', { ascending: false })
+          .limit(10);
+        
+        if (bookingError) throw bookingError;
+        bookings = bookingData || [];
+      }
+      
+      setLookupResult({
+        customer: customerData,
+        bookings,
+      });
+    } catch (error) {
+      console.error('Error looking up customer:', error);
+      toast({
+        title: 'Lookup failed',
+        description: 'Could not find customer information',
+        variant: 'destructive',
+      });
+    } finally {
+      setLookupLoading(false);
     }
   };
 
@@ -221,9 +317,14 @@ const AdminSMSMessages = () => {
     };
   }, []);
 
+  // Scroll messages to bottom when thread changes - use scrollAreaRef to avoid page scroll
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current && scrollAreaRef.current) {
+      // Use scrollTop on the container instead of scrollIntoView to prevent page scroll
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   }, [selectedThread?.messages]);
 
@@ -537,7 +638,7 @@ const AdminSMSMessages = () => {
                   <Card className={`lg:col-span-2 flex flex-col ${!selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     {selectedThread ? (
                       <>
-                        <CardHeader className="pb-3 border-b">
+                        <CardHeader className="pb-3 border-b flex-shrink-0">
                           <div className="flex items-center gap-3">
                             <Button
                               variant="ghost"
@@ -552,8 +653,8 @@ const AdminSMSMessages = () => {
                                 {getInitials(selectedThread.customer_name, selectedThread.phone_number)}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <CardTitle className="text-lg">
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-lg truncate">
                                 {selectedThread.customer_name || selectedThread.phone_number}
                               </CardTitle>
                               {selectedThread.customer_name && (
@@ -563,10 +664,149 @@ const AdminSMSMessages = () => {
                                 </p>
                               )}
                             </div>
+                            
+                            {/* Customer Lookup Button */}
+                            <Sheet open={showCustomerLookup} onOpenChange={(open) => {
+                              setShowCustomerLookup(open);
+                              if (open && selectedThread) {
+                                lookupCustomerByPhone(selectedThread.phone_number);
+                              }
+                            }}>
+                              <SheetTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-2">
+                                  <UserSearch className="h-4 w-4" />
+                                  <span className="hidden sm:inline">Lookup</span>
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                                <SheetHeader>
+                                  <SheetTitle className="flex items-center gap-2">
+                                    <UserSearch className="h-5 w-5" />
+                                    Customer Lookup
+                                  </SheetTitle>
+                                </SheetHeader>
+                                
+                                <div className="mt-6 space-y-6">
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Phone className="h-4 w-4" />
+                                    <span className="font-mono">{selectedThread.phone_number}</span>
+                                  </div>
+                                  
+                                  {lookupLoading ? (
+                                    <div className="flex items-center justify-center py-8">
+                                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                    </div>
+                                  ) : lookupResult ? (
+                                    <div className="space-y-6">
+                                      {/* Customer Info */}
+                                      {lookupResult.customer ? (
+                                        <div className="p-4 rounded-lg border bg-muted/30">
+                                          <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                            <User className="h-4 w-4" />
+                                            Customer Found
+                                          </h4>
+                                          <div className="space-y-2 text-sm">
+                                            <p><strong>Name:</strong> {lookupResult.customer.full_name || `${lookupResult.customer.first_name || ''} ${lookupResult.customer.last_name || ''}`.trim() || 'N/A'}</p>
+                                            <p><strong>Email:</strong> {lookupResult.customer.email || 'N/A'}</p>
+                                            <p><strong>Phone:</strong> {lookupResult.customer.phone || 'N/A'}</p>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="mt-2"
+                                              onClick={() => navigate(`/admin-customers?id=${lookupResult.customer?.id}`)}
+                                            >
+                                              <ExternalLink className="h-3 w-3 mr-1" />
+                                              View Customer
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="p-4 rounded-lg border border-dashed bg-muted/20">
+                                          <p className="text-sm text-muted-foreground text-center">
+                                            No customer found with this phone number
+                                          </p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Bookings */}
+                                      <div>
+                                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                          <Calendar className="h-4 w-4" />
+                                          Booking History ({lookupResult.bookings.length})
+                                        </h4>
+                                        
+                                        {lookupResult.bookings.length > 0 ? (
+                                          <div className="space-y-3">
+                                            {lookupResult.bookings.map((booking) => (
+                                              <div key={booking.id} className="p-3 rounded-lg border bg-card">
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                      <Badge variant={
+                                                        booking.booking_status === 'completed' ? 'default' :
+                                                        booking.booking_status === 'active' ? 'secondary' :
+                                                        'outline'
+                                                      }>
+                                                        {booking.booking_status || 'Unknown'}
+                                                      </Badge>
+                                                      <span className="font-medium text-sm">
+                                                        {booking.service_type || 'Cleaning'}
+                                                      </span>
+                                                    </div>
+                                                    
+                                                    {booking.date_time && (
+                                                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {format(new Date(booking.date_time), 'EEE, dd MMM yyyy HH:mm')}
+                                                      </p>
+                                                    )}
+                                                    
+                                                    {(booking.address || booking.postcode) && (
+                                                      <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                                        <MapPin className="h-3 w-3" />
+                                                        {[booking.address, booking.postcode].filter(Boolean).join(', ')}
+                                                      </p>
+                                                    )}
+                                                    
+                                                    <div className="flex items-center gap-4 mt-2 text-sm">
+                                                      {booking.total_hours && (
+                                                        <span>{booking.total_hours}h</span>
+                                                      )}
+                                                      {booking.total_cost && (
+                                                        <span className="font-medium">£{booking.total_cost}</span>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="shrink-0"
+                                                    onClick={() => navigate(`/admin-bookings?booking=${booking.id}`)}
+                                                  >
+                                                    <ExternalLink className="h-4 w-4" />
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="p-4 rounded-lg border border-dashed bg-muted/20">
+                                            <p className="text-sm text-muted-foreground text-center">
+                                              No bookings found for this number
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </SheetContent>
+                            </Sheet>
                           </div>
                         </CardHeader>
-                        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
-                          <ScrollArea className="flex-1 p-4">
+                        <CardContent className="flex-1 p-0 overflow-hidden flex flex-col min-h-0">
+                          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                             <div className="space-y-4">
                               {selectedThread.messages.map((msg) => (
                                 <div
