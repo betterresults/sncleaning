@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User, UserSearch, Calendar, MapPin, Clock, ExternalLink } from 'lucide-react';
+import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User, UserSearch, Calendar, MapPin, Clock, ExternalLink, Mail } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
   Dialog,
@@ -79,7 +79,37 @@ interface CustomerLookupResult {
     total_hours: number | null;
     booking_status: string | null;
   }>;
+  smsConversations: Array<{
+    id: string;
+    message: string;
+    direction: string;
+    created_at: string;
+    status: string;
+  }>;
+  emails: Array<{
+    id: string;
+    subject: string;
+    status: string;
+    created_at: string;
+    notification_type: string;
+  }>;
 }
+
+// Helper to normalize UK phone numbers for comparison
+const normalizeUKPhone = (phone: string): string[] => {
+  // Remove all non-digit characters
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Get last 10 digits (UK numbers without country code)
+  const last10 = digitsOnly.slice(-10);
+  
+  // Return multiple formats to search with
+  return [
+    last10,                    // 7774706135
+    `44${last10}`,            // 447774706135
+    `0${last10.slice(1)}`,    // 07774706135 (if starts with 7)
+  ];
+};
 
 const AdminSMSMessages = () => {
   const { user, userRole, signOut } = useAuth();
@@ -119,20 +149,26 @@ const AdminSMSMessages = () => {
     setLookupResult(null);
     
     try {
-      // Normalize phone number for lookup
-      const normalizedPhone = phoneNumber.replace(/^\+/, '').slice(-10);
+      // Get multiple phone format variations for UK numbers
+      const phoneVariations = normalizeUKPhone(phoneNumber);
+      const last10 = phoneVariations[0];
       
-      // Find customer by phone
+      // Build search query for multiple formats
+      const phoneSearchPatterns = phoneVariations.map(v => `%${v}%`);
+      
+      // Find customer by phone - try all variations
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
         .select('id, full_name, first_name, last_name, email, phone')
-        .or(`phone.ilike.%${normalizedPhone}%,whatsapp.ilike.%${normalizedPhone}%`)
+        .or(`phone.ilike.%${last10}%,whatsapp.ilike.%${last10}%`)
         .limit(1)
         .maybeSingle();
       
       if (customerError) throw customerError;
       
       let bookings: CustomerLookupResult['bookings'] = [];
+      let smsConversations: CustomerLookupResult['smsConversations'] = [];
+      let emails: CustomerLookupResult['emails'] = [];
       
       if (customerData) {
         // Get bookings for this customer
@@ -145,22 +181,65 @@ const AdminSMSMessages = () => {
         
         if (bookingError) throw bookingError;
         bookings = bookingData || [];
+        
+        // Get emails sent to this customer
+        if (customerData.email) {
+          const { data: emailData, error: emailError } = await supabase
+            .from('notification_logs')
+            .select('id, subject, status, created_at, notification_type')
+            .eq('recipient_email', customerData.email)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          
+          if (!emailError) {
+            emails = emailData || [];
+          }
+        }
       } else {
-        // Try to find bookings by phone number directly
+        // Try to find bookings by phone number directly - use all variations
         const { data: bookingData, error: bookingError } = await supabase
           .from('bookings')
           .select('id, service_type, date_time, address, postcode, total_cost, total_hours, booking_status, first_name, last_name, email')
-          .ilike('phone_number', `%${normalizedPhone}%`)
+          .or(`phone_number.ilike.%${last10}%`)
           .order('date_time', { ascending: false })
           .limit(10);
         
         if (bookingError) throw bookingError;
         bookings = bookingData || [];
+        
+        // Try to get email from booking if found
+        if (bookings.length > 0) {
+          const bookingEmail = (bookings[0] as any).email;
+          if (bookingEmail) {
+            const { data: emailData } = await supabase
+              .from('notification_logs')
+              .select('id, subject, status, created_at, notification_type')
+              .eq('recipient_email', bookingEmail)
+              .order('created_at', { ascending: false })
+              .limit(20);
+            
+            emails = emailData || [];
+          }
+        }
+      }
+      
+      // Get all SMS conversations for this phone number - search with all variations
+      const { data: smsData, error: smsError } = await supabase
+        .from('sms_conversations')
+        .select('id, message, direction, created_at, status')
+        .or(`phone_number.ilike.%${last10}%,phone_number.ilike.%44${last10}%`)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (!smsError) {
+        smsConversations = smsData || [];
       }
       
       setLookupResult({
         customer: customerData,
         bookings,
+        smsConversations,
+        emails,
       });
     } catch (error) {
       console.error('Error looking up customer:', error);
@@ -794,6 +873,91 @@ const AdminSMSMessages = () => {
                                           <div className="p-4 rounded-lg border border-dashed bg-muted/20">
                                             <p className="text-sm text-muted-foreground text-center">
                                               No bookings found for this number
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* SMS Conversations */}
+                                      <div>
+                                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                          <MessageCircle className="h-4 w-4" />
+                                          SMS History ({lookupResult.smsConversations.length})
+                                        </h4>
+                                        
+                                        {lookupResult.smsConversations.length > 0 ? (
+                                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {lookupResult.smsConversations.map((sms) => (
+                                              <div 
+                                                key={sms.id} 
+                                                className={`p-2 rounded-lg text-sm ${
+                                                  sms.direction === 'outgoing' 
+                                                    ? 'bg-primary/10 ml-4' 
+                                                    : 'bg-muted mr-4'
+                                                }`}
+                                              >
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                                  <span className="font-medium">
+                                                    {sms.direction === 'outgoing' ? 'Sent' : 'Received'}
+                                                  </span>
+                                                  <span>•</span>
+                                                  <span>{format(new Date(sms.created_at), 'dd MMM yyyy HH:mm')}</span>
+                                                  {sms.direction === 'outgoing' && (
+                                                    <>
+                                                      <span>•</span>
+                                                      <span className={sms.status === 'delivered' ? 'text-green-600' : ''}>
+                                                        {sms.status}
+                                                      </span>
+                                                    </>
+                                                  )}
+                                                </div>
+                                                <p className="whitespace-pre-wrap break-words">{sms.message}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="p-4 rounded-lg border border-dashed bg-muted/20">
+                                            <p className="text-sm text-muted-foreground text-center">
+                                              No SMS history found
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Email History */}
+                                      <div>
+                                        <h4 className="font-semibold mb-3 flex items-center gap-2">
+                                          <Mail className="h-4 w-4" />
+                                          Email History ({lookupResult.emails.length})
+                                        </h4>
+                                        
+                                        {lookupResult.emails.length > 0 ? (
+                                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {lookupResult.emails.map((email) => (
+                                              <div key={email.id} className="p-3 rounded-lg border bg-card">
+                                                <div className="flex items-start justify-between gap-2">
+                                                  <div className="flex-1 min-w-0">
+                                                    <p className="font-medium text-sm truncate">{email.subject}</p>
+                                                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                                      <span>{format(new Date(email.created_at), 'dd MMM yyyy HH:mm')}</span>
+                                                      <span>•</span>
+                                                      <Badge variant={
+                                                        email.status === 'sent' || email.status === 'delivered' ? 'default' :
+                                                        email.status === 'failed' ? 'destructive' :
+                                                        'secondary'
+                                                      } className="text-xs">
+                                                        {email.status}
+                                                      </Badge>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <div className="p-4 rounded-lg border border-dashed bg-muted/20">
+                                            <p className="text-sm text-muted-foreground text-center">
+                                              No email history found
                                             </p>
                                           </div>
                                         )}
