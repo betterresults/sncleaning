@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User, UserSearch, Calendar, MapPin, Clock, ExternalLink, Mail } from 'lucide-react';
+import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User, UserSearch, Calendar, MapPin, Clock, ExternalLink, Mail, Bell, AlertCircle } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import {
   Dialog,
@@ -461,11 +461,11 @@ const AdminSMSMessages = () => {
     }
   }, [selectedThread?.messages]);
 
-  // Mark messages as read when opening a thread
-  const handleSelectThread = async (thread: ConversationThread) => {
-    setSelectedThread(thread);
+  // Mark messages as read by phone number
+  const markMessagesAsRead = async (phoneNumber: string) => {
+    const thread = threads.find(t => t.phone_number === phoneNumber);
+    if (!thread) return;
     
-    // Mark incoming messages as read
     const unreadIds = thread.messages
       .filter(m => m.direction === 'incoming' && !m.read_at)
       .map(m => m.id);
@@ -478,6 +478,12 @@ const AdminSMSMessages = () => {
       
       fetchConversations();
     }
+  };
+
+  // Mark messages as read when opening a thread
+  const handleSelectThread = async (thread: ConversationThread) => {
+    setSelectedThread(thread);
+    await markMessagesAsRead(thread.phone_number);
   };
 
   const handleSendMessage = async () => {
@@ -571,9 +577,48 @@ const AdminSMSMessages = () => {
             onSignOut={handleSignOut}
           />
           <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 max-w-full overflow-hidden h-[calc(100vh-64px)]">
-              <div className="max-w-7xl mx-auto h-full">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full overflow-hidden">
+            <main className="flex-1 p-4 max-w-full overflow-hidden h-[calc(100vh-64px)] flex flex-col">
+              <div className="max-w-7xl mx-auto w-full flex flex-col h-full">
+                {/* Unread Messages Alert Banner */}
+                {(() => {
+                  const totalUnread = threads.reduce((sum, t) => sum + t.unread_count, 0);
+                  if (totalUnread === 0) return null;
+                  
+                  return (
+                    <div className="mb-4 bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between flex-shrink-0">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary rounded-full p-2">
+                          <Bell className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-primary">
+                            {totalUnread} new message{totalUnread !== 1 ? 's' : ''} waiting for response
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {threads.filter(t => t.unread_count > 0).length} conversation{threads.filter(t => t.unread_count > 0).length !== 1 ? 's' : ''} with unread messages
+                          </p>
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                        onClick={() => {
+                          // Find first thread with unread messages
+                          const unreadThread = threads.find(t => t.unread_count > 0);
+                          if (unreadThread) {
+                            setSelectedThread(unreadThread);
+                            markMessagesAsRead(unreadThread.phone_number);
+                          }
+                        }}
+                      >
+                        View Messages
+                      </Button>
+                    </div>
+                  );
+                })()}
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-hidden">
                   {/* Conversations List */}
                   <Card className={`lg:col-span-1 flex flex-col ${selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     <CardHeader className="pb-3">
