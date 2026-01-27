@@ -618,9 +618,9 @@ const AdminSMSMessages = () => {
                   );
                 })()}
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 overflow-hidden" style={{ maxHeight: 'calc(100vh - 180px)' }}>
                   {/* Conversations List */}
-                  <Card className={`lg:col-span-1 flex flex-col overflow-hidden ${selectedThread ? 'hidden lg:flex' : 'flex'}`}>
+                  <Card className={`lg:col-span-1 flex flex-col overflow-hidden h-full ${selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
@@ -813,7 +813,7 @@ const AdminSMSMessages = () => {
                   </Card>
 
                   {/* Chat Area */}
-                  <Card className={`lg:col-span-2 flex flex-col overflow-hidden ${!selectedThread ? 'hidden lg:flex' : 'flex'}`}>
+                  <Card className={`lg:col-span-2 flex flex-col overflow-hidden h-full ${!selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     {selectedThread ? (
                       <>
                         <CardHeader className="pb-3 border-b flex-shrink-0">
@@ -1130,8 +1130,8 @@ const AdminSMSMessages = () => {
                             </Sheet>
                           </div>
                         </CardHeader>
-                        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                          <ScrollArea className="flex-1" ref={scrollAreaRef}>
+                        <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+                          <ScrollArea className="flex-1 h-full" ref={scrollAreaRef}>
                             <div className="p-4 space-y-4">
                               {selectedThread.messages.map((msg) => (
                                 <div
