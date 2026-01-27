@@ -69,6 +69,22 @@ interface CustomerLookupResult {
     email: string | null;
     phone: string | null;
   } | null;
+  quoteLead: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    postcode: string | null;
+    service_type: string | null;
+    frequency: string | null;
+    calculated_quote: number | null;
+    recommended_hours: number | null;
+    selected_date: string | null;
+    status: string | null;
+    created_at: string | null;
+  } | null;
   bookings: Array<{
     id: number;
     service_type: string | null;
@@ -153,9 +169,6 @@ const AdminSMSMessages = () => {
       const phoneVariations = normalizeUKPhone(phoneNumber);
       const last10 = phoneVariations[0];
       
-      // Build search query for multiple formats
-      const phoneSearchPatterns = phoneVariations.map(v => `%${v}%`);
-      
       // Find customer by phone - try all variations
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
@@ -169,6 +182,7 @@ const AdminSMSMessages = () => {
       let bookings: CustomerLookupResult['bookings'] = [];
       let smsConversations: CustomerLookupResult['smsConversations'] = [];
       let emails: CustomerLookupResult['emails'] = [];
+      let quoteLead: CustomerLookupResult['quoteLead'] = null;
       
       if (customerData) {
         // Get bookings for this customer
@@ -196,7 +210,7 @@ const AdminSMSMessages = () => {
           }
         }
       } else {
-        // Try to find bookings by phone number directly - use all variations
+        // Try to find bookings by phone number directly
         const { data: bookingData, error: bookingError } = await supabase
           .from('bookings')
           .select('id, service_type, date_time, address, postcode, total_cost, total_hours, booking_status, first_name, last_name, email')
@@ -223,7 +237,46 @@ const AdminSMSMessages = () => {
         }
       }
       
-      // Get all SMS conversations for this phone number - search with all variations
+      // Search quote_leads table - this is where unconverted leads are stored
+      const { data: quoteLeadData, error: quoteLeadError } = await supabase
+        .from('quote_leads')
+        .select('id, first_name, last_name, email, phone, address, postcode, service_type, frequency, calculated_quote, recommended_hours, selected_date, status, created_at')
+        .or(`phone.ilike.%${last10}%`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (!quoteLeadError && quoteLeadData) {
+        quoteLead = quoteLeadData;
+        
+        // Also get emails sent to this quote lead's email if not already fetched
+        if (emails.length === 0 && quoteLeadData.email) {
+          const { data: emailData } = await supabase
+            .from('notification_logs')
+            .select('id, subject, status, created_at, notification_type')
+            .eq('recipient_email', quoteLeadData.email)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          
+          emails = emailData || [];
+        }
+        
+        // Also check notification_logs where recipient_email is the phone number (SMS logs)
+        const { data: smsNotificationData } = await supabase
+          .from('notification_logs')
+          .select('id, subject, status, created_at, notification_type')
+          .or(`recipient_email.ilike.%${last10}%`)
+          .eq('notification_type', 'sms')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        
+        if (smsNotificationData && smsNotificationData.length > 0) {
+          // Merge SMS notification logs with emails
+          emails = [...emails, ...smsNotificationData];
+        }
+      }
+      
+      // Get all SMS conversations for this phone number
       const { data: smsData, error: smsError } = await supabase
         .from('sms_conversations')
         .select('id, message, direction, created_at, status')
@@ -237,6 +290,7 @@ const AdminSMSMessages = () => {
       
       setLookupResult({
         customer: customerData,
+        quoteLead,
         bookings,
         smsConversations,
         emails,
@@ -799,10 +853,72 @@ const AdminSMSMessages = () => {
                                             </Button>
                                           </div>
                                         </div>
+                                      ) : lookupResult.quoteLead ? (
+                                        <div className="p-4 rounded-lg border bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                                          <h4 className="font-semibold mb-3 flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                                            <User className="h-4 w-4" />
+                                            Quote Lead Found
+                                          </h4>
+                                          <div className="space-y-2 text-sm">
+                                            <p><strong>Name:</strong> {`${lookupResult.quoteLead.first_name || ''} ${lookupResult.quoteLead.last_name || ''}`.trim() || 'N/A'}</p>
+                                            <p><strong>Email:</strong> {lookupResult.quoteLead.email || 'N/A'}</p>
+                                            <p><strong>Phone:</strong> {lookupResult.quoteLead.phone || 'N/A'}</p>
+                                            {lookupResult.quoteLead.address && (
+                                              <p><strong>Address:</strong> {lookupResult.quoteLead.address}, {lookupResult.quoteLead.postcode}</p>
+                                            )}
+                                            <div className="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800">
+                                              <p className="text-xs text-muted-foreground mb-2">Quote Details</p>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                  <p className="text-xs text-muted-foreground">Service</p>
+                                                  <p className="font-medium">{lookupResult.quoteLead.service_type || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-xs text-muted-foreground">Frequency</p>
+                                                  <p className="font-medium">{lookupResult.quoteLead.frequency || 'N/A'}</p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-xs text-muted-foreground">Hours</p>
+                                                  <p className="font-medium">{lookupResult.quoteLead.recommended_hours || 'N/A'}h</p>
+                                                </div>
+                                                <div>
+                                                  <p className="text-xs text-muted-foreground">Quote</p>
+                                                  <p className="font-medium text-green-600 dark:text-green-400">
+                                                    £{lookupResult.quoteLead.calculated_quote?.toFixed(2) || 'N/A'}
+                                                  </p>
+                                                </div>
+                                              </div>
+                                              {lookupResult.quoteLead.selected_date && (
+                                                <p className="mt-2 text-sm">
+                                                  <strong>Preferred Date:</strong> {format(new Date(lookupResult.quoteLead.selected_date), 'EEE, dd MMM yyyy')}
+                                                </p>
+                                              )}
+                                              <div className="flex items-center gap-2 mt-2">
+                                                <Badge variant={lookupResult.quoteLead.status === 'converted' ? 'default' : 'secondary'}>
+                                                  {lookupResult.quoteLead.status || 'pending'}
+                                                </Badge>
+                                                {lookupResult.quoteLead.created_at && (
+                                                  <span className="text-xs text-muted-foreground">
+                                                    Created {format(new Date(lookupResult.quoteLead.created_at), 'dd MMM yyyy')}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              className="mt-2"
+                                              onClick={() => navigate(`/admin-dashboard?tab=leads`)}
+                                            >
+                                              <ExternalLink className="h-3 w-3 mr-1" />
+                                              View Quote Leads
+                                            </Button>
+                                          </div>
+                                        </div>
                                       ) : (
                                         <div className="p-4 rounded-lg border border-dashed bg-muted/20">
                                           <p className="text-sm text-muted-foreground text-center">
-                                            No customer found with this phone number
+                                            No customer or quote lead found with this phone number
                                           </p>
                                         </div>
                                       )}
