@@ -571,9 +571,9 @@ const AdminSMSMessages = () => {
             onSignOut={handleSignOut}
           />
           <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto h-[calc(100vh-120px)]">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full">
+            <main className="flex-1 p-4 max-w-full overflow-hidden h-[calc(100vh-64px)]">
+              <div className="max-w-7xl mx-auto h-full">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-full overflow-hidden">
                   {/* Conversations List */}
                   <Card className={`lg:col-span-1 flex flex-col ${selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     <CardHeader className="pb-3">
@@ -768,7 +768,7 @@ const AdminSMSMessages = () => {
                   </Card>
 
                   {/* Chat Area */}
-                  <Card className={`lg:col-span-2 flex flex-col ${!selectedThread ? 'hidden lg:flex' : 'flex'}`}>
+                  <Card className={`lg:col-span-2 flex flex-col overflow-hidden h-full ${!selectedThread ? 'hidden lg:flex' : 'flex'}`}>
                     {selectedThread ? (
                       <>
                         <CardHeader className="pb-3 border-b flex-shrink-0">
@@ -1119,7 +1119,7 @@ const AdminSMSMessages = () => {
                               <div ref={messagesEndRef} />
                             </div>
                           </ScrollArea>
-                          <div className="p-4 border-t">
+                          <div className="p-4 border-t flex-shrink-0 bg-background">
                             <form
                               onSubmit={(e) => {
                                 e.preventDefault();
