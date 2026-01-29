@@ -136,6 +136,9 @@ const ShortLinkResolver = () => {
             params.set('mattressItems', JSON.stringify(mattressItems));
             console.log('[ShortLinkResolver] Set mattressItems param:', JSON.stringify(mattressItems));
           }
+        } else if (serviceType === 'End of Tenancy' || serviceType === 'end_of_tenancy' || serviceType.toLowerCase().includes('end of tenancy') || serviceType.toLowerCase().includes('eot')) {
+          route = '/end-of-tenancy';
+          console.log('[ShortLinkResolver] Matched End of Tenancy route');
         } else if (serviceType === 'Airbnb' || serviceType === 'airbnb' || serviceType.toLowerCase().includes('airbnb')) {
           route = '/airbnb-cleaning';
           console.log('[ShortLinkResolver] Matched Airbnb route');
