@@ -289,6 +289,16 @@ const EndOfTenancyBookingForm: React.FC = () => {
       const shortNotice = searchParams.get('shortNotice');
       const firstTime = searchParams.get('firstTime');
       
+      console.log('[EndOfTenancyBookingForm] Quote link params:', {
+        quotedCost,
+        quotedHours,
+        shortNotice,
+        firstTime,
+        propertyType,
+        bedrooms,
+        bathrooms,
+      });
+      
       // Parse address into components
       let houseNumber = '';
       let street = '';
@@ -702,18 +712,19 @@ const EndOfTenancyBookingForm: React.FC = () => {
         {isFromQuoteLink && (
           <div className="mb-4 p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border-2 border-primary/20">
             <h3 className="text-lg font-bold text-primary mb-3">Your End of Tenancy Cleaning Quote</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Property</p>
                 <p className="font-semibold text-foreground">
                   {bookingData.propertyType === 'flat' ? 'Flat' : bookingData.propertyType === 'house' ? 'House' : bookingData.propertyType === 'house-share' ? 'House Share' : ''}
-                  {bookingData.bedrooms && ` ${bookingData.bedrooms === 'studio' ? 'Studio' : `${bookingData.bedrooms} Bed`}`}
+                  {bookingData.bedrooms && `, ${bookingData.bedrooms === 'studio' ? 'Studio' : `${bookingData.bedrooms} Bed`}`}
+                  {bookingData.bathrooms && `, ${bookingData.bathrooms} Bath`}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Date</p>
                 <p className="font-semibold text-foreground">
-                  {bookingData.selectedDate ? bookingData.selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Flexible'}
+                  {bookingData.selectedDate ? bookingData.selectedDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Flexible'}
                 </p>
               </div>
               <div>
