@@ -1499,7 +1499,8 @@ useEffect(() => {
   return (
     <div className="space-y-8">
       {/* Quote Link Mode: Booking Summary at Top - CARPET CLEANING SPECIFIC */}
-      {isQuoteLinkMode && !isAdminMode && subServiceType === 'carpet' && (
+      {/* Show for quote link users regardless of admin mode */}
+      {(isQuoteLinkMode || isFromQuoteLink) && subServiceType === 'carpet' && (
         <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border-2 border-primary/20">
           <h3 className="text-xl font-bold text-[#185166] mb-4 flex items-center gap-2">
             <Check className="h-5 w-5 text-green-600" />
@@ -1638,7 +1639,8 @@ useEffect(() => {
       )}
 
       {/* Quote Link Mode: Booking Summary at Top - NON-CARPET SERVICES */}
-      {isQuoteLinkMode && !isAdminMode && subServiceType !== 'carpet' && (
+      {/* Show for quote link users regardless of admin mode */}
+      {(isQuoteLinkMode || isFromQuoteLink) && subServiceType !== 'carpet' && (
         <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-2xl p-6 border-2 border-primary/20">
           <h3 className="text-xl font-bold text-[#185166] mb-4 flex items-center gap-2">
             <Check className="h-5 w-5 text-green-600" />
@@ -1715,7 +1717,8 @@ useEffect(() => {
       )}
 
       {/* ADMIN MODE: Customer Selection */}
-      {isAdminMode && (
+      {/* Hide for quote link users - they already have customer info pre-filled */}
+      {isAdminMode && !isFromQuoteLink && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Select Customer
@@ -1760,7 +1763,8 @@ useEffect(() => {
       )}
 
       {/* Customer Details - Admin (editable - shown for existing or new customer) */}
-      {isAdminMode && (
+      {/* Hide for quote link users - they use the customer-mode collapsible section */}
+      {isAdminMode && !isFromQuoteLink && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Customer Details
@@ -1812,7 +1816,8 @@ useEffect(() => {
       )}
 
       {/* Customer/Guest Mode - show customer details */}
-      {!isAdminMode && (
+      {/* Also show for quote link users even if they happen to be logged in as admin */}
+      {(!isAdminMode || isFromQuoteLink) && (
         <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
           <div className="rounded-2xl border-2 border-gray-200 bg-white transition-all">
             <CollapsibleTrigger className="w-full p-4 flex items-center justify-between text-left">
@@ -1929,7 +1934,8 @@ useEffect(() => {
       )}
 
       {/* ADMIN MODE: Address Selection */}
-      {isAdminMode && data.customerId && (
+      {/* Hide for quote link users - they use customer-mode collapsible address section */}
+      {isAdminMode && !isFromQuoteLink && data.customerId && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Select Address
@@ -2065,7 +2071,8 @@ useEffect(() => {
       )}
 
       {/* Additional Notes - for quote link customers, after address section */}
-      {isQuoteLinkMode && !isAdminMode && (
+      {/* Show for quote link users regardless of admin mode */}
+      {(isQuoteLinkMode || isFromQuoteLink) && (!isAdminMode || isFromQuoteLink) && (
         <div className="space-y-3">
           <Label htmlFor="quote-notes" className="text-lg font-semibold text-[#185166]">
             Additional Notes (optional)
@@ -2081,7 +2088,8 @@ useEffect(() => {
         </div>
       )}
 
-      {isAdminMode && formType !== 'linen' && (
+      {/* Assign Cleaner - Admin only, hide for quote link users */}
+      {isAdminMode && !isFromQuoteLink && formType !== 'linen' && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4 flex items-center gap-2">
             <User className="h-6 w-6" />
@@ -2109,7 +2117,8 @@ useEffect(() => {
       )}
 
       {/* ADMIN MODE: Payment Method Selection - show for existing or new customers */}
-      {isAdminMode && !checkingPaymentMethods && (
+      {/* Hide for quote link users - they should see customer payment UI instead */}
+      {isAdminMode && !isFromQuoteLink && !checkingPaymentMethods && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Payment Method
@@ -2312,7 +2321,8 @@ useEffect(() => {
       )}
 
       {/* Payment Method Section - For logged-in customers and guests (skip in admin test mode) */}
-      {!adminTestMode && !isAdminMode && (
+      {/* Also show for quote link users even if they happen to be logged in as admin */}
+      {!adminTestMode && (!isAdminMode || isFromQuoteLink) && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
             Payment Details
