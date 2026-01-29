@@ -590,6 +590,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
               onBack={isFromQuoteLink ? undefined : prevStep}
               isAdminMode={isAdminMode}
               isFromQuoteLink={isFromQuoteLink}
+              stripePromise={stripePromise}
             />
           </Elements>
         ) : (
