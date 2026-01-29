@@ -103,6 +103,9 @@ const ShortLinkResolver = () => {
         // Property access
         if (data.property_access) params.set('propertyAccess', data.property_access);
         if (data.access_notes) params.set('accessNotes', data.access_notes);
+        
+        // Mark as quote link - this tells the form to lock to payment step
+        params.set('fromQuote', '1');
 
         // Determine the route based on service type
         const serviceType = data.service_type || 'Domestic';
