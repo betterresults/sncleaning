@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 interface EndOfTenancySummaryProps {
   data: EndOfTenancyBookingData;
   isAdminMode?: boolean;
+  isFromQuoteLink?: boolean;
   onUpdate?: (updates: Partial<EndOfTenancyBookingData>) => void;
 }
 
@@ -29,6 +30,7 @@ const FURNITURE_STATUS_LABELS: Record<string, string> = {
 export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   data,
   isAdminMode = false,
+  isFromQuoteLink = false,
   onUpdate,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -38,11 +40,20 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   const [manualDiscount, setManualDiscount] = useState<string>('');
   const [waiveShortNotice, setWaiveShortNotice] = useState(false);
 
-  // Use the calculation hook with database prices
+  // Use the calculation hook with database prices - but skip for quote links which use pre-calculated prices
   const calculations = useEndOfTenancyCalculations(data, data.isFirstTimeCustomer || false);
+  
+  // For quote links, preserve the exact quoted price without recalculation
+  const quotedTotal = isFromQuoteLink ? (data.totalCost || 0) : null;
 
   // Calculate final total with admin overrides
+  // For quote links, ALWAYS use the quoted/overridden price from URL
   const getDisplayTotal = () => {
+    // For quote links, use the exact quoted price
+    if (isFromQuoteLink && quotedTotal !== null && quotedTotal > 0) {
+      return quotedTotal;
+    }
+    
     if (manualTotalCost) {
       let total = parseFloat(manualTotalCost) || 0;
       if (manualDiscount) {
@@ -63,7 +74,11 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 
   // Update parent when total changes - sync the calculated total to parent
   // This ensures the correct price is used during booking submission
+  // SKIP syncing for quote links - they should preserve the original quoted price
   useEffect(() => {
+    // For quote links, don't recalculate or sync - preserve the quoted price
+    if (isFromQuoteLink) return;
+    
     if (onUpdate && !calculations.isLoading) {
       const displayTotal = getDisplayTotal();
       // Only update if the values are actually different (with small tolerance for floating point)
@@ -77,7 +92,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         });
       }
     }
-  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice, data.totalCost, data.estimatedHours]);
+  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice, data.totalCost, data.estimatedHours, isFromQuoteLink]);
   
   // Format property description
   const getPropertyDescription = () => {
@@ -445,7 +460,8 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {hasPropertyData && (
+      {/* Hide estimated hours for quote link users */}
+      {hasPropertyData && !isFromQuoteLink && (
         <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
           <div className="p-2 bg-primary/10 rounded-xl">
             <Clock className="w-5 h-5 text-primary" />
