@@ -698,6 +698,36 @@ const EndOfTenancyBookingForm: React.FC = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-2 sm:px-4 py-2 max-w-[1400px]">
+        {/* Quote Summary Banner for Quote Link Users - shown at top */}
+        {isFromQuoteLink && (
+          <div className="mb-4 p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border-2 border-primary/20">
+            <h3 className="text-lg font-bold text-primary mb-3">Your End of Tenancy Cleaning Quote</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Property</p>
+                <p className="font-semibold text-foreground">
+                  {bookingData.propertyType === 'flat' ? 'Flat' : bookingData.propertyType === 'house' ? 'House' : bookingData.propertyType === 'house-share' ? 'House Share' : ''}
+                  {bookingData.bedrooms && ` ${bookingData.bedrooms === 'studio' ? 'Studio' : `${bookingData.bedrooms} Bed`}`}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Date</p>
+                <p className="font-semibold text-foreground">
+                  {bookingData.selectedDate ? bookingData.selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Flexible'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Time</p>
+                <p className="font-semibold text-foreground">{bookingData.selectedTime || 'Flexible'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Quoted Price</p>
+                <p className="text-2xl font-bold text-primary">£{bookingData.totalCost.toFixed(2)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <div className="lg:col-span-2">
             <Card className="p-4 sm:p-6 lg:p-8 bg-white border border-border">
@@ -705,18 +735,22 @@ const EndOfTenancyBookingForm: React.FC = () => {
             </Card>
           </div>
           
-          <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-4">
-              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-4 border-2 border-slate-200 shadow-lg lg:bg-transparent lg:p-0 lg:border-0 lg:shadow-none lg:rounded-none">
-                <h3 className="text-lg font-bold text-slate-700 mb-3 lg:hidden">Booking Summary</h3>
-                <EndOfTenancySummary 
-                  data={bookingData} 
-                  isAdminMode={isAdminMode}
-                  onUpdate={updateBookingData}
-                />
+          {/* Hide the normal booking summary sidebar for quote link users */}
+          {!isFromQuoteLink && (
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-4">
+                <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-4 border-2 border-slate-200 shadow-lg lg:bg-transparent lg:p-0 lg:border-0 lg:shadow-none lg:rounded-none">
+                  <h3 className="text-lg font-bold text-slate-700 mb-3 lg:hidden">Booking Summary</h3>
+                  <EndOfTenancySummary 
+                    data={bookingData} 
+                    isAdminMode={isAdminMode}
+                    isFromQuoteLink={isFromQuoteLink}
+                    onUpdate={updateBookingData}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
 
