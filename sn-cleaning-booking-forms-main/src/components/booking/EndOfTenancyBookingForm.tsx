@@ -127,6 +127,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
   const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const [showExitPopup, setShowExitPopup] = useState(false);
   const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+  const [isFromQuoteLink, setIsFromQuoteLink] = useState(false);
   
   const [bookingData, setBookingData] = useState<EndOfTenancyBookingData>({
     propertyType: '',
@@ -252,6 +253,95 @@ const EndOfTenancyBookingForm: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
+
+  // Handle quote link URL parameters - pre-fill data and lock to payment step
+  useEffect(() => {
+    const fromQuote = searchParams.get('fromQuote') === '1';
+    
+    if (fromQuote) {
+      setIsFromQuoteLink(true);
+      
+      // Parse URL parameters and pre-fill booking data
+      const propertyType = searchParams.get('propertyType') as EndOfTenancyBookingData['propertyType'] || '';
+      const bedrooms = searchParams.get('bedrooms') || '';
+      const bathrooms = searchParams.get('bathrooms') || '';
+      const postcode = searchParams.get('postcode') || '';
+      const ovenType = searchParams.get('ovenType') || '';
+      const firstName = searchParams.get('firstName') || '';
+      const lastName = searchParams.get('lastName') || '';
+      const email = searchParams.get('email') || '';
+      const phone = searchParams.get('phone') || '';
+      const address = searchParams.get('address') || '';
+      const propertyAccess = searchParams.get('propertyAccess') || '';
+      const accessNotes = searchParams.get('accessNotes') || '';
+      const flexibility = searchParams.get('flexibility') as EndOfTenancyBookingData['flexibility'] || '';
+      
+      // Parse date
+      const dateStr = searchParams.get('date');
+      const selectedDate = dateStr ? new Date(dateStr) : null;
+      
+      // Parse time
+      const selectedTime = searchParams.get('time') || '';
+      
+      // Parse quoted cost and hours (preserve exact quote)
+      const quotedCost = searchParams.get('quotedCost');
+      const quotedHours = searchParams.get('quotedHours');
+      const shortNotice = searchParams.get('shortNotice');
+      const firstTime = searchParams.get('firstTime');
+      
+      // Parse address into components
+      let houseNumber = '';
+      let street = '';
+      let city = '';
+      if (address) {
+        const parts = address.split(',').map(p => p.trim());
+        if (parts.length >= 1) {
+          // Try to extract house number from first part
+          const firstPart = parts[0];
+          const numberMatch = firstPart.match(/^(\d+[A-Za-z]?)\s+(.+)$/);
+          if (numberMatch) {
+            houseNumber = numberMatch[1];
+            street = numberMatch[2];
+          } else {
+            street = firstPart;
+          }
+        }
+        if (parts.length >= 2) {
+          city = parts[1];
+        }
+      }
+      
+      // Update booking data with all quote link data
+      setBookingData(prev => ({
+        ...prev,
+        propertyType,
+        bedrooms,
+        bathrooms,
+        postcode,
+        ovenType,
+        firstName,
+        lastName,
+        name: `${firstName} ${lastName}`.trim(),
+        email,
+        phone,
+        houseNumber,
+        street,
+        city,
+        propertyAccess,
+        accessNotes,
+        selectedDate,
+        selectedTime,
+        flexibility,
+        totalCost: quotedCost ? parseFloat(quotedCost) : prev.totalCost,
+        estimatedHours: quotedHours ? parseFloat(quotedHours) : prev.estimatedHours,
+        shortNoticeCharge: shortNotice ? parseFloat(shortNotice) : undefined,
+        isFirstTimeCustomer: firstTime === '1',
+      }));
+      
+      // Jump directly to payment step (step 4)
+      setCurrentStep(4);
+    }
+  }, [searchParams]);
 
   // Check if user is admin AND on admin route
   useEffect(() => {
@@ -403,9 +493,9 @@ const EndOfTenancyBookingForm: React.FC = () => {
     });
   }, [currentStep, isAdminMode, saveQuoteLead, trackQuoteCalculated, calculateTotals]);
 
-  // Handle browser back button to show exit popup
+  // Handle browser back button to show exit popup - disabled for quote link users
   useEffect(() => {
-    if (isAdminMode) return;
+    if (isAdminMode || isFromQuoteLink) return;
     
     const handlePopState = (e: PopStateEvent) => {
       if (bookingData.totalCost > 0) {
@@ -419,7 +509,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isAdminMode, bookingData.totalCost]);
+  }, [isAdminMode, isFromQuoteLink, bookingData.totalCost]);
 
   const nextStep = () => {
     if (currentStep < steps.length) {
@@ -438,6 +528,9 @@ const EndOfTenancyBookingForm: React.FC = () => {
   };
 
   const prevStep = () => {
+    // Prevent going back if from quote link - user should only be on payment step
+    if (isFromQuoteLink) return;
+    
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -484,8 +577,9 @@ const EndOfTenancyBookingForm: React.FC = () => {
                 calculatedLinenCost: 0,
               } as any}
               onUpdate={updateBookingData as any}
-              onBack={prevStep}
+              onBack={isFromQuoteLink ? undefined : prevStep}
               isAdminMode={isAdminMode}
+              isFromQuoteLink={isFromQuoteLink}
             />
           </Elements>
         ) : (
@@ -525,6 +619,12 @@ const EndOfTenancyBookingForm: React.FC = () => {
                   Send to Customer
                 </Button>
               </>
+            ) : isFromQuoteLink ? (
+              // Quote link users only see the title - no back button, no navigation
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto whitespace-nowrap">
+                <span className="sm:hidden">End of Tenancy</span>
+                <span className="hidden sm:inline">End of Tenancy Cleaning</span>
+              </h1>
             ) : bookingData.customerId ? (
               <>
                 <Button
@@ -548,49 +648,51 @@ const EndOfTenancyBookingForm: React.FC = () => {
             )}
           </div>
           
-          {/* Step Navigation */}
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-center gap-1 px-2">
-              {steps.map((step, index) => {
-                const stepNumber = index + 1;
-                const isActive = currentStep === stepNumber;
-                const isCompleted = currentStep > stepNumber;
-                
-                return (
-                  <div key={step.id} className="contents">
-                    <button
-                      onClick={() => (isCompleted || stepNumber <= currentStep) && setCurrentStep(stepNumber)}
-                      disabled={!(isCompleted || stepNumber <= currentStep)}
-                      className={`flex flex-col items-center justify-center transition-all duration-300 ${
-                        isActive ? 'flex-1' : 'w-12'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                        isActive 
-                          ? 'bg-primary text-white scale-110' 
-                          : isCompleted 
-                          ? 'bg-primary text-white' 
-                          : 'bg-gray-200 text-gray-400'
-                      }`}>
-                        {stepNumber}
-                      </div>
-                      {isActive && (
-                        <span className="text-xs sm:text-sm font-medium text-primary mt-1 text-center">
-                          {step.title}
-                        </span>
+          {/* Step Navigation - hidden for quote link users */}
+          {!isFromQuoteLink && (
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-center gap-1 px-2">
+                {steps.map((step, index) => {
+                  const stepNumber = index + 1;
+                  const isActive = currentStep === stepNumber;
+                  const isCompleted = currentStep > stepNumber;
+                  
+                  return (
+                    <div key={step.id} className="contents">
+                      <button
+                        onClick={() => (isCompleted || stepNumber <= currentStep) && setCurrentStep(stepNumber)}
+                        disabled={!(isCompleted || stepNumber <= currentStep)}
+                        className={`flex flex-col items-center justify-center transition-all duration-300 ${
+                          isActive ? 'flex-1' : 'w-12'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                          isActive 
+                            ? 'bg-primary text-white scale-110' 
+                            : isCompleted 
+                            ? 'bg-primary text-white' 
+                            : 'bg-gray-200 text-gray-400'
+                        }`}>
+                          {stepNumber}
+                        </div>
+                        {isActive && (
+                          <span className="text-xs sm:text-sm font-medium text-primary mt-1 text-center">
+                            {step.title}
+                          </span>
+                        )}
+                      </button>
+                      
+                      {index < steps.length - 1 && (
+                        <div className={`h-0.5 flex-1 max-w-[20px] sm:max-w-[30px] transition-all ${
+                          currentStep > stepNumber ? 'bg-primary' : 'bg-gray-200'
+                        }`} />
                       )}
-                    </button>
-                    
-                    {index < steps.length - 1 && (
-                      <div className={`h-0.5 flex-1 max-w-[20px] sm:max-w-[30px] transition-all ${
-                        currentStep > stepNumber ? 'bg-primary' : 'bg-gray-200'
-                      }`} />
-                    )}
-                  </div>
-                );
-              })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 

@@ -179,9 +179,10 @@ const PaymentElementInner: React.FC<{
 interface PaymentStepProps {
   data: BookingData | any;
   onUpdate: (updates: Partial<BookingData> | any) => void;
-  onBack: () => void;
+  onBack?: () => void;
   isAdminMode?: boolean;
   isQuoteLinkMode?: boolean;
+  isFromQuoteLink?: boolean;
   formType?: 'airbnb' | 'linen';
   bookingSummary?: React.ReactNode;
   onBookingAttempt?: () => void;
@@ -195,12 +196,15 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   onBack, 
   isAdminMode = false, 
   isQuoteLinkMode = false,
+  isFromQuoteLink = false,
   formType = 'airbnb',
   bookingSummary,
   onBookingAttempt,
   onBookingSuccess,
   stripePromise
 }) => {
+  // Combine both quote link flags
+  const hideBackButton = isQuoteLinkMode || isFromQuoteLink;
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, customerId, paymentMethods: userPaymentMethods, loading: loadingPaymentMethods } = useSimpleAuth();
@@ -1506,14 +1510,16 @@ useEffect(() => {
             <div className="bg-white rounded-xl p-4 border border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-[#185166]">Carpets & Rugs</h4>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => onBack()}
-                  className="text-primary hover:bg-primary/10 h-8 px-3"
-                >
-                  <Pencil className="h-3 w-3 mr-1" /> Edit
-                </Button>
+                {!hideBackButton && onBack && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => onBack()}
+                    className="text-primary hover:bg-primary/10 h-8 px-3"
+                  >
+                    <Pencil className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                )}
               </div>
               {data.carpetItems && data.carpetItems.length > 0 ? (
                 <ul className="space-y-1 text-sm">
@@ -1533,14 +1539,16 @@ useEffect(() => {
             <div className="bg-white rounded-xl p-4 border border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-[#185166]">Upholstery</h4>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => { onBack(); onBack(); }} 
-                  className="text-primary hover:bg-primary/10 h-8 px-3"
-                >
-                  <Pencil className="h-3 w-3 mr-1" /> Edit
-                </Button>
+                {!hideBackButton && onBack && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => { onBack(); onBack(); }} 
+                    className="text-primary hover:bg-primary/10 h-8 px-3"
+                  >
+                    <Pencil className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                )}
               </div>
               {data.upholsteryItems && data.upholsteryItems.length > 0 ? (
                 <ul className="space-y-1 text-sm">
@@ -1552,7 +1560,7 @@ useEffect(() => {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground italic">No upholstery selected - <button onClick={() => { onBack(); onBack(); }} className="text-primary underline">Add items</button></p>
+                <p className="text-sm text-muted-foreground italic">No upholstery selected</p>
               )}
             </div>
             
@@ -1560,14 +1568,16 @@ useEffect(() => {
             <div className="bg-white rounded-xl p-4 border border-gray-200">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-[#185166]">Mattresses</h4>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => { onBack(); onBack(); }}
-                  className="text-primary hover:bg-primary/10 h-8 px-3"
-                >
-                  <Pencil className="h-3 w-3 mr-1" /> Edit
-                </Button>
+                {!hideBackButton && onBack && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => { onBack(); onBack(); }}
+                    className="text-primary hover:bg-primary/10 h-8 px-3"
+                  >
+                    <Pencil className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                )}
               </div>
               {data.mattressItems && data.mattressItems.length > 0 ? (
                 <ul className="space-y-1 text-sm">
@@ -1579,7 +1589,7 @@ useEffect(() => {
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-muted-foreground italic">No mattresses selected - <button onClick={() => { onBack(); onBack(); }} className="text-primary underline">Add items</button></p>
+                <p className="text-sm text-muted-foreground italic">No mattresses selected</p>
               )}
             </div>
           </div>
@@ -2578,10 +2588,12 @@ useEffect(() => {
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" size="lg" onClick={onBack} disabled={processing || submitting}>
-          Back
-        </Button>
+      <div className={`flex pt-6 ${hideBackButton ? 'justify-end' : 'justify-between'}`}>
+        {!hideBackButton && onBack && (
+          <Button variant="outline" size="lg" onClick={onBack} disabled={processing || submitting}>
+            Back
+          </Button>
+        )}
         <Button
           variant="default"
           size="lg"
