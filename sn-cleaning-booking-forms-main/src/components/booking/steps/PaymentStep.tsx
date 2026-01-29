@@ -509,7 +509,9 @@ useEffect(() => {
       // Only create SetupIntent for customer mode (not admin), when paying by card,
       // and when customer doesn't have saved payment methods
       // Also skip if guest has saved cards and wants to use them
-      if (isAdminMode || paymentType !== 'card' || hasPaymentMethods || loadingSetupIntent) {
+      // IMPORTANT: For quote link users (isFromQuoteLink), always create SetupIntent regardless of admin mode
+      const shouldSkipForAdmin = isAdminMode && !isFromQuoteLink;
+      if (shouldSkipForAdmin || paymentType !== 'card' || hasPaymentMethods || loadingSetupIntent) {
         return;
       }
       
@@ -553,7 +555,7 @@ useEffect(() => {
     // Debounce the SetupIntent creation to avoid calling with partial email
     const timeoutId = setTimeout(createSetupIntent, 800);
     return () => clearTimeout(timeoutId);
-  }, [isAdminMode, paymentType, hasPaymentMethods, data.email, data.firstName, data.lastName, guestPaymentMethods.length, useGuestSavedCard, checkingGuestCustomer, setupIntentClientSecret]);
+  }, [isAdminMode, isFromQuoteLink, paymentType, hasPaymentMethods, data.email, data.firstName, data.lastName, guestPaymentMethods.length, useGuestSavedCard, checkingGuestCustomer, setupIntentClientSecret]);
 
   const validateEmail = (email: string) => {
     if (!email) {
