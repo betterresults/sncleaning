@@ -270,7 +270,8 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
       }
       
       // CRITICAL: Sync estimatedHours so it's available for quote emails
-      if (calculations.totalHours !== data.estimatedHours) {
+      // BUT only if user hasn't manually overridden the hours (to preserve their selection)
+      if (!calculations.isUserOverride && calculations.totalHours !== data.estimatedHours) {
         updates.estimatedHours = calculations.totalHours;
       }
       
