@@ -9,7 +9,6 @@ import { useAirbnbFieldConfigsBatch } from '@/hooks/useAirbnbFieldConfigs';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 interface DomesticPropertyStepProps {
   data: DomesticBookingData;
   onUpdate: (updates: Partial<DomesticBookingData>) => void;
@@ -118,7 +117,6 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
   const recommendedHours = calculations.baseTime;
   const [searchParams] = useSearchParams();
   const showDebug = searchParams.get('debug') === '1';
-  const { toast } = useToast();
   const [showValidationErrors, setShowValidationErrors] = useState(false);
   
   // Individual field validation
@@ -151,29 +149,28 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
     if (!canContinue) {
       setShowValidationErrors(true);
       
-      // Build error message
-      const missingFields: string[] = [];
-      if (validationErrors.propertyType) missingFields.push('property type');
-      if (validationErrors.bedrooms) missingFields.push('bedrooms');
-      if (validationErrors.bathrooms) missingFields.push('bathrooms');
-      if (validationErrors.serviceFrequency) missingFields.push('cleaning frequency');
-      if (validationErrors.equipmentArrangement) missingFields.push('equipment arrangement');
-      if (validationErrors.equipmentStorageConfirmed) missingFields.push('equipment storage confirmation');
+      // Scroll to first missing field with a slight delay to ensure DOM is updated
+      setTimeout(() => {
+        let targetElement: HTMLElement | null = null;
+        
+        if (validationErrors.propertyType) {
+          targetElement = document.getElementById('property-type-section');
+        } else if (validationErrors.bedrooms || validationErrors.bathrooms) {
+          targetElement = document.getElementById('property-size-section');
+        } else if (validationErrors.serviceFrequency) {
+          targetElement = document.getElementById('frequency-section');
+        } else if (validationErrors.equipmentArrangement || validationErrors.equipmentStorageConfirmed) {
+          targetElement = document.getElementById('equipment-section');
+        }
+        
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Add a brief highlight animation
+          targetElement.classList.add('animate-pulse');
+          setTimeout(() => targetElement?.classList.remove('animate-pulse'), 1500);
+        }
+      }, 100);
       
-      toast({
-        title: "Please complete all required fields",
-        description: `Missing: ${missingFields.join(', ')}`,
-        variant: "destructive",
-      });
-      
-      // Scroll to first missing field
-      if (validationErrors.propertyType) {
-        document.getElementById('property-type-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else if (validationErrors.bedrooms || validationErrors.bathrooms) {
-        document.getElementById('property-size-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else if (validationErrors.serviceFrequency) {
-        document.getElementById('frequency-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
       return;
     }
     
@@ -200,13 +197,13 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-2xl font-bold text-slate-700">Property Details</h2>
           {showValidationErrors && validationErrors.propertyType && (
-            <span className="flex items-center gap-1 text-sm text-destructive">
+            <span className="flex items-center gap-1.5 text-sm text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
               <AlertCircle className="h-4 w-4" />
-              Required
+              Please select
             </span>
           )}
         </div>
-        <div className={`grid grid-cols-2 gap-4 ${showValidationErrors && validationErrors.propertyType ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl' : ''}`}>
+        <div className={`grid grid-cols-2 gap-4 ${showValidationErrors && validationErrors.propertyType ? 'ring-2 ring-amber-400 ring-offset-2 rounded-2xl' : ''}`}>
           {(propertyTypeConfigs.length > 0 ? propertyTypeConfigs : [{
           option: 'flat',
           label: 'Flat'
@@ -231,18 +228,18 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-2xl font-bold text-slate-700">Size of the property</h2>
           {showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) && (
-            <span className="flex items-center gap-1 text-sm text-destructive">
+            <span className="flex items-center gap-1.5 text-sm text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
               <AlertCircle className="h-4 w-4" />
-              {validationErrors.bedrooms && validationErrors.bathrooms ? 'Select bedrooms and bathrooms' : validationErrors.bedrooms ? 'Select bedrooms' : 'Select bathrooms'}
+              {validationErrors.bedrooms && validationErrors.bathrooms ? 'Please select' : validationErrors.bedrooms ? 'Select bedrooms' : 'Select bathrooms'}
             </span>
           )}
         </div>
         
-        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 ${showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 ${showValidationErrors && (validationErrors.bedrooms || validationErrors.bathrooms) ? 'ring-2 ring-amber-400 ring-offset-2 rounded-2xl p-2' : ''}`}>
           {/* Bedrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bedrooms ? 'bg-destructive/5 border border-destructive' : 'bg-card border border-border'}`}>
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bedrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bedrooms ? 'bg-amber-50 border border-amber-400' : 'bg-card border border-border'}`}>
                 <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBedrooms} disabled={!data.bedrooms || data.bedrooms === 'studio'}>
                   <Minus className="h-5 w-5" />
                 </Button>
@@ -261,7 +258,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           {/* Bathrooms */}
           <div>
             <div className="flex items-center justify-center">
-              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bathrooms ? 'bg-destructive/5 border border-destructive' : 'bg-card border border-border'}`}>
+              <div className={`flex items-center rounded-2xl p-2 w-full transition-all duration-300 ${data.bathrooms ? 'bg-primary/5 border border-primary' : showValidationErrors && validationErrors.bathrooms ? 'bg-amber-50 border border-amber-400' : 'bg-card border border-border'}`}>
                 <Button variant="ghost" size="sm" className="h-12 w-12 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary" onClick={decrementBathrooms} disabled={!data.bathrooms || data.bathrooms === '1'}>
                   <Minus className="h-5 w-5" />
                 </Button>
@@ -347,19 +344,18 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           </div>
         </div>}
 
-      {/* Service Frequency */}
       <div id="frequency-section">
         <div className="flex items-center gap-2 mb-4">
           <h2 className="text-2xl font-bold text-slate-700">How often do you need cleaning?</h2>
           {showValidationErrors && validationErrors.serviceFrequency && (
-            <span className="flex items-center gap-1 text-sm text-destructive">
+            <span className="flex items-center gap-1.5 text-sm text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
               <AlertCircle className="h-4 w-4" />
-              Required
+              Please select
             </span>
           )}
         </div>
         
-        <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${showValidationErrors && validationErrors.serviceFrequency ? 'ring-2 ring-destructive ring-offset-2 rounded-2xl p-2' : ''}`}>
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-3 ${showValidationErrors && validationErrors.serviceFrequency ? 'ring-2 ring-amber-400 ring-offset-2 rounded-2xl p-2' : ''}`}>
           {(serviceFrequencyConfigs.length > 0 ? serviceFrequencyConfigs : [{
           option: 'weekly',
           label: 'Weekly'
