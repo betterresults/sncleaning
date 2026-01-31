@@ -253,7 +253,10 @@ const DomesticBookingForm: React.FC = () => {
       if (isAdminMode && bookingData.adminRemoveShortNoticeCharge) {
         total -= calculations.shortNoticeCharge || 0;
       }
-      if (bookingData.isFirstTimeCustomer) {
+      // CRITICAL: Only apply first-time discount if NOT in quote link mode
+      // Quote link prices already include the discount (calculated_quote in DB is the final price)
+      // Re-applying the discount would cause a £67.50 quote to show as £60.75
+      if (bookingData.isFirstTimeCustomer && !isQuoteLinkMode) {
         total = total * 0.90;
       }
       if (isAdminMode && bookingData.adminDiscountPercentage) {
