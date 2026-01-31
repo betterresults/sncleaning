@@ -185,7 +185,7 @@ const DomesticBookingForm: React.FC = () => {
     accessNotes: '',
     estimatedHours: null,
     estimatedAdditionalHours: null,
-    hourlyRate: 22,
+    hourlyRate: 25, // Default to one-time rate, will be synced from database calculations
     totalCost: 0,
     isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
   });
@@ -228,7 +228,7 @@ const DomesticBookingForm: React.FC = () => {
       accessNotes: '',
       estimatedHours: null,
       estimatedAdditionalHours: null,
-      hourlyRate: 22,
+      hourlyRate: 25, // Default to one-time rate, will be synced from database calculations
       totalCost: 0,
       isFirstTimeCustomer: true,
     });

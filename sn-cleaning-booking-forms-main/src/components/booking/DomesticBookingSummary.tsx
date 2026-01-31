@@ -289,6 +289,11 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         updates.wantsFirstDeepClean = calculations.wantsFirstDeepClean;
       }
       
+      // CRITICAL: Sync hourlyRate so booking submission uses the correct rate from database
+      if (calculations.hourlyRate !== data.hourlyRate) {
+        updates.hourlyRate = calculations.hourlyRate;
+      }
+      
       if (Object.keys(updates).length > 0) {
         onUpdate(updates);
       }
