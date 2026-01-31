@@ -16,6 +16,7 @@ interface SendSMSRequest {
   bookingDate?: string;
   bookingTime?: string;
   totalHours?: number;
+  customerId?: number;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -24,7 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { bookingId, phoneNumber, customerName, amount, paymentLink, messageType = 'invoice', bookingDate, bookingTime, totalHours }: SendSMSRequest = await req.json();
+    const { bookingId, phoneNumber, customerName, amount, paymentLink, messageType = 'invoice', bookingDate, bookingTime, totalHours, customerId }: SendSMSRequest = await req.json();
 
     console.log(`Sending ${messageType} SMS for booking ${bookingId} to ${phoneNumber}`);
 
@@ -42,8 +43,43 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Resolve payment link: prefer provided, else fetch from DB (only for invoice type)
+    // Resolve payment link: prefer provided, else fetch from DB or generate short link
     let finalPaymentLink = paymentLink || '';
+
+    // For payment method collection, generate a short link
+    if (messageType === 'payment_method_collection' && !finalPaymentLink && customerId) {
+      console.log('Generating short link for payment method collection...');
+      
+      // Generate a short code
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+      let shortCode = '';
+      for (let i = 0; i < 6; i++) {
+        shortCode += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      
+      // The target URL for payment collection
+      const targetUrl = `${supabaseUrl}/functions/v1/redirect-to-payment-collection?customer_id=${customerId}`;
+      
+      // Insert the short link into the database
+      const { error: insertError } = await supabase
+        .from('short_links')
+        .insert({
+          short_code: shortCode,
+          target_url: targetUrl,
+          link_type: 'payment_collection',
+          customer_id: customerId,
+          booking_id: bookingId,
+        });
+      
+      if (insertError) {
+        console.error('Error creating short link:', insertError);
+        // Fall back to full URL
+        finalPaymentLink = targetUrl;
+      } else {
+        finalPaymentLink = `https://account.sncleaningservices.co.uk/b/${shortCode}`;
+        console.log('Generated short link:', finalPaymentLink);
+      }
+    }
 
     if (messageType === 'invoice' && !finalPaymentLink) {
       // Try bookings.invoice_link
