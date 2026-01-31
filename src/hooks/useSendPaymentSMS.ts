@@ -10,6 +10,7 @@ export interface SendPaymentSMSOptions {
   bookingDate?: string;
   bookingTime?: string;
   totalHours?: number;
+  customerId?: number;
 }
 
 export function useSendPaymentSMS() {
@@ -28,6 +29,7 @@ export function useSendPaymentSMS() {
           bookingDate: options.bookingDate,
           bookingTime: options.bookingTime,
           totalHours: options.totalHours,
+          customerId: options.customerId,
         }
       });
 
