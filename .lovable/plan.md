@@ -1,107 +1,96 @@
 
+# Fix Domestic Cleaning Price Discrepancy
 
-## Plan: Fix End of Tenancy Booking Price Discrepancy
+## Problem Summary
+When domestic cleaning bookings are submitted, the price saved to the database differs from what should be calculated based on database configuration. A recent booking for 5 hours one-time cleaning was saved as £110 instead of the correct £112.50.
 
-### Problem Analysis
-When End of Tenancy bookings are submitted, the price shown to the customer differs from the price saved in the database. Investigation reveals multiple code issues causing this:
+## Root Cause Analysis
 
-1. **Incorrect Service Type Mapping**: The `serviceType` parameter is mapped to "Commercial" instead of "End of Tenancy Cleaning" when submitting via `create-public-booking`
-2. **Missing End of Tenancy Handler in useAirbnbBookingSubmit.ts**: The `cleaning_type` calculation doesn't have a case for End of Tenancy, causing it to default to "checkin-checkout"
-3. **Misleading Hourly Rate**: End of Tenancy uses fixed pricing from database configs, but the form still passes `hourlyRate: 28`, which could cause confusion if anything recalculates costs
-4. **Zero Total Hours**: `total_hours` comes through as 0, which could trigger incorrect recalculations
+### Issue 1: Hourly Rate Not Synced
+The form state `hourlyRate` is initialized to a hardcoded value of £22 but never updated with the correct rate from the database configuration (£25 for one-time cleaning).
 
----
+**Flow Breakdown:**
+1. `DomesticBookingForm.tsx` initializes `hourlyRate: 22` (hardcoded)
+2. `useDomesticHardcodedCalculations.ts` correctly fetches £25/hour for one-time from database
+3. `DomesticBookingSummary.tsx` syncs several values but **NOT** `hourlyRate`
+4. `PaymentStep.tsx` sends `data.hourlyRate` (£22) to the edge function
 
-### Technical Changes Required
+### Issue 2: Database Saved Wrong Values
+The edge function receives:
+- `hourlyRate: 22` (wrong - should be 25)
+- `totalCost: 110` (wrong - should be 112.50)
 
-#### 1. Fix PaymentStep.tsx - Service Type Mapping
-Multiple locations in PaymentStep.tsx call `create-public-booking` with incorrect `serviceType` mapping. Need to update all instances:
-
-**Current (broken):**
-```javascript
-serviceType: subServiceType === 'domestic' ? 'Domestic' : (subServiceType === 'airbnb' ? 'Air BnB' : 'Commercial'),
-```
-
-**Fixed:**
-```javascript
-serviceType: (() => {
-  switch(subServiceType) {
-    case 'domestic': return 'Domestic';
-    case 'airbnb': return 'Air BnB';
-    case 'carpet': return 'Carpet Cleaning';
-    case 'end-of-tenancy': return 'End of Tenancy Cleaning';
-    case 'commercial': return 'Commercial';
-    default: return subServiceType;
-  }
-})(),
-```
-
-**Files to update:**
-- Line ~1270 (new customer flow with PaymentElement)
-- Line ~1408 (fallback Stripe Checkout flow)
-- Line ~800+ (bank transfer flow)
-
-#### 2. Fix PaymentStep.tsx - Cleaning Type Mapping
-The `cleaningType` parameter is being set to 'Deep Cleaning' or 'Standard Cleaning' for all services, but End of Tenancy should use a fixed value:
-
-**Current:**
-```javascript
-cleaningType: (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
-```
-
-**Fixed:**
-```javascript
-cleaningType: subServiceType === 'end-of-tenancy' 
-  ? 'End of Tenancy' 
-  : subServiceType === 'carpet'
-  ? 'Carpet Cleaning'
-  : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
-```
-
-#### 3. Fix useAirbnbBookingSubmit.ts - Add End of Tenancy Handler
-The `cleaning_type` calculation (lines 464-477) needs to handle End of Tenancy:
-
-**Current logic falls through to:**
-```javascript
-return bookingData.serviceType || 'checkin-checkout';
-```
-
-**Add explicit case:**
-```javascript
-if (subType === 'end-of-tenancy') {
-  return 'End of Tenancy';
-}
-if (subType === 'carpet') {
-  return 'Carpet Cleaning';
-}
-```
-
-#### 4. Fix Total Hours Passing
-Ensure `totalHours` is populated from `estimatedHours` when not explicitly set:
-
-In the booking payload construction, ensure:
-```javascript
-totalHours: data.totalHours || data.estimatedHours || 0,
-```
+**Calculation Difference:**
+- Expected: 5h × £25 = £125 × 0.90 (first-time discount) = £112.50
+- Actual: 5h × £22 = £110 (no discount applied)
 
 ---
 
-### Files to Modify
+## Technical Solution
+
+### Change 1: Sync `hourlyRate` in DomesticBookingSummary.tsx
+Add `hourlyRate` to the list of values synced from calculations back to the parent form state.
+
+**Location:** `sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingSummary.tsx` (around line 262-295)
+
+**Current sync logic:**
+```javascript
+const updates: Partial<DomesticBookingData> = {};
+// Syncs: totalCost, estimatedHours, shortNoticeCharge, regularRecurringCost, wantsFirstDeepClean
+// MISSING: hourlyRate
+```
+
+**Add:**
+```javascript
+// Sync hourlyRate so it's available for booking submission
+if (calculations.hourlyRate !== data.hourlyRate) {
+  updates.hourlyRate = calculations.hourlyRate;
+}
+```
+
+### Change 2: Fallback in PaymentStep.tsx
+As a safety net, update `PaymentStep.tsx` to use the calculated hourly rate when submitting bookings.
+
+**Location:** `sn-cleaning-booking-forms-main/src/components/booking/steps/PaymentStep.tsx` (multiple locations where `hourlyRate: data.hourlyRate` is passed)
+
+**Update all occurrences of:**
+```javascript
+hourlyRate: data.hourlyRate,
+```
+
+**To:**
+```javascript
+hourlyRate: domesticCalculations?.hourlyRate || data.hourlyRate || 25,
+```
+
+This applies to approximately 8 locations in the file where `create-public-booking` or `submitBooking` is called.
+
+---
+
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `sn-cleaning-booking-forms-main/src/components/booking/steps/PaymentStep.tsx` | Update serviceType and cleaningType mapping in 3+ locations where `create-public-booking` is called |
-| `src/hooks/useAirbnbBookingSubmit.ts` | Add End of Tenancy and Carpet Cleaning cases to the `cleaning_type` determination logic |
+| `sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingSummary.tsx` | Add `hourlyRate` to the useEffect sync logic |
+| `sn-cleaning-booking-forms-main/src/components/booking/steps/PaymentStep.tsx` | Use `domesticCalculations.hourlyRate` as fallback in all booking submission calls |
+| `sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingForm.tsx` | Update initial `hourlyRate` default to 25 to match one-time rate |
 
 ---
 
-### Testing Checklist
-After implementation:
-1. Create a new End of Tenancy booking as a guest customer
-2. Verify the summary shows the correct price (e.g., £205.20)
-3. Complete the booking and check the database record
-4. Confirm `service_type` = "End of Tenancy Cleaning"
-5. Confirm `cleaning_type` = "End of Tenancy"
-6. Confirm `total_cost` matches the displayed price exactly
-7. Test quote link flow to ensure quoted prices are preserved
+## Database Configuration Reference
+Current values in `airbnb_field_configs`:
+- One-time (onetime): £25/hour
+- Weekly: £23/hour  
+- Bi-weekly: £24/hour
+- Monthly: £24/hour
 
+---
+
+## Testing Checklist
+1. Create a new domestic one-time cleaning booking as a guest
+2. Verify the summary shows the correct calculation (e.g., 5h × £25 = £125, with 10% first-time = £112.50)
+3. Complete the booking and check the database record
+4. Confirm `cleaning_cost_per_hour` = 25 (not 22)
+5. Confirm `total_cost` matches the displayed price
+6. Test weekly/biweekly/monthly bookings to ensure correct rates apply
+7. Test returning customer bookings (no first-time discount)
