@@ -23,6 +23,17 @@ interface CollectPaymentMethodRequest {
   collect_only?: boolean; // Flag to indicate collect-only mode (no booking)
   send_email?: boolean;
   payment_method_type?: string; // 'card' | 'revolut_pay' | 'amazon_pay' | etc.
+  generate_short_link?: boolean; // Flag to generate a short link instead of returning long URL
+}
+
+// Generate a random 6-character alphanumeric code
+function generateShortCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -40,9 +51,9 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { customer_id, email, name, return_url, booking_details, collect_only, send_email, payment_method_type }: CollectPaymentMethodRequest = await req.json();
+    const { customer_id, email, name, return_url, booking_details, collect_only, send_email, payment_method_type, generate_short_link }: CollectPaymentMethodRequest = await req.json();
 
-    console.log('Collecting payment method for customer:', { customer_id, email, name, collect_only, send_email, payment_method_type });
+    console.log('Collecting payment method for customer:', { customer_id, email, name, collect_only, send_email, payment_method_type, generate_short_link });
 
     // Check if Stripe customer exists
     let stripeCustomer;
@@ -114,6 +125,56 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Created Checkout Session:', checkoutSession.id);
 
+    // Generate short link if requested
+    let shortUrl: string | null = null;
+    let shortCode: string | null = null;
+    
+    if (generate_short_link && checkoutSession.url) {
+      // Generate unique short code
+      let attempts = 0;
+      const maxAttempts = 5;
+      
+      while (attempts < maxAttempts) {
+        shortCode = generateShortCode();
+        
+        // Check if code already exists
+        const { data: existing } = await supabaseAdmin
+          .from('short_links')
+          .select('id')
+          .eq('short_code', shortCode)
+          .single();
+        
+        if (!existing) {
+          break; // Found unique code
+        }
+        attempts++;
+      }
+      
+      if (shortCode) {
+        // Store the short link with checkout URL in metadata
+        const { error: insertError } = await supabaseAdmin
+          .from('short_links')
+          .insert({
+            short_code: shortCode,
+            link_type: 'payment_collection',
+            customer_id: customer_id,
+            metadata: { 
+              checkout_url: checkoutSession.url,
+              stripe_session_id: checkoutSession.id,
+              setup_intent_id: setupIntent.id
+            },
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days expiry
+          });
+        
+        if (insertError) {
+          console.error('Error creating short link:', insertError);
+        } else {
+          shortUrl = `https://account.sncleaningservices.co.uk/b/${shortCode}`;
+          console.log('Created short link:', shortUrl);
+        }
+      }
+    }
+
     // Send email if requested
     if (send_email && checkoutSession.url) {
       try {
@@ -141,6 +202,9 @@ const handler = async (req: Request): Promise<Response> => {
           // Compile template with Handlebars
           const compiledTemplate = Handlebars.compile(template.html_content);
           
+          // Use short URL in email if available, otherwise use long URL
+          const paymentLink = shortUrl || checkoutSession.url;
+          
           // Render template with data
           const processedHtml = compiledTemplate({
             customer_name: name,
@@ -148,7 +212,7 @@ const handler = async (req: Request): Promise<Response> => {
             booking_date: bookingDate || null,
             address: booking_details?.address || null,
             total_cost: booking_details?.total_cost || null,
-            payment_link: checkoutSession.url
+            payment_link: paymentLink
           });
 
           // Send the email using the send-notification-email function
@@ -184,6 +248,8 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(JSON.stringify({
       success: true,
       checkout_url: checkoutSession.url,
+      short_url: shortUrl,
+      short_code: shortCode,
       setup_intent_id: setupIntent.id,
       stripe_customer_id: stripeCustomer.id,
       session_id: checkoutSession.id,

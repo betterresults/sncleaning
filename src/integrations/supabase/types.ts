@@ -2716,6 +2716,60 @@ export type Database = {
         }
         Relationships: []
       }
+      short_links: {
+        Row: {
+          booking_id: number | null
+          created_at: string
+          created_by: string | null
+          customer_id: number | null
+          expires_at: string | null
+          id: string
+          link_type: string
+          metadata: Json | null
+          short_code: string
+          used_at: string | null
+        }
+        Insert: {
+          booking_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: number | null
+          expires_at?: string | null
+          id?: string
+          link_type?: string
+          metadata?: Json | null
+          short_code: string
+          used_at?: string | null
+        }
+        Update: {
+          booking_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: number | null
+          expires_at?: string | null
+          id?: string
+          link_type?: string
+          metadata?: Json | null
+          short_code?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_links_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "short_links_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_conversations: {
         Row: {
           booking_id: number | null

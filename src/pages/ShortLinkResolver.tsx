@@ -7,6 +7,7 @@ const ShortLinkResolver = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string>('Loading...');
 
   useEffect(() => {
     const resolveShortLink = async () => {
@@ -16,14 +17,57 @@ const ShortLinkResolver = () => {
       }
 
       try {
-        // Look up the quote_lead by short_code - explicitly select all columns including carpet items
+        // First check the new short_links table for payment collection links
+        const { data: shortLink, error: shortLinkError } = await supabase
+          .from('short_links')
+          .select('*')
+          .eq('short_code', shortCode)
+          .single();
+
+        if (shortLink && !shortLinkError) {
+          console.log('[ShortLinkResolver] Found short_link:', shortLink);
+          
+          // Check if expired
+          if (shortLink.expires_at && new Date(shortLink.expires_at) < new Date()) {
+            setError('This link has expired');
+            return;
+          }
+
+          // Handle different link types
+          if (shortLink.link_type === 'payment_collection') {
+            setMessage('Redirecting to payment...');
+            
+            // Mark as used
+            await supabase
+              .from('short_links')
+              .update({ used_at: new Date().toISOString() })
+              .eq('id', shortLink.id);
+            
+            // Get the checkout URL from metadata and redirect
+            const metadata = shortLink.metadata as Record<string, any> | null;
+            const checkoutUrl = metadata?.checkout_url;
+            if (checkoutUrl) {
+              window.location.href = checkoutUrl;
+              return;
+            } else {
+              setError('Payment link is no longer valid');
+              return;
+            }
+          }
+          
+          // Handle other link types in the future
+          setError('Unknown link type');
+          return;
+        }
+
+        // If not found in short_links, fall back to quote_leads lookup (existing behavior)
         const { data, error: fetchError } = await supabase
           .from('quote_leads')
           .select('*, carpet_items, upholstery_items, mattress_items')
           .eq('short_code', shortCode)
           .single();
 
-        console.log('[ShortLinkResolver] Fetched data:', data);
+        console.log('[ShortLinkResolver] Fetched quote_leads data:', data);
         console.log('[ShortLinkResolver] Fetch error:', fetchError);
 
         if (fetchError || !data) {
@@ -31,6 +75,8 @@ const ShortLinkResolver = () => {
           setError('This link has expired or is invalid');
           return;
         }
+
+        setMessage('Loading your booking...');
 
         // Build the redirect URL with all the saved data
         const params = new URLSearchParams();
@@ -188,7 +234,7 @@ const ShortLinkResolver = () => {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-        <p className="text-muted-foreground">Loading your booking...</p>
+        <p className="text-muted-foreground">{message}</p>
       </div>
     </div>
   );

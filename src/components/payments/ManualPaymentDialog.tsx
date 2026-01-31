@@ -116,13 +116,14 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
           email: booking.email,
           name: `${booking.first_name} ${booking.last_name}`.trim(),
           return_url: `https://account.sncleaningservices.co.uk/payment-method-success`,
-          send_email: sendEmail
+          send_email: sendEmail,
+          generate_short_link: !sendEmail // Generate short link when copying, not when emailing
         }
       });
 
       if (error) throw error;
 
-      if (data.checkout_url) {
+      if (data.checkout_url || data.short_url) {
         if (sendEmail) {
           toast({
             title: 'Email Sent Successfully',
@@ -131,8 +132,8 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
           onSuccess();
           onClose();
         } else {
-          // Just generate the link for copying
-          setGeneratedLink(data.checkout_url);
+          // Use short URL if available, otherwise fall back to long URL
+          setGeneratedLink(data.short_url || data.checkout_url);
           toast({
             title: 'Link Generated',
             description: 'Card collection link ready to copy',
