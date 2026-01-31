@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,12 @@ interface SMSRequest {
   to: string;
   message: string;
   from?: string;
+  // Optional logging fields
+  subject?: string;
+  entity_type?: string;
+  entity_id?: string;
+  recipient_type?: string;
+  log_to_db?: boolean; // If true, log to notification_logs
 }
 
 // Format phone number to E.164 international format
@@ -73,7 +80,16 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { to, message, from }: SMSRequest = await req.json();
+    const { 
+      to, 
+      message, 
+      from,
+      subject,
+      entity_type,
+      entity_id,
+      recipient_type,
+      log_to_db
+    }: SMSRequest = await req.json();
 
     // Get Twilio credentials from environment
     const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
@@ -138,6 +154,48 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log('SMS sent successfully:', twilioResponse.sid);
+
+    // Log to notification_logs if requested
+    if (log_to_db !== false) {
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+
+        // Determine a subject based on message content if not provided
+        let logSubject = subject;
+        if (!logSubject) {
+          if (message.includes('payment card') || message.includes('add your payment')) {
+            logSubject = 'Card Collection SMS';
+          } else if (message.includes('invoice') || message.includes('payment')) {
+            logSubject = 'Payment SMS';
+          } else if (message.includes('booking') || message.includes('cleaning')) {
+            logSubject = 'Booking SMS';
+          } else {
+            logSubject = 'SMS Notification';
+          }
+        }
+
+        await supabase.from('notification_logs').insert({
+          notification_type: 'sms',
+          recipient_email: formattedTo,
+          recipient_type: recipient_type || 'customer',
+          subject: logSubject,
+          content: message,
+          entity_type: entity_type || null,
+          entity_id: entity_id || null,
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+          delivery_id: twilioResponse.sid,
+        });
+
+        console.log('SMS logged to notification_logs');
+      } catch (logError) {
+        console.error('Error logging SMS to database:', logError);
+        // Don't fail the request if logging fails
+      }
+    }
 
     return new Response(
       JSON.stringify({
