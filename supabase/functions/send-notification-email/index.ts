@@ -21,6 +21,7 @@ interface EmailAttachment {
 interface NotificationRequest {
   template_id?: string;
   recipient_email?: string;
+  recipient_type?: string;
   variables?: Record<string, string>;
   is_test?: boolean;
   // Legacy format support
@@ -33,6 +34,10 @@ interface NotificationRequest {
   custom_content?: string;
   // Attachments
   attachments?: EmailAttachment[];
+  // Trigger and entity info for proper logging
+  trigger_id?: string;
+  entity_type?: string;
+  entity_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -57,11 +62,15 @@ const handler = async (req: Request): Promise<Response> => {
     // Handle different request formats
     let template_id = requestData.template_id;
     let recipient_email = requestData.recipient_email || requestData.to;
+    let recipient_type = requestData.recipient_type || 'customer';
     let variables = requestData.variables || {};
     let is_test = requestData.is_test || false;
     let custom_subject = requestData.custom_subject || requestData.subject;
     let custom_content = requestData.custom_content || requestData.html;
     const attachments = requestData.attachments || [];
+    const trigger_id = requestData.trigger_id || null;
+    const entity_type = requestData.entity_type || null;
+    const entity_id = requestData.entity_id || null;
 
     // Convert attachments to Resend format
     // Resend accepts base64 string directly for content
@@ -147,13 +156,17 @@ const handler = async (req: Request): Promise<Response> => {
           .from('notification_logs')
           .insert({
             template_id: null,
+            trigger_id: trigger_id,
             recipient_email: recipientArray[0],
-            recipient_type: 'custom',
+            recipient_type: recipient_type,
             subject: processedSubject,
             content: processedContent,
+            entity_type: entity_type,
+            entity_id: entity_id,
             status: 'sent',
             delivery_id: emailResult.data?.id,
             sent_at: new Date().toISOString(),
+            notification_type: 'email'
           });
       }
 
@@ -272,13 +285,17 @@ const handler = async (req: Request): Promise<Response> => {
         .from('notification_logs')
         .insert({
           template_id: template_id,
+          trigger_id: trigger_id,
           recipient_email: recipientArray[0],
-          recipient_type: 'customer', // Default, should be passed in real implementation
+          recipient_type: recipient_type,
           subject: subject,
           content: htmlContent,
+          entity_type: entity_type,
+          entity_id: entity_id,
           status: 'sent',
           delivery_id: emailResult.data?.id,
           sent_at: new Date().toISOString(),
+          notification_type: 'email'
         });
     }
 
