@@ -58,6 +58,7 @@ interface Booking {
   same_day?: boolean;
   sub_cleaners_count?: number;
   sub_cleaners_total_pay?: number;
+  customer_source?: string | null;
   // Additional fields for domestic booking details
   property_details?: string | null;
   oven_size?: string | null;
@@ -910,6 +911,11 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                 recommendedHours={booking.recommended_hours}
                 hoursRequired={booking.hours_required}
                 ironingHours={booking.ironing_hours}
+                customerSource={customerSourceMap[booking.customer] || null}
+                onSourceClick={() => {
+                  setSelectedBookingForSource(booking);
+                  setSourceDialogOpen(true);
+                }}
               />
               
               {/* Hidden */}
@@ -1121,6 +1127,11 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                 recommendedHours={booking.recommended_hours}
                 hoursRequired={booking.hours_required}
                 ironingHours={booking.ironing_hours}
+                customerSource={customerSourceMap[booking.customer] || null}
+                onSourceClick={() => {
+                  setSelectedBookingForSource(booking);
+                  setSourceDialogOpen(true);
+                }}
               />
             </div>
           </div>

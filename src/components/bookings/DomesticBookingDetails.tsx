@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Bath, Key, Sparkles, Calendar, Package, Flame, FileText, Droplets, Clock, ChevronDown, ChevronUp, Shirt } from 'lucide-react';
+import { Home, Bath, Key, Sparkles, Calendar, Package, Flame, FileText, Droplets, Clock, ChevronDown, ChevronUp, Shirt, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -15,6 +15,8 @@ interface DomesticBookingDetailsProps {
   recommendedHours?: number | null;
   hoursRequired?: number | null;
   ironingHours?: number | null;
+  customerSource?: string | null;
+  onSourceClick?: () => void;
 }
 
 interface ParsedPropertyDetails {
@@ -149,6 +151,8 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
   recommendedHours,
   hoursRequired,
   ironingHours,
+  customerSource,
+  onSourceClick,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -317,7 +321,21 @@ const DomesticBookingDetails: React.FC<DomesticBookingDetailsProps> = ({
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground flex-shrink-0 ml-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0 ml-3">
+            {/* Clickable Source Badge */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSourceClick?.();
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/80 hover:bg-secondary text-secondary-foreground text-xs font-medium transition-colors border border-border/50 hover:border-border"
+              title={customerSource ? `Source: ${customerSource} (click to change)` : 'Set customer source'}
+            >
+              <Tag className="h-3 w-3" />
+              <span>{customerSource || 'Set Source'}</span>
+            </button>
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </div>
         </button>
