@@ -269,7 +269,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     setIsLoading(true);
 
     try {
-      // Handle unassigning a cleaner - remove from cleaner_payments only
+      // Handle unassigning a cleaner - remove from cleaner_payments and clear booking
       if (selectedCleaner === 'unassigned') {
         // Delete the primary cleaner from cleaner_payments
         const { error } = await supabase
@@ -279,8 +279,24 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
           .eq('is_primary', true);
 
         if (error) {
-          console.error('Error unassigning cleaner:', error);
+          console.error('Error unassigning cleaner from payments:', error);
           throw error;
+        }
+
+        // Also clear the cleaner from the bookings table
+        const { error: bookingError } = await supabase
+          .from('bookings')
+          .update({
+            cleaner: null,
+            cleaner_pay: null,
+            cleaner_rate: null,
+            cleaner_percentage: null
+          })
+          .eq('id', bookingId);
+
+        if (bookingError) {
+          console.error('Error clearing cleaner from booking:', bookingError);
+          throw bookingError;
         }
 
         toast({

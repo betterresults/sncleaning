@@ -282,6 +282,20 @@ export const upsertPrimaryCleaner = async (
 
     if (error) throw error;
   }
+
+  // CRITICAL: Also update the bookings table to keep it in sync
+  // This ensures the booking shows the assigned cleaner correctly
+  const { error: bookingError } = await supabase
+    .from('bookings')
+    .update({
+      cleaner: cleanerId,
+      cleaner_pay: calculatedPay,
+      cleaner_rate: paymentType === 'hourly' ? hourlyRate : null,
+      cleaner_percentage: paymentType === 'percentage' ? percentageRate : null
+    })
+    .eq('id', bookingId);
+
+  if (bookingError) throw bookingError;
 };
 
 // Get total pay for additional cleaners
