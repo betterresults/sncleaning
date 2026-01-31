@@ -1,10 +1,21 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
+// Generate a random 6-character alphanumeric code
+function generateShortCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   try {
     const url = new URL(req.url);
     const customerId = url.searchParams.get('customer_id');
+    const returnShortUrl = url.searchParams.get('short') === 'true'; // Add option to get short URL
     
     if (!customerId) {
       return new Response('Missing customer_id parameter', { status: 400 });
@@ -36,13 +47,22 @@ const handler = async (req: Request): Promise<Response> => {
         email: customer.email,
         name: `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Customer',
         return_url: `https://account.sncleaningservices.co.uk/welcome?customer_id=${customerId}&payment_setup=success`,
-        collect_only: true
+        collect_only: true,
+        generate_short_link: true // Always generate short link
       }
     });
 
     if (error) {
       console.error('Error creating payment collection:', error);
       return new Response('Error creating payment collection', { status: 500 });
+    }
+
+    // If short URL was requested and available, return it as JSON
+    if (returnShortUrl && data?.short_url) {
+      return new Response(JSON.stringify({ short_url: data.short_url }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     if (data?.checkout_url) {
