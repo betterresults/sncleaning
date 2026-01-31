@@ -28,6 +28,7 @@ interface NotificationLog {
   delivered_at: string;
   opened_at: string;
   created_at: string;
+  notification_type: string;
   notification_triggers?: {
     name: string;
   };
@@ -50,6 +51,7 @@ export const NotificationLogsViewer = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [recipientTypeFilter, setRecipientTypeFilter] = useState('all');
+  const [notificationTypeFilter, setNotificationTypeFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [selectedLog, setSelectedLog] = useState<NotificationLog | null>(null);
@@ -59,7 +61,7 @@ export const NotificationLogsViewer = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, [currentPage, statusFilter, recipientTypeFilter, searchTerm]);
+  }, [currentPage, statusFilter, recipientTypeFilter, notificationTypeFilter, searchTerm]);
 
   const fetchLogs = async () => {
     try {
@@ -81,6 +83,10 @@ export const NotificationLogsViewer = () => {
 
       if (recipientTypeFilter !== 'all') {
         query = query.eq('recipient_type', recipientTypeFilter);
+      }
+
+      if (notificationTypeFilter !== 'all') {
+        query = query.eq('notification_type', notificationTypeFilter);
       }
 
       if (searchTerm) {
@@ -157,6 +163,17 @@ export const NotificationLogsViewer = () => {
           </SelectContent>
         </Select>
 
+        <Select value={notificationTypeFilter} onValueChange={setNotificationTypeFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="All Channels" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Channels</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
+            <SelectItem value="sms">SMS</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Button variant="outline" onClick={fetchLogs} disabled={loading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -193,6 +210,7 @@ export const NotificationLogsViewer = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Status</TableHead>
+                    <TableHead>Channel</TableHead>
                     <TableHead>Recipient</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Subject</TableHead>
@@ -205,13 +223,18 @@ export const NotificationLogsViewer = () => {
                   {logs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell>{getStatusBadge(log.status)}</TableCell>
-                      <TableCell className="font-medium">{log.recipient_email}</TableCell>
+                      <TableCell>
+                        <Badge className={log.notification_type === 'sms' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
+                          {log.notification_type === 'sms' ? 'SMS' : 'Email'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium max-w-[150px] truncate">{log.recipient_email}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{log.recipient_type}</Badge>
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate">{log.subject}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {log.notification_triggers?.name || 'Unknown'}
+                        {log.notification_triggers?.name || (log.notification_type === 'sms' ? 'Manual SMS' : 'Unknown')}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(log.created_at), 'MMM dd, yyyy HH:mm')}
@@ -286,6 +309,7 @@ const LogDetailView: React.FC<LogDetailViewProps> = ({ log }) => {
         <div>
           <h4 className="font-semibold mb-2">Basic Information</h4>
           <div className="space-y-2 text-sm">
+            <div><strong>Channel:</strong> <Badge className={log.notification_type === 'sms' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>{log.notification_type === 'sms' ? 'SMS' : 'Email'}</Badge></div>
             <div><strong>Status:</strong> <Badge className={STATUS_COLORS[log.status as keyof typeof STATUS_COLORS]}>{log.status}</Badge></div>
             <div><strong>Recipient:</strong> {log.recipient_email}</div>
             <div><strong>Recipient Type:</strong> {log.recipient_type}</div>
