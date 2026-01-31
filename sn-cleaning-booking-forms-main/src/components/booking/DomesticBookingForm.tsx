@@ -710,11 +710,10 @@ const DomesticBookingForm: React.FC = () => {
         newData.estimatedHours = null;
       }
       
-      // Only recalculate totalCost from hours if there's no admin override (preserves quoted prices)
-      if ('estimatedHours' in updates && !newData.adminTotalCostOverride) {
-        const estimatedHours = newData.estimatedHours ?? 0;
-        newData.totalCost = estimatedHours * newData.hourlyRate;
-      }
+      // NOTE: Do NOT recalculate totalCost here. The correct totalCost (including discounts like
+      // first-time customer 10% off, equipment costs, oven cleaning, etc.) is calculated in 
+      // DomesticBookingSummary.tsx and synced back via the onUpdate prop. Any recalculation here
+      // would overwrite the correct discounted price with an incorrect base calculation.
       
       // Track when totalCost is updated - pass through values directly from summary (NO RECALCULATION)
       if ('totalCost' in updates && updates.totalCost && updates.totalCost > 0) {
