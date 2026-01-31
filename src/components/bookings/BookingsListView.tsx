@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText, CreditCard, Users } from 'lucide-react';
+import { Edit, Trash2, Copy, X, UserPlus, DollarSign, Repeat, MoreHorizontal, MapPin, User, Mail, Phone, Send, Calendar, Camera, FileText, CreditCard, Users, Tag } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import InvoilessInvoiceDialog from '@/components/payments/InvoilessInvoiceDialog';
@@ -22,6 +22,7 @@ import DuplicateBookingDialog from '../dashboard/DuplicateBookingDialog';
 import ConvertToRecurringDialog from '../dashboard/ConvertToRecurringDialog';
 import ManualEmailDialog from '../dashboard/ManualEmailDialog';
 import { BookingInvoiceDialog } from '@/components/bookings/BookingInvoiceDialog';
+import SetCustomerSourceDialog from '@/components/bookings/SetCustomerSourceDialog';
 import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
 interface Booking {
@@ -144,6 +145,8 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
   const [selectedBookingForInvoiceSend, setSelectedBookingForInvoiceSend] = useState<Booking | null>(null);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [selectedBookingForInvoice, setSelectedBookingForInvoice] = useState<Booking | null>(null);
+  const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
+  const [selectedBookingForSource, setSelectedBookingForSource] = useState<Booking | null>(null);
   const { toast } = useToast();
   
   // Fetch service/cleaning types for labels and badge colors
@@ -505,6 +508,11 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
   const handleViewInvoice = (booking: Booking) => {
     setSelectedBookingForInvoice(booking);
     setInvoiceDialogOpen(true);
+  };
+
+  const handleSetSource = (booking: Booking) => {
+    setSelectedBookingForSource(booking);
+    setSourceDialogOpen(true);
   };
 
   const handlePaymentAction = (booking: Booking) => {
@@ -878,6 +886,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                         <DropdownMenuItem onClick={() => handleMakeRecurring(booking)}><Repeat className="w-4 h-4 mr-2" />Make Recurring</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleSendEmail(booking)}><Send className="w-4 h-4 mr-2" />Send Email</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleViewInvoice(booking)}><FileText className="w-4 h-4 mr-2" />View Invoice</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSetSource(booking)}><Tag className="w-4 h-4 mr-2" />Set Customer Source</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handlePaymentAction(booking)}><DollarSign className="w-4 h-4 mr-2" />{booking.payment_method === 'Invoiless' ? 'Manage Invoice' : 'Manage Payment'}</DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -1018,6 +1027,10 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
                     <DropdownMenuItem onClick={() => handleViewInvoice(booking)}>
                       <FileText className="w-4 h-4 mr-2" />
                       View Invoice
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleSetSource(booking)}>
+                      <Tag className="w-4 h-4 mr-2" />
+                      Set Customer Source
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => handlePaymentAction(booking)}>
@@ -1254,6 +1267,21 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
         onOpenChange={setInvoiceDialogOpen}
         booking={selectedBookingForInvoice}
       />
+
+      {selectedBookingForSource && (
+        <SetCustomerSourceDialog
+          open={sourceDialogOpen}
+          onOpenChange={setSourceDialogOpen}
+          customerId={selectedBookingForSource.customer}
+          customerName={`${selectedBookingForSource.first_name} ${selectedBookingForSource.last_name}`}
+          currentSource={customerSourceMap[selectedBookingForSource.customer] || null}
+          onSuccess={() => {
+            fetchData();
+            setSourceDialogOpen(false);
+            setSelectedBookingForSource(null);
+          }}
+        />
+      )}
     </div>
   );
 };
