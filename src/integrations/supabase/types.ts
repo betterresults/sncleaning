@@ -2761,13 +2761,6 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "short_links_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
         ]
       }
       sms_conversations: {
