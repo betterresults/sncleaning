@@ -144,7 +144,7 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
       baseTime = hours + 1;
     }
 
-    // Ensure minimum time
+    // Ensure minimum time of 2 hours
     if (baseTime < 2 && bookingData.propertyType && bookingData.bedrooms) {
       baseTime = 2;
     }
@@ -153,7 +153,14 @@ export const useDomesticHardcodedCalculations = (bookingData: DomesticBookingDat
     const isUserOverride = bookingData.estimatedHours !== null 
       && bookingData.estimatedHours !== undefined 
       && Math.abs((bookingData.estimatedHours as number) - baseTime) > 0.001;
-    const totalHours = isUserOverride ? (bookingData.estimatedHours as number) : baseTime;
+    
+    // Calculate total hours - apply 2-hour minimum even to user overrides
+    let totalHours = isUserOverride ? (bookingData.estimatedHours as number) : baseTime;
+    
+    // CRITICAL: Enforce 2-hour minimum regardless of user override or calculated time
+    if (totalHours < 2 && bookingData.propertyType && bookingData.bedrooms) {
+      totalHours = 2;
+    }
 
     // HOURLY RATE CALCULATION
     let cleaningProductsValue = 0;

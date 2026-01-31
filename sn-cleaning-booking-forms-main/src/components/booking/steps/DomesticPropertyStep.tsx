@@ -41,22 +41,33 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
     if (value === '6+') return '6+ Bedrooms';
     return `${value} Bedroom${parseInt(value) > 1 ? 's' : ''}`;
   };
+  // Helper to auto-set bathroom to 1 if not already set when bedrooms are selected
+  const ensureBathroomDefault = () => {
+    if (!data.bathrooms) {
+      return { bathrooms: '1' };
+    }
+    return {};
+  };
+
   const incrementBedrooms = () => {
     const current = data.bedrooms;
     if (!current) {
       onUpdate({
-        bedrooms: 'studio'
+        bedrooms: 'studio',
+        ...ensureBathroomDefault()
       });
     } else if (current === 'studio') {
       onUpdate({
-        bedrooms: '1'
+        bedrooms: '1',
+        ...ensureBathroomDefault()
       });
     } else if (current === '6+') {
       return;
     } else {
       const num = parseInt(current);
       onUpdate({
-        bedrooms: num >= 5 ? '6+' : (num + 1).toString()
+        bedrooms: num >= 5 ? '6+' : (num + 1).toString(),
+        ...ensureBathroomDefault()
       });
     }
   };
@@ -64,18 +75,21 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
     const current = data.bedrooms;
     if (!current || current === '1') {
       onUpdate({
-        bedrooms: 'studio'
+        bedrooms: 'studio',
+        ...ensureBathroomDefault()
       });
     } else if (current === 'studio') {
       return;
     } else if (current === '6+') {
       onUpdate({
-        bedrooms: '5'
+        bedrooms: '5',
+        ...ensureBathroomDefault()
       });
     } else {
       const num = parseInt(current);
       onUpdate({
-        bedrooms: num > 1 ? (num - 1).toString() : 'studio'
+        bedrooms: num > 1 ? (num - 1).toString() : 'studio',
+        ...ensureBathroomDefault()
       });
     }
   };
