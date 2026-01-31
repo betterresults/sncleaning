@@ -799,8 +799,21 @@ useEffect(() => {
             numberOfFloors: data.numberOfFloors,
             additionalRooms: data.additionalRooms,
             propertyFeatures: data.propertyFeatures,
-            serviceType: subServiceType === 'domestic' ? 'Domestic' : (subServiceType === 'airbnb' ? 'Air BnB' : 'Commercial'),
-            cleaningType: (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
+            serviceType: (() => {
+              switch(subServiceType) {
+                case 'domestic': return 'Domestic';
+                case 'airbnb': return 'Air BnB';
+                case 'carpet': return 'Carpet Cleaning';
+                case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                case 'commercial': return 'Commercial';
+                default: return subServiceType;
+              }
+            })(),
+            cleaningType: subServiceType === 'end-of-tenancy' 
+              ? 'End of Tenancy' 
+              : subServiceType === 'carpet'
+              ? 'Carpet Cleaning'
+              : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
             serviceFrequency: data.serviceFrequency,
             ovenType: data.ovenType,
             selectedDate: data.selectedDate?.toISOString(),
@@ -1267,8 +1280,21 @@ useEffect(() => {
             numberOfFloors: data.numberOfFloors,
             additionalRooms: data.additionalRooms,
             propertyFeatures: data.propertyFeatures,
-            serviceType: subServiceType === 'domestic' ? 'Domestic' : (subServiceType === 'airbnb' ? 'Air BnB' : 'Commercial'),
-            cleaningType: (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
+            serviceType: (() => {
+              switch(subServiceType) {
+                case 'domestic': return 'Domestic';
+                case 'airbnb': return 'Air BnB';
+                case 'carpet': return 'Carpet Cleaning';
+                case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                case 'commercial': return 'Commercial';
+                default: return subServiceType;
+              }
+            })(),
+            cleaningType: subServiceType === 'end-of-tenancy' 
+              ? 'End of Tenancy' 
+              : subServiceType === 'carpet'
+              ? 'Carpet Cleaning'
+              : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
             serviceFrequency: data.serviceFrequency,
             ovenType: data.ovenType,
             selectedDate: data.selectedDate?.toISOString(),
@@ -1405,8 +1431,21 @@ useEffect(() => {
             numberOfFloors: data.numberOfFloors,
             additionalRooms: data.additionalRooms,
             propertyFeatures: data.propertyFeatures,
-            serviceType: subServiceType === 'domestic' ? 'Domestic' : (subServiceType === 'airbnb' ? 'Air BnB' : 'Commercial'),
-            cleaningType: (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
+            serviceType: (() => {
+              switch(subServiceType) {
+                case 'domestic': return 'Domestic';
+                case 'airbnb': return 'Air BnB';
+                case 'carpet': return 'Carpet Cleaning';
+                case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                case 'commercial': return 'Commercial';
+                default: return subServiceType;
+              }
+            })(),
+            cleaningType: subServiceType === 'end-of-tenancy' 
+              ? 'End of Tenancy' 
+              : subServiceType === 'carpet'
+              ? 'Carpet Cleaning'
+              : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
             serviceFrequency: data.serviceFrequency,
             ovenType: data.ovenType,
             selectedDate: data.selectedDate?.toISOString(),
