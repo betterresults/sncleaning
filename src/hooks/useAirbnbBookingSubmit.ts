@@ -463,6 +463,14 @@ export const useAirbnbBookingSubmit = () => {
         // cleaning_type: For Airbnb = type of cleaning (checkin-checkout, midstay), For others = frequency or specific type
         cleaning_type: (() => {
           const subType = bookingData.subServiceType || 'airbnb';
+          // End of Tenancy: always use 'End of Tenancy'
+          if (subType === 'end-of-tenancy') {
+            return 'End of Tenancy';
+          }
+          // Carpet Cleaning: always use 'Carpet Cleaning'
+          if (subType === 'carpet') {
+            return 'Carpet Cleaning';
+          }
           // For Domestic bookings: show frequency (weekly/biweekly/monthly/onetime)
           // EXCEPT when "First Clean as Deep Clean" is selected, then show "Deep Cleaning"
           if (subType === 'domestic') {
