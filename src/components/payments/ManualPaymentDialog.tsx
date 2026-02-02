@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link, Copy, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { playSuccessSound } from '@/utils/soundEffects';
 
 interface PaymentMethod {
   id: string;
@@ -331,6 +332,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
 
       if (error) throw error;
 
+      playSuccessSound();
       toast({
         title: 'Success',
         description: `Payment ${action === 'authorize' ? 'authorized' : 'charged'} successfully`,
@@ -366,6 +368,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
 
       if (error) throw error;
 
+      playSuccessSound();
       toast({
         title: 'Success',
         description: 'Payment retry successful',
