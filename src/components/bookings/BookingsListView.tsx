@@ -287,28 +287,28 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
         } else {
           setCleaners(cleanersData || []);
         }
-
-        // Fetch customer sources for filter
-        const { data: customersData } = await supabase
-          .from('customers')
-          .select('id, source');
-        
-        const sourceMap: Record<number, string> = {};
-        const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
-        const sourcesWithBookings = new Set<string>();
-        
-        customersData?.forEach(c => {
-          if (c.source) {
-            sourceMap[c.id] = c.source;
-            if (customerIdsInBookings.has(c.id)) {
-              sourcesWithBookings.add(c.source);
-            }
-          }
-        });
-        
-        setCustomerSourceMap(sourceMap);
-        setAvailableSources(Array.from(sourcesWithBookings).sort());
       }
+
+      // Always fetch customer sources for source display and filtering
+      const { data: customersData } = await supabase
+        .from('customers')
+        .select('id, source');
+      
+      const sourceMap: Record<number, string> = {};
+      const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
+      const sourcesWithBookings = new Set<string>();
+      
+      customersData?.forEach(c => {
+        if (c.source) {
+          sourceMap[c.id] = c.source;
+          if (customerIdsInBookings.has(c.id)) {
+            sourcesWithBookings.add(c.source);
+          }
+        }
+      });
+      
+      setCustomerSourceMap(sourceMap);
+      setAvailableSources(Array.from(sourcesWithBookings).sort());
 
       setBookings(enrichedBookings);
     } catch (error) {
