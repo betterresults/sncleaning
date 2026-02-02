@@ -318,7 +318,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           </div>
         </div>}
 
-      {/* Oven Cleaning Section */}
+      {/* Oven Cleaning Section - Shows cost only, no additional time */}
       {data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '' && (
         <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
@@ -329,12 +329,6 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
               {calculations.ovenCleaningCost > 0 ? `£${calculations.ovenCleaningCost.toFixed(2)}` : 'Included'}
             </span>
           </div>
-          {calculations.ovenCleaningTime > 0 && (
-            <div className="flex justify-between items-center pl-4 text-sm">
-              <span className="text-muted-foreground">Additional cleaning time</span>
-              <span className="text-foreground font-medium">+{Math.round(calculations.ovenCleaningTime)}min</span>
-            </div>
-          )}
         </div>
       )}
 
