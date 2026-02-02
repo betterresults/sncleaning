@@ -154,7 +154,8 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
 
     // BASE TIME CALCULATION
     // Minutes sum from all relevant fields (in minutes)
-    const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime + ovenCleaningTime;
+    // Note: ovenCleaningTime is NOT added here - oven cleaning only adds cost, not time
+    const minutesSum = propertyTypeTime + bedroomsTime + bathroomsTime + additionalRoomsTime + propertyFeaturesTime;
 
     // Calculate total minutes with multipliers
     // Formula: (sum of all times) * service type time * already cleaned multiplier
