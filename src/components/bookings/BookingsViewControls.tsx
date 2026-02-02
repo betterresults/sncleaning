@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
+export type BookedFilterType = 'none' | 'today' | 'yesterday' | 'last3days' | 'lastweek' | 'lastmonth';
+
 interface BookingsViewControlsProps {
   viewMode: 'list' | 'calendar';
   onViewModeChange: (mode: 'list' | 'calendar') => void;
@@ -13,8 +15,8 @@ interface BookingsViewControlsProps {
   itemsPerPage: number;
   onItemsPerPageChange: (count: number) => void;
   onBulkEditClick: () => void;
-  showBookedToday?: boolean;
-  onShowBookedTodayChange?: (show: boolean) => void;
+  bookedFilter?: BookedFilterType;
+  onBookedFilterChange?: (filter: BookedFilterType) => void;
 }
 
 export function BookingsViewControls({
@@ -25,8 +27,8 @@ export function BookingsViewControls({
   itemsPerPage,
   onItemsPerPageChange,
   onBulkEditClick,
-  showBookedToday = false,
-  onShowBookedTodayChange
+  bookedFilter = 'none',
+  onBookedFilterChange
 }: BookingsViewControlsProps) {
   return (
     <div className="bg-white p-3 sm:p-5 rounded-xl shadow-sm border-0">
@@ -95,15 +97,28 @@ export function BookingsViewControls({
             </Select>
           </div>
 
-          {onShowBookedTodayChange && (
-            <Button 
-              onClick={() => onShowBookedTodayChange(!showBookedToday)}
-              variant={showBookedToday ? "default" : "outline"}
-              className={`flex items-center gap-1 rounded-lg h-8 px-3 text-xs ${showBookedToday ? 'bg-primary text-white' : ''}`}
-            >
-              <CalendarPlus className="h-3 w-3" />
-              <span>Booked Today</span>
-            </Button>
+          {onBookedFilterChange && (
+            <div className="flex items-center gap-1">
+              <Label className="text-xs font-medium whitespace-nowrap">
+                Booked:
+              </Label>
+              <Select 
+                value={bookedFilter} 
+                onValueChange={(value: BookedFilterType) => onBookedFilterChange(value)}
+              >
+                <SelectTrigger className="h-8 rounded-lg text-xs min-w-[90px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-white shadow-lg rounded-lg z-50">
+                  <SelectItem value="none">All</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="last3days">Last 3 days</SelectItem>
+                  <SelectItem value="lastweek">Last week</SelectItem>
+                  <SelectItem value="lastmonth">Last month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           <Button 
@@ -179,16 +194,29 @@ export function BookingsViewControls({
           </Select>
         </div>
 
-        {/* Booked Today Button */}
-        {onShowBookedTodayChange && (
-          <Button 
-            onClick={() => onShowBookedTodayChange(!showBookedToday)}
-            variant={showBookedToday ? "default" : "outline"}
-            className={`flex items-center gap-2 rounded-lg h-9 px-4 ${showBookedToday ? 'bg-primary text-white' : ''}`}
-          >
-            <CalendarPlus className="h-4 w-4" />
-            <span>Booked Today</span>
-          </Button>
+        {/* Booked Filter Dropdown */}
+        {onBookedFilterChange && (
+          <div className="flex items-center gap-2">
+            <Label className="text-sm font-medium whitespace-nowrap">
+              Booked:
+            </Label>
+            <Select 
+              value={bookedFilter} 
+              onValueChange={(value: BookedFilterType) => onBookedFilterChange(value)}
+            >
+              <SelectTrigger className="w-32 h-9 rounded-lg">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-white shadow-lg rounded-lg z-50">
+                <SelectItem value="none">All</SelectItem>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="yesterday">Yesterday</SelectItem>
+                <SelectItem value="last3days">Last 3 days</SelectItem>
+                <SelectItem value="lastweek">Last week</SelectItem>
+                <SelectItem value="lastmonth">Last month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )}
 
         {/* Bulk Edit Button */}
