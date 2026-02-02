@@ -319,16 +319,24 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         </div>}
 
       {/* Oven Cleaning Section */}
-      {data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '' && <div className="space-y-3 mt-3">
+      {data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '' && (
+        <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">
               {data.ovenType.charAt(0).toUpperCase() + data.ovenType.slice(1)} oven cleaning
             </span>
             <span className="text-foreground font-semibold">
-              Included
+              {calculations.ovenCleaningCost > 0 ? `£${calculations.ovenCleaningCost.toFixed(2)}` : 'Included'}
             </span>
           </div>
-        </div>}
+          {calculations.ovenCleaningTime > 0 && (
+            <div className="flex justify-between items-center pl-4 text-sm">
+              <span className="text-muted-foreground">Additional cleaning time</span>
+              <span className="text-foreground font-medium">+{Math.round(calculations.ovenCleaningTime)}min</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Additional Rooms */}
       {data.additionalRooms && Object.entries(data.additionalRooms).map(([type, count]) => {

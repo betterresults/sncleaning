@@ -411,6 +411,7 @@ export const useAirbnbHardcodedCalculations = (bookingData: BookingData) => {
       shortNoticeCharge,
       equipmentOneTimeCost,
       ovenCleaningCost,
+      ovenCleaningTime,
       additionalCharge,
       discount,
       modifierDetails,
