@@ -20,7 +20,7 @@ const SMSNotificationBadge = () => {
         description: 'Click to view your messages',
         action: {
           label: 'View',
-          onClick: () => navigate('/admin/sms-messages'),
+          onClick: () => navigate('/admin-sms-messages'),
         },
         duration: 10000,
       });
@@ -32,7 +32,7 @@ const SMSNotificationBadge = () => {
   if (userRole !== 'admin') return null;
 
   const handleClick = () => {
-    navigate('/admin/sms-messages');
+    navigate('/admin-sms-messages');
   };
 
   return (
