@@ -44,7 +44,8 @@ serve(async (req) => {
     // 2. Have payment_method = 'Stripe'
     // 3. Have payment_status = 'Unpaid'
     // 4. Have no invoice_id (meaning payment was never completed)
-    // 5. Haven't already received this notification
+    // 5. Customer has NO saved payment methods (truly abandoned)
+    // 6. Haven't already received this notification
     const { data: incompleteBookings, error: bookingsError } = await supabaseClient
       .from('bookings')
       .select(`
@@ -74,7 +75,7 @@ serve(async (req) => {
       throw bookingsError
     }
 
-    console.log(`Found ${incompleteBookings?.length || 0} incomplete payment bookings`)
+    console.log(`Found ${incompleteBookings?.length || 0} potential incomplete payment bookings`)
 
     if (!incompleteBookings || incompleteBookings.length === 0) {
       return new Response(
@@ -83,9 +84,45 @@ serve(async (req) => {
       )
     }
 
+    // Filter out bookings where customer already has a saved payment method
+    const bookingsWithoutCards = []
+    for (const booking of incompleteBookings) {
+      if (!booking.customer) {
+        console.log(`Booking ${booking.id} has no customer ID, skipping`)
+        continue
+      }
+
+      const { data: paymentMethods, error: pmError } = await supabaseClient
+        .from('customer_payment_methods')
+        .select('id')
+        .eq('customer_id', booking.customer)
+        .limit(1)
+
+      if (pmError) {
+        console.error(`Error checking payment methods for customer ${booking.customer}:`, pmError)
+        continue
+      }
+
+      if (paymentMethods && paymentMethods.length > 0) {
+        console.log(`Booking ${booking.id}: Customer ${booking.customer} has card on file, skipping`)
+        continue
+      }
+
+      bookingsWithoutCards.push(booking)
+    }
+
+    console.log(`After filtering: ${bookingsWithoutCards.length} bookings with NO cards on file`)
+
+    if (bookingsWithoutCards.length === 0) {
+      return new Response(
+        JSON.stringify({ message: 'No incomplete bookings without saved cards found', count: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+
     const results = []
 
-    for (const booking of incompleteBookings) {
+    for (const booking of bookingsWithoutCards) {
       // Check if we already sent this notification for this booking
       const { data: existingLog } = await supabaseClient
         .from('notification_logs')
