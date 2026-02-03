@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
+import SMSNotificationBadge from './SMSNotificationBadge';
 
 interface UnifiedHeaderProps {
   title: string;
@@ -65,6 +66,7 @@ export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmi
           {getGreeting()}
         </div>
         
+        <SMSNotificationBadge />
         <NotificationBell />
         
         {onSignOut && (
