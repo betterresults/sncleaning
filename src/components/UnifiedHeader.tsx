@@ -61,12 +61,12 @@ export function UnifiedHeader({ title, user, userRole, onSignOut, showBackToAdmi
         )}
       </div>
       
-      <div className="flex items-center gap-3 flex-shrink-0" style={{ paddingRight: 'max(0px, env(safe-area-inset-right))' }}>
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0" style={{ paddingRight: 'max(0px, env(safe-area-inset-right))' }}>
+        <SMSNotificationBadge />
+        
         <div className="hidden sm:block text-sm text-white/80 truncate">
           {getGreeting()}
         </div>
-        
-        <SMSNotificationBadge />
         <NotificationBell />
         
         {onSignOut && (
