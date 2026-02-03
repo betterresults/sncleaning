@@ -333,8 +333,27 @@ const AdminSMSMessages = () => {
 
   // Debounced customer search
   useEffect(() => {
-    const timer = setTimeout(() => {
-      searchCustomers(customerSearch);
+    if (customerSearch.length < 2) {
+      setCustomers([]);
+      return;
+    }
+    
+    const timer = setTimeout(async () => {
+      setSearchingCustomers(true);
+      try {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('id, full_name, first_name, last_name, phone')
+          .or(`full_name.ilike.%${customerSearch}%,first_name.ilike.%${customerSearch}%,last_name.ilike.%${customerSearch}%,phone.ilike.%${customerSearch}%`)
+          .limit(10);
+        
+        if (error) throw error;
+        setCustomers(data || []);
+      } catch (error) {
+        console.error('Error searching customers:', error);
+      } finally {
+        setSearchingCustomers(false);
+      }
     }, 300);
     return () => clearTimeout(timer);
   }, [customerSearch]);
