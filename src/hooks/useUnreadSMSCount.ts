@@ -19,7 +19,7 @@ export function useUnreadSMSCount() {
         const { count, error } = await supabase
           .from('sms_conversations')
           .select('*', { count: 'exact', head: true })
-          .eq('direction', 'inbound')
+          .eq('direction', 'incoming')
           .is('read_at', null);
 
         if (error) {
