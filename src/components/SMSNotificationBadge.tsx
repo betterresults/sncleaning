@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useUnreadSMSCount } from '@/hooks/useUnreadSMSCount';
 import { useNavigate } from 'react-router-dom';
@@ -10,11 +11,11 @@ const SMSNotificationBadge = () => {
   const { count, loading } = useUnreadSMSCount();
   const navigate = useNavigate();
   const { userRole } = useAuth();
-  const prevCountRef = useRef(count);
+  const prevCountRef = useRef<number | undefined>(undefined);
 
   // Show toast when new message arrives
   useEffect(() => {
-    if (!loading && count > prevCountRef.current && prevCountRef.current !== undefined) {
+    if (!loading && prevCountRef.current !== undefined && count > prevCountRef.current) {
       toast.info('📱 New SMS message received!', {
         description: 'Click to view your messages',
         action: {
@@ -28,24 +29,30 @@ const SMSNotificationBadge = () => {
   }, [count, loading, navigate]);
 
   // Only show for admins
-  if (userRole !== 'admin' || loading) return null;
-  if (count === 0) return null;
+  if (userRole !== 'admin') return null;
 
   const handleClick = () => {
     navigate('/admin/sms-messages');
   };
 
   return (
-    <Badge 
+    <Button
       onClick={handleClick}
-      variant="destructive" 
-      className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:opacity-90 transition-opacity animate-pulse"
+      variant="ghost"
+      size="sm"
+      className="relative h-8 w-8 p-0 text-white hover:bg-white/10 hover:text-white flex-shrink-0"
+      title={count > 0 ? `${count} unanswered message${count !== 1 ? 's' : ''}` : 'SMS Messages'}
     >
       <MessageSquare className="h-4 w-4" />
-      <span className="font-medium whitespace-nowrap">
-        {count} New Message{count !== 1 ? 's' : ''}
-      </span>
-    </Badge>
+      {count > 0 && (
+        <Badge 
+          variant="destructive" 
+          className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center min-w-[20px] animate-pulse"
+        >
+          {count > 99 ? '99+' : count}
+        </Badge>
+      )}
+    </Button>
   );
 };
 
