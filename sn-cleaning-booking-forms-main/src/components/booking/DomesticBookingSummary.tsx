@@ -320,6 +320,18 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
 
   const renderSummaryContent = () => (
     <div className="space-y-3">
+      
+      {/* Base cleaning cost - show when we have hours calculated */}
+      {(calculations.totalHours ?? 0) > 0 && data.serviceFrequency && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">
+            Cleaning ({calculations.wantsFirstDeepClean ? calculations.firstDeepCleanHours : calculations.totalHours}h × £{effectiveHourlyRate.toFixed(2)})
+          </span>
+          <span className="text-foreground font-semibold">
+            £{((calculations.wantsFirstDeepClean ? calculations.firstDeepCleanHours : calculations.totalHours) * effectiveHourlyRate).toFixed(2)}
+          </span>
+        </div>
+      )}
 
       {data.selectedDate && (
         <div className="space-y-3 mt-3">
@@ -356,14 +368,16 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         </div>
       )}
 
-      {data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '' && (
+      {/* Oven cleaning - show with actual price instead of "Included" */}
+      {data.ovenType && data.ovenType !== 'dontneed' && data.ovenType !== '' && calculations.ovenCleaningCost > 0 && (
         <div className="space-y-3 mt-3">
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">
               {data.ovenType.charAt(0).toUpperCase() + data.ovenType.slice(1)} oven cleaning
+              <span className="text-xs ml-1">(fixed price)</span>
             </span>
             <span className="text-foreground font-semibold">
-              Included
+              £{calculations.ovenCleaningCost.toFixed(2)}
             </span>
           </div>
         </div>
