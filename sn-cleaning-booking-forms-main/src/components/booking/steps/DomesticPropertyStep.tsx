@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DomesticBookingData } from '../DomesticBookingForm';
-import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, AlertCircle } from 'lucide-react';
+import { Home, Building, Plus, Minus, CheckCircle, Droplets, Wrench, AlertCircle, Info } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useAirbnbFieldConfigsBatch } from '@/hooks/useAirbnbFieldConfigs';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 import { useSearchParams } from 'react-router-dom';
@@ -118,7 +119,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
   const [searchParams] = useSearchParams();
   const showDebug = searchParams.get('debug') === '1';
   const [showValidationErrors, setShowValidationErrors] = useState(false);
-  
+  const [showOvenCleaningInfo, setShowOvenCleaningInfo] = useState(false);
   // Individual field validation
   const validationErrors = {
     propertyType: !data.propertyType,
@@ -558,19 +559,35 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                   Add professional oven cleaning
                 </h2>
                 <p className="text-sm text-slate-600 mt-1">
-                  Include professional oven cleaning service
+                  Fixed price based on oven size
                 </p>
               </div>
             </div>
             <Switch checked={data.hasOvenCleaning} onCheckedChange={checked => {
-          onUpdate({
-            hasOvenCleaning: checked,
-            ovenType: checked ? data.ovenType : ''
-          });
-        }} className={`w-16 h-7 ${!data.hasOvenCleaning ? 'border-2 border-border' : ''}`} />
+              if (checked) {
+                setShowOvenCleaningInfo(true);
+              }
+              onUpdate({
+                hasOvenCleaning: checked,
+                ovenType: checked ? data.ovenType : ''
+              });
+            }} className={`w-16 h-7 ${!data.hasOvenCleaning ? 'border-2 border-border' : ''}`} />
           </div>
           
           {data.hasOvenCleaning && <>
+              {/* Oven cleaning info banner */}
+              <div className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-200 flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-blue-800">
+                    Oven cleaning is a fixed-price specialist service
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    The cost is based on oven size and is separate from your hourly cleaning rate. It won't change the duration of your regular cleaning.
+                  </p>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {ovenCleaningConfigs.filter((oven: any) => oven.option !== 'not-required').map((oven: any) => {
             const isSelected = data.ovenType === oven.option;
@@ -581,6 +598,11 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                       <div className="flex flex-col items-center justify-center h-full">
                         {IconComponent && <IconComponent className={`h-6 w-6 mb-1 transition-all duration-500 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'}`} />}
                         <span className={`text-base font-bold transition-colors ${isSelected ? 'text-primary' : 'text-slate-500 group-hover:text-primary'}`}>{oven.label}</span>
+                        {oven.value > 0 && (
+                          <span className={`text-xs mt-0.5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>
+                            £{oven.value.toFixed(0)}
+                          </span>
+                        )}
                       </div>
                     </button>;
           })}
@@ -606,6 +628,50 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
                 </div>}
             </>}
         </div>}
+
+      {/* Oven Cleaning Info Dialog */}
+      <Dialog open={showOvenCleaningInfo} onOpenChange={setShowOvenCleaningInfo}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <LucideIcons.Microwave className="h-6 w-6 text-primary" />
+              </div>
+              <DialogTitle className="text-xl">Professional Oven Cleaning</DialogTitle>
+            </div>
+            <DialogDescription asChild>
+              <div className="space-y-3 text-left">
+                <p className="text-sm text-muted-foreground">
+                  Oven cleaning is a <strong className="text-foreground">specialist service with a fixed price</strong> based on your oven size — it's not charged by the hour.
+                </p>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-foreground font-medium mb-2">How it works:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1.5">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Select your oven size to see the exact cost</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>The oven cost is separate from your cleaning hours</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span>Your regular cleaning duration stays the same</span>
+                    </li>
+                  </ul>
+                </div>
+                <Button 
+                  onClick={() => setShowOvenCleaningInfo(false)} 
+                  className="w-full mt-4"
+                >
+                  Got it, let me choose my oven size
+                </Button>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
 
       {/* Cleaning Supplies */}
       {cleaningSuppliesConfigs.length > 0 && <div className="relative z-[4]">
