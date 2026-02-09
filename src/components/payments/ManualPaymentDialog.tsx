@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link, Copy, Check } from 'lucide-react';
+import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link, Copy, Check, MessageSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { playSuccessSound } from '@/utils/soundEffects';
@@ -31,6 +31,7 @@ interface Booking {
   first_name: string;
   last_name: string;
   email: string;
+  phone_number?: string;
   total_cost: number;
   payment_status: string;
   customer: number;
@@ -149,6 +150,125 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
         variant: 'destructive',
       });
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendViaSMS = async (link: string, messageType: 'collect' | 'payment') => {
+    if (!booking || !booking.phone_number) {
+      toast({
+        title: 'No Phone Number',
+        description: 'This customer does not have a phone number on file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const customerName = booking.first_name || 'there';
+      const smsMessage = messageType === 'collect'
+        ? `Hi ${customerName}, please add your payment card for your cleaning service with SN Cleaning. It's quick and secure: ${link}`
+        : `Hi ${customerName}, please complete your payment of £${amount} for your cleaning service with SN Cleaning: ${link}`;
+
+      const { error } = await supabase.functions.invoke('send-sms-notification', {
+        body: {
+          to: booking.phone_number,
+          message: smsMessage,
+          subject: messageType === 'collect' ? 'Card Collection SMS' : 'Payment Link SMS',
+          entity_type: 'booking',
+          entity_id: String(booking.id),
+          recipient_type: 'customer',
+          log_to_db: true,
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'SMS Sent',
+        description: `${messageType === 'collect' ? 'Card collection' : 'Payment'} link sent via SMS to ${booking.phone_number}`,
+      });
+      onSuccess();
+      onClose();
+    } catch (error: any) {
+      console.error('Error sending SMS:', error);
+      toast({
+        title: 'SMS Failed',
+        description: error.message || 'Failed to send SMS',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCollectViaSMS = async () => {
+    if (!booking) return;
+
+    setLoading(true);
+    setGeneratedLink('');
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-collect-payment-method', {
+        body: {
+          customer_id: booking.customer,
+          email: booking.email,
+          name: `${booking.first_name} ${booking.last_name}`.trim(),
+          return_url: `https://account.sncleaningservices.co.uk/payment-method-success`,
+          send_email: false,
+          generate_short_link: true
+        }
+      });
+
+      if (error) throw error;
+
+      const link = data.short_url || data.checkout_url;
+      if (link) {
+        await handleSendViaSMS(link, 'collect');
+      }
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to generate link for SMS',
+        variant: 'destructive',
+      });
+      setLoading(false);
+    }
+  };
+
+  const handlePaymentLinkViaSMS = async () => {
+    if (!booking || !amount || amount <= 0) {
+      toast({ title: 'Error', description: 'Please enter a valid amount', variant: 'destructive' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-send-payment-link', {
+        body: {
+          customer_id: booking.customer,
+          email: booking.email,
+          name: `${booking.first_name} ${booking.last_name}`.trim(),
+          amount,
+          description: paymentLinkDescription,
+          booking_id: booking.id,
+          collect_payment_method: collectForFuture
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.payment_link_url) {
+        await handleSendViaSMS(data.payment_link_url, 'payment');
+      }
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to generate payment link for SMS',
+        variant: 'destructive',
+      });
       setLoading(false);
     }
   };
@@ -701,23 +821,32 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
               {/* Collect Payment Method Content */}
               {paymentMode === 'collect_only' && (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       onClick={() => handleCollectPaymentMethod(false)}
                       disabled={loading}
                       variant="outline"
-                      className="rounded-xl flex items-center justify-center gap-2"
+                      className="rounded-xl flex items-center justify-center gap-1 text-xs px-2"
                     >
-                      <Link className="h-4 w-4" />
-                      {loading ? 'Creating...' : 'Generate Link'}
+                      <Link className="h-4 w-4 shrink-0" />
+                      {loading ? '...' : 'Generate'}
                     </Button>
                     <Button
                       onClick={() => handleCollectPaymentMethod(true)}
                       disabled={loading}
-                      className="rounded-xl flex items-center justify-center gap-2"
+                      className="rounded-xl flex items-center justify-center gap-1 text-xs px-2"
                     >
-                      <Mail className="h-4 w-4" />
-                      {loading ? 'Sending...' : 'Send via Email'}
+                      <Mail className="h-4 w-4 shrink-0" />
+                      {loading ? '...' : 'Email'}
+                    </Button>
+                    <Button
+                      onClick={handleCollectViaSMS}
+                      disabled={loading || !booking?.phone_number}
+                      variant="outline"
+                      className="rounded-xl flex items-center justify-center gap-1 text-xs px-2"
+                    >
+                      <MessageSquare className="h-4 w-4 shrink-0" />
+                      {loading ? '...' : 'SMS'}
                     </Button>
                   </div>
                   
@@ -775,23 +904,32 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       onClick={handleGeneratePaymentLink}
                       disabled={loading || !amount}
                       variant="outline"
-                      className="rounded-xl flex items-center justify-center gap-2"
+                      className="rounded-xl flex items-center justify-center gap-1 text-xs px-2"
                     >
-                      <Link className="h-4 w-4" />
-                      {loading ? 'Creating...' : 'Generate Link'}
+                      <Link className="h-4 w-4 shrink-0" />
+                      {loading ? '...' : 'Generate'}
                     </Button>
                     <Button
                       onClick={handleSendPaymentLink}
                       disabled={loading || !amount}
-                      className="rounded-xl flex items-center justify-center gap-2"
+                      className="rounded-xl flex items-center justify-center gap-1 text-xs px-2"
                     >
-                      <Mail className="h-4 w-4" />
-                      {loading ? 'Sending...' : 'Send via Email'}
+                      <Mail className="h-4 w-4 shrink-0" />
+                      {loading ? '...' : 'Email'}
+                    </Button>
+                    <Button
+                      onClick={handlePaymentLinkViaSMS}
+                      disabled={loading || !amount || !booking?.phone_number}
+                      variant="outline"
+                      className="rounded-xl flex items-center justify-center gap-1 text-xs px-2"
+                    >
+                      <MessageSquare className="h-4 w-4 shrink-0" />
+                      {loading ? '...' : 'SMS'}
                     </Button>
                   </div>
                   
