@@ -83,21 +83,6 @@ serve(async (req) => {
         } else {
           console.log(`Successfully completed booking ${booking.id}`)
           completedCount++
-
-          // Send booking completion notification
-          try {
-            const { error: notifError } = await supabaseClient.rpc('send_booking_notification', {
-              p_booking_id: booking.id,
-              p_event_type: 'booking_completed'
-            })
-            if (notifError) {
-              console.error(`Failed to send completion notification for booking ${booking.id}:`, notifError)
-            } else {
-              console.log(`Completion notification sent for booking ${booking.id}`)
-            }
-          } catch (notifErr) {
-            console.error(`Error sending completion notification for booking ${booking.id}:`, notifErr)
-          }
         }
       } catch (error) {
         console.error(`Error completing booking ${booking.id}:`, error)
