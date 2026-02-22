@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { ArrowRight, Loader2 } from 'lucide-react';
 
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
@@ -10,6 +11,8 @@ const FreeQuoteForm = () => {
   const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [postcode, setPostcode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,14 +23,29 @@ const FreeQuoteForm = () => {
     const trimmedName = fullName.trim();
     const trimmedEmail = email.trim();
 
-    if (!trimmedName || !trimmedEmail) {
-      setError('Please fill in both fields.');
+    const trimmedPostcode = postcode.trim();
+
+    if (!trimmedName || !trimmedEmail || !phone || !trimmedPostcode) {
+      setError('Please fill in all fields.');
       return;
     }
 
     // Basic email validation
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setError('Please enter a valid email address.');
+      return;
+    }
+
+    // Phone validation (must have +44 and 10 digits)
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (!phone.startsWith('+44') || phoneDigits.length !== 12) {
+      setError('Please enter a valid UK phone number.');
+      return;
+    }
+
+    // Basic postcode validation
+    if (trimmedPostcode.length < 5) {
+      setError('Please enter a valid postcode.');
       return;
     }
 
@@ -63,6 +81,8 @@ const FreeQuoteForm = () => {
             first_name: firstName,
             last_name: lastName,
             email: trimmedEmail,
+            phone: phone,
+            postcode: trimmedPostcode,
             status: 'new',
             furthest_step: 'lead_captured',
             source: source,
@@ -77,7 +97,7 @@ const FreeQuoteForm = () => {
       });
 
       // Navigate to services page with params
-      navigate(`/services?email=${encodeURIComponent(trimmedEmail)}`);
+      navigate(`/services?email=${encodeURIComponent(trimmedEmail)}&postcode=${encodeURIComponent(trimmedPostcode)}`);
     } catch (err) {
       console.error('Error saving lead:', err);
       // Still navigate even if tracking fails
@@ -108,6 +128,25 @@ const FreeQuoteForm = () => {
           onChange={(e) => setEmail(e.target.value)}
           className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
           maxLength={255}
+          required
+        />
+      </div>
+      <div>
+        <PhoneInput
+          value={phone}
+          onChange={(val) => setPhone(val)}
+          placeholder="7123 456 789"
+          className="rounded-xl"
+        />
+      </div>
+      <div>
+        <Input
+          type="text"
+          placeholder="Postcode"
+          value={postcode}
+          onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+          className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
+          maxLength={10}
           required
         />
       </div>
