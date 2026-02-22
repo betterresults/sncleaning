@@ -1,96 +1,98 @@
 
-# Fix Domestic Cleaning Price Discrepancy
 
-## Problem Summary
-When domestic cleaning bookings are submitted, the price saved to the database differs from what should be calculated based on database configuration. A recent booking for 5 hours one-time cleaning was saved as £110 instead of the correct £112.50.
+# Landing Page and Funnel Pages Plan
 
-## Root Cause Analysis
-
-### Issue 1: Hourly Rate Not Synced
-The form state `hourlyRate` is initialized to a hardcoded value of £22 but never updated with the correct rate from the database configuration (£25 for one-time cleaning).
-
-**Flow Breakdown:**
-1. `DomesticBookingForm.tsx` initializes `hourlyRate: 22` (hardcoded)
-2. `useDomesticHardcodedCalculations.ts` correctly fetches £25/hour for one-time from database
-3. `DomesticBookingSummary.tsx` syncs several values but **NOT** `hourlyRate`
-4. `PaymentStep.tsx` sends `data.hourlyRate` (£22) to the edge function
-
-### Issue 2: Database Saved Wrong Values
-The edge function receives:
-- `hourlyRate: 22` (wrong - should be 25)
-- `totalCost: 110` (wrong - should be 112.50)
-
-**Calculation Difference:**
-- Expected: 5h × £25 = £125 × 0.90 (first-time discount) = £112.50
-- Actual: 5h × £22 = £110 (no discount applied)
+Based on the uploaded document, we need to create 3 new pages that form a marketing funnel for SN Cleaning Services.
 
 ---
 
-## Technical Solution
+## Page 1: VSL Landing Page (`/get-quote` or `/lp`)
 
-### Change 1: Sync `hourlyRate` in DomesticBookingSummary.tsx
-Add `hourlyRate` to the list of values synced from calculations back to the parent form state.
+The main landing page visitors see from ads or organic traffic.
 
-**Location:** `sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingSummary.tsx` (around line 262-295)
+**Sections (top to bottom):**
+1. **Hero Section** - Headline: "Reliable & Consistent Cleaning In London & Essex", subheadline about in-house trained staff, supervisors, checklists, and photo reports
+2. **Video Placeholder** - An empty video container/placeholder area (no actual video content - just a styled box ready for a video embed later)
+3. **CTA Button** - "Get my FREE personalised quote" - scrolls to lead form or navigates to Page 2
+4. **Testimonials Section** - 3 review cards with the testimonials from the document
+5. **Body Section** (from pages 6-7) - "3 key reasons clients choose SN Clean" with trust copy about consistency, checklists, and photo reports
+6. **Second CTA Button** - Same "Get my FREE personalised quote"
 
-**Current sync logic:**
-```javascript
-const updates: Partial<DomesticBookingData> = {};
-// Syncs: totalCost, estimatedHours, shortNoticeCharge, regularRecurringCost, wantsFirstDeepClean
-// MISSING: hourlyRate
-```
-
-**Add:**
-```javascript
-// Sync hourlyRate so it's available for booking submission
-if (calculations.hourlyRate !== data.hourlyRate) {
-  updates.hourlyRate = calculations.hourlyRate;
-}
-```
-
-### Change 2: Fallback in PaymentStep.tsx
-As a safety net, update `PaymentStep.tsx` to use the calculated hourly rate when submitting bookings.
-
-**Location:** `sn-cleaning-booking-forms-main/src/components/booking/steps/PaymentStep.tsx` (multiple locations where `hourlyRate: data.hourlyRate` is passed)
-
-**Update all occurrences of:**
-```javascript
-hourlyRate: data.hourlyRate,
-```
-
-**To:**
-```javascript
-hourlyRate: domesticCalculations?.hourlyRate || data.hourlyRate || 25,
-```
-
-This applies to approximately 8 locations in the file where `create-public-booking` or `submitBooking` is called.
+**Design:** Uses existing brand colors (`#18A5A5`, `#185166`), mobile-first, clean and conversion-focused.
 
 ---
 
-## Files to Modify
+## Page 2: Free Quote Lead Capture (`/free-quote`)
 
-| File | Changes |
-|------|---------|
-| `sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingSummary.tsx` | Add `hourlyRate` to the useEffect sync logic |
-| `sn-cleaning-booking-forms-main/src/components/booking/steps/PaymentStep.tsx` | Use `domesticCalculations.hourlyRate` as fallback in all booking submission calls |
-| `sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingForm.tsx` | Update initial `hourlyRate` default to 25 to match one-time rate |
+The lead capture step before sending users into the booking form.
 
----
+**Sections:**
+1. **Headline** - "Get Your Free Cleaning Quote... in under 2 Minutes"
+2. **Sub-headline** - "Plus Get 10% Off Your First Cleaning If You Checkout Using The Hassle Free Portal"
+3. **Lead Form** - Full Name + Email fields, "Next" button
+4. **Trust Badges** - 3 checkmarks: "Free Quote & Hassle Free Sign Up In Under 2 Minutes", "Trusted by London & Essex Homeowners", "Easy Support On WhatsApp"
+5. **Testimonials** - Same 3 reviews
 
-## Database Configuration Reference
-Current values in `airbnb_field_configs`:
-- One-time (onetime): £25/hour
-- Weekly: £23/hour  
-- Bi-weekly: £24/hour
-- Monthly: £24/hour
+**On submit:** Saves the lead to the `quote_leads` table (already exists in the system), then redirects to `/services` (the existing ChooseService page) with name and email passed as query params.
 
 ---
 
-## Testing Checklist
-1. Create a new domestic one-time cleaning booking as a guest
-2. Verify the summary shows the correct calculation (e.g., 5h × £25 = £125, with 10% first-time = £112.50)
-3. Complete the booking and check the database record
-4. Confirm `cleaning_cost_per_hour` = 25 (not 22)
-5. Confirm `total_cost` matches the displayed price
-6. Test weekly/biweekly/monthly bookings to ensure correct rates apply
-7. Test returning customer bookings (no first-time discount)
+## Page 3: Post-Payment Confirmation Update
+
+The existing `/booking-confirmation` page already handles this. We will add an enhanced version of the "what happens next" content from the document:
+
+- "Payment received. You're booked in."
+- 4-step checklist: review details, assign supervisor, confirm first clean date, photo reports after each clean
+- Contact options: WhatsApp, Email, Phone
+
+This updates the existing `BookingConfirmation.tsx` rather than creating a new page.
+
+---
+
+## Technical Details
+
+### New Files to Create
+- `src/pages/LandingPage.tsx` - The VSL landing page (Page 1)
+- `src/pages/FreeQuote.tsx` - The lead capture page (Page 2)
+- `src/components/landing/LandingHero.tsx` - Hero section component
+- `src/components/landing/LandingVideoPlaceholder.tsx` - Video placeholder component
+- `src/components/landing/LandingTestimonials.tsx` - Testimonials section
+- `src/components/landing/LandingReasons.tsx` - "3 key reasons" section
+- `src/components/landing/LandingCTA.tsx` - Reusable CTA button component
+- `src/components/landing/FreeQuoteForm.tsx` - Lead capture form component
+- `src/components/landing/TrustBadges.tsx` - Trust badges component
+
+### Files to Modify
+- `src/App.tsx` - Add routes for `/lp` and `/free-quote`
+- `src/pages/BookingConfirmation.tsx` - Add the "what happens next" steps from the document
+
+### Routing and Flow
+
+```text
+Ad / Link --> /lp (Landing Page)
+                |
+                v
+         CTA "Get my FREE quote"
+                |
+                v
+           /free-quote (Lead Capture: Name + Email)
+                |
+                v
+         Save lead to quote_leads table
+                |
+                v
+           /services (Existing ChooseService page - pick service type)
+                |
+                v
+     /domestic or /airbnb or /end-of-tenancy (Existing booking forms)
+                |
+                v
+     /booking-confirmation (Enhanced with "what happens next")
+```
+
+### UTM Tracking
+The landing page will use the existing `captureTrackingParams()` logic from `ChooseService.tsx` to capture UTM parameters on arrival, ensuring ad attribution is preserved through the funnel.
+
+### No Design Changes to Existing Pages
+All existing pages remain untouched in terms of design. Only the `BookingConfirmation.tsx` gets the additional "what happens next" content added below the existing confirmation UI.
+
