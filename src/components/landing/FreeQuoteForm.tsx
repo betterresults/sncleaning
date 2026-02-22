@@ -86,7 +86,7 @@ const FreeQuoteForm = () => {
             status: 'new',
             furthest_step: 'lead_captured',
             source: source,
-            landing_page_url: landingUrl,
+            
             utm_source: utmParams.utm_source || null,
             utm_medium: utmParams.utm_medium || null,
             utm_campaign: utmParams.utm_campaign || null,
