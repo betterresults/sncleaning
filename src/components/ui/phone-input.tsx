@@ -85,13 +85,13 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         <div 
           className={cn(
             "flex items-center gap-3",
-            "h-16 px-4",
+            "h-12 px-3",
             "bg-white",
-            "border-2 rounded-2xl",
+            "border rounded-xl",
             "transition-all duration-200",
             hasError && "border-red-500",
             isComplete && !hasError && "border-green-500",
-            !hasError && !isComplete && isFocused && "border-[#185166] ring-2 ring-[#185166]/20",
+            !hasError && !isComplete && isFocused && "border-[#18A5A5]",
             !hasError && !isComplete && !isFocused && "border-gray-200",
             className
           )}
@@ -99,7 +99,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           {/* UK Flag and Country Code */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <UKFlag />
-            <span className="text-gray-700 font-medium text-lg">+44</span>
+            <span className="text-gray-700 font-medium text-base">+44</span>
           </div>
           
           {/* Separator */}
@@ -115,7 +115,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
             onChange={handleChange}
             onBlur={handleBlur}
             onFocus={handleFocus}
-            className="flex-1 h-full bg-transparent text-lg font-medium text-gray-900 placeholder:text-gray-400 outline-none"
+            className="flex-1 h-full bg-transparent text-base font-medium text-gray-900 placeholder:text-gray-400 outline-none md:text-sm"
             {...props}
           />
         </div>
