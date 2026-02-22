@@ -67,6 +67,8 @@ import AdminProfitTracking from "./pages/AdminProfitTracking";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminNotificationManagement from "./pages/AdminNotificationManagement";
 import ApplyToWork from "./pages/ApplyToWork";
+import LandingPage from "./pages/LandingPage";
+import FreeQuote from "./pages/FreeQuote";
 
 import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
 import AdminEndOfTenancyFormSettings from "./pages/AdminEndOfTenancyFormSettings";
@@ -142,6 +144,9 @@ const App = () => (
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
             <Route path="/payment-failed" element={<PaymentFailed />} />
             <Route path="/apply" element={<ApplyToWork />} />
+            <Route path="/lp" element={<LandingPage />} />
+            <Route path="/get-quote" element={<LandingPage />} />
+            <Route path="/free-quote" element={<FreeQuote />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/upcoming-bookings" element={<UpcomingBookings />} />
             <Route path="/bulk-edit-bookings" element={<BulkEditBookings />} />

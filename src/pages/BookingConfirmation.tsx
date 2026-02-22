@@ -374,14 +374,39 @@ const BookingConfirmation = () => {
           </div>
         </div>
 
-        {/* Next Steps */}
+        {/* What Happens Next */}
         <div className="bg-blue-50 rounded-xl p-6 mb-8">
-          <h3 className="font-semibold text-[#185166] mb-2">What's Next?</h3>
-          <ul className="space-y-2 text-sm text-gray-700">
-            <li>• You'll receive a confirmation email shortly</li>
-            <li>• Create an account to manage your bookings</li>
-            <li>• We'll send you a reminder before your appointment</li>
-          </ul>
+          <h3 className="font-semibold text-[#185166] mb-4 text-lg">Payment received. You're booked in.</h3>
+          <p className="text-sm text-gray-600 mb-4">Here's what happens next:</p>
+          <ol className="space-y-3 text-sm text-gray-700">
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">1</span>
+              <span>We review your booking details and confirm everything is in order.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">2</span>
+              <span>A dedicated supervisor is assigned to oversee your clean.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">3</span>
+              <span>We confirm your first cleaning date and send you all the details.</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">4</span>
+              <span>After each clean, you receive a full photo report so you can see exactly what was done.</span>
+            </li>
+          </ol>
+
+          <div className="mt-5 pt-4 border-t border-blue-100">
+            <p className="text-sm font-medium text-[#185166] mb-2">Need help? Reach us anytime:</p>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <a href="https://wa.me/447000000000" target="_blank" rel="noopener noreferrer" className="text-[#18A5A5] hover:underline">WhatsApp</a>
+              <span className="text-gray-300">|</span>
+              <a href="mailto:info@sncleaningservices.co.uk" className="text-[#18A5A5] hover:underline">Email</a>
+              <span className="text-gray-300">|</span>
+              <a href="tel:+447000000000" className="text-[#18A5A5] hover:underline">Phone</a>
+            </div>
+          </div>
         </div>
 
         {/* Actions */}
