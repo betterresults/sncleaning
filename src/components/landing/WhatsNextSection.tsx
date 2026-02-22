@@ -28,7 +28,7 @@ const WhatsNextSection = () => (
     <div className="mt-4 pt-4 border-t border-white/20 space-y-2">
       <p className="text-sm font-semibold text-white">Get in touch:</p>
       <div className="flex flex-col gap-1.5 text-sm">
-        <a href="https://wa.me/440238355033" target="_blank" rel="noopener noreferrer" className="text-[#7EDFD6] hover:underline">📱 WhatsApp: 0238 355 033</a>
+        <a href="https://wa.me/440238355033" target="_blank" rel="noopener noreferrer" className="text-[#7EDFD6] hover:underline inline-flex items-center gap-1">📱 WhatsApp: 0238 355 033</a>
         <a href="mailto:info@sncleaningservices.co.uk" className="text-[#7EDFD6] hover:underline">✉️ info@sncleaningservices.co.uk</a>
         <a href="tel:+440238355033" className="text-[#7EDFD6] hover:underline">📞 0238 355 033</a>
       </div>
