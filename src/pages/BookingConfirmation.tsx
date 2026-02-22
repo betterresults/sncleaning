@@ -375,36 +375,36 @@ const BookingConfirmation = () => {
         </div>
 
         {/* What Happens Next */}
-        <div className="bg-blue-50 rounded-xl p-6 mb-8">
-          <h3 className="font-semibold text-[#185166] mb-4 text-lg">Payment received. You're booked in.</h3>
-          <p className="text-sm text-gray-600 mb-4">Here's what happens next:</p>
-          <ol className="space-y-3 text-sm text-gray-700">
-            <li className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">1</span>
-              <span>We review your booking details and confirm everything is in order.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">2</span>
-              <span>A dedicated supervisor is assigned to oversee your clean.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">3</span>
-              <span>We confirm your first cleaning date and send you all the details.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#18A5A5] text-white flex items-center justify-center text-xs font-bold">4</span>
-              <span>After each clean, you receive a full photo report so you can see exactly what was done.</span>
-            </li>
-          </ol>
+        <div className="bg-[#185166]/5 rounded-xl p-6 mb-8">
+          <h3 className="font-bold text-[#185166] mb-1 text-xl">Payment received. You're booked in.</h3>
+          <p className="text-gray-600 mb-5">Thanks for signing up with SN Clean. Here's what happens next:</p>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">We review your details and confirm the plan for your home (service, frequency, and any priorities)</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">Your dedicated supervisor is assigned to your property and checks the cleaning plan, checklist, and photo reports</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">We confirm your first clean date and arrival window</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700">After each clean, photo reports are sent and quality is monitored internally</span>
+            </div>
+          </div>
 
-          <div className="mt-5 pt-4 border-t border-blue-100">
-            <p className="text-sm font-medium text-[#185166] mb-2">Need help? Reach us anytime:</p>
-            <div className="flex flex-wrap gap-3 text-sm">
-              <a href="https://wa.me/447000000000" target="_blank" rel="noopener noreferrer" className="text-[#18A5A5] hover:underline">WhatsApp</a>
-              <span className="text-gray-300">|</span>
-              <a href="mailto:info@sncleaningservices.co.uk" className="text-[#18A5A5] hover:underline">Email</a>
-              <span className="text-gray-300">|</span>
-              <a href="tel:+447000000000" className="text-[#18A5A5] hover:underline">Phone</a>
+          <p className="text-sm text-gray-600 mt-5">If you need to change anything, it's easy. Message us and we'll update your plan.</p>
+
+          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+            <p className="text-sm font-semibold text-[#185166]">Get in touch:</p>
+            <div className="flex flex-col gap-1.5 text-sm">
+              <a href="https://wa.me/440238355033" target="_blank" rel="noopener noreferrer" className="text-[#18A5A5] hover:underline flex items-center gap-2">📱 WhatsApp: 0238 355 033</a>
+              <a href="mailto:info@sncleaningservices.co.uk" className="text-[#18A5A5] hover:underline flex items-center gap-2">✉️ info@sncleaningservices.co.uk</a>
+              <a href="tel:+440238355033" className="text-[#18A5A5] hover:underline flex items-center gap-2">📞 0238 355 033</a>
             </div>
           </div>
         </div>
