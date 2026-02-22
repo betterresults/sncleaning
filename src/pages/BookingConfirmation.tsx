@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Calendar, Clock, MapPin, Loader2 } from 'lucide-react';
+import { CheckCircle, Calendar, Clock, MapPin, Loader2, Sparkles } from 'lucide-react';
+import WhatsNextSection from '@/components/landing/WhatsNextSection';
 
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
@@ -222,39 +223,61 @@ const BookingConfirmation = () => {
 
   if (loading || processingPayment) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]">
-        <Loader2 className="h-12 w-12 animate-spin text-[#185166]" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#185166] via-[#1a5f75] to-[#18A5A5]">
+        <Loader2 className="h-12 w-12 animate-spin text-white" />
         {processingPayment && (
-          <p className="mt-4 text-[#185166] font-medium">Processing your payment...</p>
+          <p className="mt-4 text-white/80 font-medium">Processing your payment...</p>
         )}
       </div>
     );
   }
 
+  // Shared branded wrapper
+  const BrandedWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-screen bg-gradient-to-br from-[#185166] via-[#1a5f75] to-[#18A5A5]">
+      <div className="pt-12 pb-6 px-4 text-center">
+        <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <Sparkles className="h-4 w-4" />
+          Booking Confirmed
+        </div>
+      </div>
+      <div className="px-4 pb-12">
+        <div className="max-w-2xl mx-auto">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+
   if (!booking && !bookingId) {
-    // No booking ID provided at all
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]">
-        <div className="text-center p-8">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-[#185166] mb-2">Thank You!</h1>
-          <p className="text-gray-600 mb-6">Your booking request has been received.</p>
+      <BrandedWrapper>
+        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 text-center mb-8">
+          <div className="relative inline-block mb-4">
+            <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
+            <CheckCircle className="h-20 w-20 text-green-500 relative" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-[#185166] mb-2">Thank You!</h1>
+          <p className="text-gray-600 mb-2">Your booking request has been received.</p>
           <p className="text-sm text-gray-500 mb-6">We'll send you a confirmation email shortly.</p>
-          <Button onClick={() => navigate('/')} className="bg-[#185166] hover:bg-[#185166]/90">
+          <Button onClick={() => navigate('/')} className="bg-[#18A5A5] hover:bg-[#159090] h-12 px-8 text-base font-bold rounded-xl">
             Back to Home
           </Button>
         </div>
-      </div>
+        <WhatsNextSection />
+      </BrandedWrapper>
     );
   }
 
   if (!booking && bookingId) {
-    // Booking ID provided but not found - might still be processing
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-[#185166] mb-2">Booking Confirmed!</h1>
+      <BrandedWrapper>
+        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 text-center mb-8">
+          <div className="relative inline-block mb-4">
+            <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
+            <CheckCircle className="h-20 w-20 text-green-500 relative" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-[#185166] mb-2">Booking Confirmed!</h1>
           <p className="text-gray-600 mb-4">Your booking #{bookingId} has been successfully created.</p>
           {paymentSuccess && (
             <p className="text-green-600 font-medium mb-4">
@@ -263,32 +286,33 @@ const BookingConfirmation = () => {
           )}
           <p className="text-sm text-gray-500 mb-6">You'll receive a confirmation email shortly with all the details.</p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button onClick={() => navigate('/auth')} className="flex-1 bg-[#185166] hover:bg-[#185166]/90">
+            <Button onClick={() => navigate('/auth')} className="flex-1 bg-[#18A5A5] hover:bg-[#159090] h-12 text-base font-bold rounded-xl">
               Log In / Sign Up
             </Button>
-            <Button onClick={() => navigate('/')} variant="outline" className="flex-1">
+            <Button onClick={() => navigate('/')} variant="outline" className="flex-1 h-12 text-base rounded-xl">
               Back to Home
             </Button>
           </div>
         </div>
-      </div>
+        <WhatsNextSection />
+      </BrandedWrapper>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9] p-4">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+    <BrandedWrapper>
+      <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 mb-8">
         {/* Success Icon */}
         <div className="flex justify-center mb-6">
           <div className="relative">
             <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-            <CheckCircle className="h-24 w-24 text-green-500 relative" />
+            <CheckCircle className="h-20 w-20 text-green-500 relative" />
           </div>
         </div>
 
         {/* Payment Success Message */}
         {paymentSuccess && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-center">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-center">
             <p className="text-green-700 font-medium">
               {isUrgentBooking || isUrgent ? '✓ Payment received successfully!' : '✓ Card details saved successfully!'}
             </p>
@@ -296,7 +320,7 @@ const BookingConfirmation = () => {
         )}
 
         {/* Title */}
-        <h1 className="text-3xl md:text-4xl font-bold text-[#185166] text-center mb-3">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-[#185166] text-center mb-3">
           Booking Confirmed!
         </h1>
         <p className="text-center text-gray-600 mb-8">
@@ -304,11 +328,11 @@ const BookingConfirmation = () => {
         </p>
 
         {/* Booking Details */}
-        <div className="space-y-6 bg-gray-50 rounded-xl p-6 mb-8">
+        <div className="space-y-6 bg-gray-50 rounded-xl p-6 mb-6">
           <h2 className="text-xl font-bold text-[#185166] mb-4">Booking Details</h2>
           
           <div className="flex items-start gap-4">
-            <Calendar className="h-6 w-6 text-[#185166] mt-1 flex-shrink-0" />
+            <Calendar className="h-6 w-6 text-[#18A5A5] mt-1 flex-shrink-0" />
             <div>
               <p className="text-sm text-gray-500">Date & Time</p>
               {booking.date_time ? (
@@ -335,7 +359,7 @@ const BookingConfirmation = () => {
           </div>
 
           <div className="flex items-start gap-4">
-            <MapPin className="h-6 w-6 text-[#185166] mt-1 flex-shrink-0" />
+            <MapPin className="h-6 w-6 text-[#18A5A5] mt-1 flex-shrink-0" />
             <div>
               <p className="text-sm text-gray-500">Address</p>
               <p className="text-lg font-semibold text-gray-900">
@@ -374,59 +398,26 @@ const BookingConfirmation = () => {
           </div>
         </div>
 
-        {/* What Happens Next */}
-        <div className="bg-[#185166]/5 rounded-xl p-6 mb-8">
-          <h3 className="font-bold text-[#185166] mb-1 text-xl">Payment received. You're booked in.</h3>
-          <p className="text-gray-600 mb-5">Thanks for signing up with SN Clean. Here's what happens next:</p>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-gray-700">We review your details and confirm the plan for your home (service, frequency, and any priorities)</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-gray-700">Your dedicated supervisor is assigned to your property and checks the cleaning plan, checklist, and photo reports</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-gray-700">We confirm your first clean date and arrival window</span>
-            </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-gray-700">After each clean, photo reports are sent and quality is monitored internally</span>
-            </div>
-          </div>
-
-          <p className="text-sm text-gray-600 mt-5">If you need to change anything, it's easy. Message us and we'll update your plan.</p>
-
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-            <p className="text-sm font-semibold text-[#185166]">Get in touch:</p>
-            <div className="flex flex-col gap-1.5 text-sm">
-              <a href="https://wa.me/440238355033" target="_blank" rel="noopener noreferrer" className="text-[#18A5A5] hover:underline flex items-center gap-2">📱 WhatsApp: 0238 355 033</a>
-              <a href="mailto:info@sncleaningservices.co.uk" className="text-[#18A5A5] hover:underline flex items-center gap-2">✉️ info@sncleaningservices.co.uk</a>
-              <a href="tel:+440238355033" className="text-[#18A5A5] hover:underline flex items-center gap-2">📞 0238 355 033</a>
-            </div>
-          </div>
-        </div>
-
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4">
           <Button
             onClick={() => navigate('/auth')}
-            className="flex-1 h-12 text-base bg-[#185166] hover:bg-[#185166]/90"
+            className="flex-1 h-12 text-base font-bold bg-[#18A5A5] hover:bg-[#159090] rounded-xl"
           >
             Log In to Your Account
           </Button>
           <Button
             onClick={() => navigate('/airbnb')}
             variant="outline"
-            className="flex-1 h-12 text-base"
+            className="flex-1 h-12 text-base rounded-xl"
           >
             Book Another Service
           </Button>
         </div>
       </div>
-    </div>
+
+      <WhatsNextSection />
+    </BrandedWrapper>
   );
 };
 
