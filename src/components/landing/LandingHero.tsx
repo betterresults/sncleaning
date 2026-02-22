@@ -1,6 +1,17 @@
+import heroCleaningBg from '@/assets/hero-cleaning-bg.jpg';
+
 const LandingHero = () => {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#185166] to-[#0f3a4a] text-white">
+    <section className="relative overflow-hidden text-white">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${heroCleaningBg})` }}
+      />
+
+      {/* Color overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#185166]/90 to-[#0f3a4a]/85" />
+
       {/* Pattern overlay */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
