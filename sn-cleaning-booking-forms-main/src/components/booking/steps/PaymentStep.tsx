@@ -406,8 +406,8 @@ useEffect(() => {
     return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
-  // Bank transfer is available for all customers
-  const canUseBankTransfer = !isAdminMode;
+  // Bank transfer is only available for admin mode
+  const canUseBankTransfer = false;
 
   // Check for existing customer by email (for guest users) - uses edge function to bypass RLS
   useEffect(() => {
@@ -596,21 +596,19 @@ useEffect(() => {
         try {
           setProcessing(true);
 
-          // If urgent booking, charge immediately
-          if (urgent === '1') {
-            const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
-              'system-payment-action',
-              {
-                body: {
-                  bookingId: parseInt(bookingId),
-                  action: 'charge'
-                }
+          // Always charge immediately for customer bookings
+          const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+            'system-payment-action',
+            {
+              body: {
+                bookingId: parseInt(bookingId),
+                action: 'charge'
               }
-            );
-
-            if (chargeError || !chargeResult?.success) {
-              throw new Error(chargeResult?.error || 'Payment failed');
             }
+          );
+
+          if (chargeError || !chargeResult?.success) {
+            throw new Error(chargeResult?.error || 'Payment failed');
           }
 
           // Call success callback for quote lead tracking
@@ -1204,10 +1202,10 @@ useEffect(() => {
           throw new Error(`Booking creation failed: ${errorDetail}`);
         }
 
-        // Handle Stripe charge timing based on admin selection
-        const chargeTiming = data.stripeChargeTiming || 'authorize';
+        // For admin mode, use the configured charge timing; for customers, always charge immediately
+        const chargeTiming = isAdminMode ? (data.stripeChargeTiming || 'authorize') : 'immediate';
         
-        if (chargeTiming === 'immediate' || (isUrgentBooking && chargeTiming !== 'none')) {
+        if (chargeTiming === 'immediate') {
           // Charge immediately
           const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
             'system-payment-action',
@@ -1224,7 +1222,7 @@ useEffect(() => {
             throw new Error(`Payment failed: ${errorDetail}`);
           }
         } else if (chargeTiming === 'authorize') {
-          // Authorize payment for later capture
+          // Authorize payment for later capture (admin only)
           console.log('[PaymentStep] Authorizing payment...');
           const { data: authResult, error: authError } = await supabase.functions.invoke(
             'system-payment-action',
@@ -1237,12 +1235,12 @@ useEffect(() => {
           );
 
           if (authError || !authResult?.success) {
-            const errorDetail = authResult?.error || authResult?.message || authError?.message || 'Card authorization was declined. Please check your card details or try a different payment method.';
+            const errorDetail = authResult?.error || authResult?.message || authError?.message || 'Card authorization was declined.';
             throw new Error(`Authorization failed: ${errorDetail}`);
           }
           console.log('[PaymentStep] Payment authorized successfully');
         }
-        // If 'none', skip payment processing
+        // If 'none', skip payment processing (admin only)
 
         // Call success callback for quote lead tracking
         onBookingSuccess?.(result.bookingId);
@@ -1370,31 +1368,25 @@ useEffect(() => {
             // Don't throw - booking is created, we can link later
           }
 
-          // Process payment - only authorize for urgent bookings (within 48 hours)
-          // For non-urgent bookings (>48 hours), just save the card - no authorization
-          if (isUrgentBooking) {
-            console.log('[PaymentStep] Urgent booking (within 48 hours) - authorizing payment...');
-            const { data: authResult, error: authError } = await supabase.functions.invoke(
-              'system-payment-action',
-              {
-                body: {
-                  bookingId: bookingId,
-                  action: 'authorize'
-                }
+          // Always charge immediately for customer bookings
+          console.log('[PaymentStep] Charging payment immediately...');
+          const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
+            'system-payment-action',
+            {
+              body: {
+                bookingId: bookingId,
+                action: 'charge'
               }
-            );
-
-            if (authError || !authResult?.success) {
-              console.error('[PaymentStep] Authorization failed:', authError || authResult);
-              toast({
-                title: "Payment Issue",
-                description: "Booking created but authorization failed. We'll contact you to arrange payment.",
-                variant: "destructive"
-              });
             }
-          } else {
-            console.log('[PaymentStep] Non-urgent booking (>48 hours) - card saved, no authorization needed');
+          );
+
+          if (chargeError || !chargeResult?.success) {
+            console.error('[PaymentStep] Charge failed:', chargeError || chargeResult);
+            // Navigate to payment failed page with booking ID
+            navigate(`/payment-failed?bookingId=${bookingId}&error=${encodeURIComponent(chargeResult?.error || chargeError?.message || 'Payment was declined. Please try a different card.')}`);
+            return;
           }
+          console.log('[PaymentStep] Payment charged successfully');
 
           // Call success callback for quote lead tracking
           onBookingSuccess?.(bookingId);
