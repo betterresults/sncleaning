@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { isEligibleForFirstTimeDiscount } from '../../utils/discountEligibility';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EndOfTenancyPropertyStep } from './steps/EndOfTenancyPropertyStep';
@@ -165,7 +166,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     estimatedHours: null,
     hourlyRate: HOURLY_RATE,
     totalCost: 0,
-    isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
+    isFirstTimeCustomer: isEligibleForFirstTimeDiscount(), // Only true if user came from landing page
   });
 
   // Calculate totals - this is a quick estimate for tracking purposes
@@ -243,7 +244,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
       estimatedHours: null,
       hourlyRate: HOURLY_RATE,
       totalCost: 0,
-      isFirstTimeCustomer: true,
+      isFirstTimeCustomer: isEligibleForFirstTimeDiscount(),
     });
     setCurrentStep(1);
     setShowQuoteDialog(false);
@@ -423,11 +424,11 @@ const EndOfTenancyBookingForm: React.FC = () => {
           }
         }
       } else {
-        // Not logged in = new customer, eligible for discount
+        // Not logged in = new customer, only eligible for discount if from landing page
         setIsAdminMode(false);
         setBookingData(prev => ({
           ...prev,
-          isFirstTimeCustomer: true
+          isFirstTimeCustomer: isEligibleForFirstTimeDiscount()
         }));
       }
     };

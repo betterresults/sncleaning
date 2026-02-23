@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { isEligibleForFirstTimeDiscount } from '../../utils/discountEligibility';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DomesticPropertyStep } from './steps/DomesticPropertyStep';
@@ -187,7 +188,7 @@ const DomesticBookingForm: React.FC = () => {
     estimatedAdditionalHours: null,
     hourlyRate: 25, // Default to one-time rate, will be synced from database calculations
     totalCost: 0,
-    isFirstTimeCustomer: true, // Default to true for new customers - will be checked against DB later
+    isFirstTimeCustomer: isEligibleForFirstTimeDiscount(), // Only true if user came from landing page
   });
 
   // Reset form to initial state - called after sending a quote to prepare for new quote
@@ -230,7 +231,7 @@ const DomesticBookingForm: React.FC = () => {
       estimatedAdditionalHours: null,
       hourlyRate: 25, // Default to one-time rate, will be synced from database calculations
       totalCost: 0,
-      isFirstTimeCustomer: true,
+      isFirstTimeCustomer: isEligibleForFirstTimeDiscount(),
     });
     setCurrentStep(1); // Go back to step 1
     setStoredQuotePrice(null);
@@ -657,11 +658,11 @@ const DomesticBookingForm: React.FC = () => {
           }
         }
       } else {
-        // Not logged in = new customer, eligible for discount
+        // Not logged in = new customer, only eligible for discount if from landing page
         setIsAdminMode(false);
         setBookingData(prev => ({
           ...prev,
-          isFirstTimeCustomer: true
+          isFirstTimeCustomer: isEligibleForFirstTimeDiscount()
         }));
       }
     };
