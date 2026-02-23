@@ -2455,10 +2455,10 @@ useEffect(() => {
                   )}
                   <div className="bg-white/80 rounded-lg p-4 border border-primary/10">
                     <p className="text-sm text-gray-700">
-                      {isUrgentBooking 
-                        ? `💳 £${data.totalCost.toFixed(2)} will be charged to the saved card immediately.`
-                        : '✅ Your card is saved. Payment hold will be placed 24 hours before service and charged after completion.'
-                      }
+                      💳 £{data.totalCost.toFixed(2)} will be charged to your saved card when you complete booking.
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      ✅ Free cancellation or rescheduling up to 48 hours before your booking.
                     </p>
                   </div>
                 </div>
@@ -2490,10 +2490,10 @@ useEffect(() => {
                     )}
                     <div className="bg-white/80 rounded-lg p-4 border border-green-200">
                       <p className="text-sm text-gray-700">
-                        {isUrgentBooking 
-                          ? `💳 £${data.totalCost?.toFixed(2) || '0.00'} will be charged to your saved card immediately.`
-                          : '✅ We found your saved card. Payment hold will be placed 24 hours before service and charged after completion.'
-                        }
+                        💳 £{data.totalCost?.toFixed(2) || '0.00'} will be charged to your saved card when you complete booking.
+                      </p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        ✅ Free cancellation or rescheduling up to 48 hours before your booking.
                       </p>
                     </div>
                     <button
@@ -2514,10 +2514,7 @@ useEffect(() => {
                           <div>
                             <p className="text-base font-semibold text-gray-900">New Payment Method</p>
                             <p className="text-xs text-gray-500">
-                              {isUrgentBooking 
-                                ? `£${data.totalCost?.toFixed(2) || '0.00'} will be charged now`
-                                : "Choose your preferred payment method"
-                              }
+                              £{data.totalCost?.toFixed(2) || '0.00'} will be charged when you complete booking
                             </p>
                           </div>
                         </div>
@@ -2569,10 +2566,7 @@ useEffect(() => {
                     <div>
                       <p className="text-base font-semibold text-gray-900">Payment Method</p>
                       <p className="text-xs text-gray-500">
-                        {isUrgentBooking 
-                          ? `£${data.totalCost?.toFixed(2) || '0.00'} will be charged now`
-                          : "Choose your preferred payment method"
-                        }
+                        £{data.totalCost?.toFixed(2) || '0.00'} will be charged when you complete booking
                       </p>
                     </div>
                   </div>
@@ -2604,16 +2598,21 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Security badges - compact */}
-                  <div className="flex items-center justify-center gap-4 pt-1 text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Shield className="h-3.5 w-3.5 text-green-600" />
-                      <span>Secure</span>
+                  {/* Security badges and cancellation policy */}
+                  <div className="flex flex-col items-center gap-2 pt-1">
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Shield className="h-3.5 w-3.5 text-green-600" />
+                        <span>Secure</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <CreditCard className="h-3.5 w-3.5 text-blue-600" />
+                        <span>Google Pay, Apple Pay & more</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <CreditCard className="h-3.5 w-3.5 text-blue-600" />
-                      <span>Google Pay, Apple Pay & more</span>
-                    </div>
+                    <p className="text-xs text-gray-500">
+                      ✅ Free cancellation or rescheduling up to 48 hours before your booking.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2648,16 +2647,10 @@ useEffect(() => {
             </>
           ) : adminTestMode ? (
             'Create Test Booking (No Payment)'
-          ) : paymentType === 'bank-transfer' ? (
+          ) : isAdminMode ? (
             'Complete Booking'
-          ) : customerId && defaultPaymentMethod && isUrgentBooking ? (
-            `Pay £${data.totalCost.toFixed(2)} & Confirm`
-          ) : customerId && defaultPaymentMethod ? (
-            'Complete Booking'
-          ) : isUrgentBooking ? (
-            `Pay £${data.totalCost.toFixed(2)} & Confirm`
           ) : (
-            'Complete Booking'
+            `Pay £${data.totalCost?.toFixed(2) || '0.00'} & Confirm`
           )}
         </Button>
       </div>
