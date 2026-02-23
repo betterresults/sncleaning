@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { isEligibleForFirstTimeDiscount } from '../../utils/discountEligibility';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CarpetCleaningItemsStep } from './steps/CarpetCleaningItemsStep';
@@ -120,7 +121,7 @@ const CarpetCleaningForm: React.FC = () => {
     estimatedHours: null,
     hourlyRate: 0,
     totalCost: 0,
-    isFirstTimeCustomer: true, // Default to true for new customers
+    isFirstTimeCustomer: isEligibleForFirstTimeDiscount(), // Only true if user came from landing page
   });
 
   // Initialize tracking using the shared hook
@@ -154,7 +155,7 @@ const CarpetCleaningForm: React.FC = () => {
       estimatedHours: null,
       hourlyRate: 0,
       totalCost: 0,
-      isFirstTimeCustomer: true,
+      isFirstTimeCustomer: isEligibleForFirstTimeDiscount(),
     });
     setCurrentStep(1);
   };
