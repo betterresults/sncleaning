@@ -42,11 +42,9 @@ const PaymentFailed = () => {
           {errorMessage}
         </p>
 
-        {bookingId && (
-          <p className="text-sm text-gray-500 mb-6">
-            Booking reference: #{bookingId}
-          </p>
-        )}
+        <p className="text-sm text-gray-500 mb-6">
+          Your booking was not created. Please try again with a different payment method.
+        </p>
 
         {/* Actions */}
         <div className="flex flex-col gap-3">

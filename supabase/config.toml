@@ -143,3 +143,6 @@ verify_jwt = false
 
 [functions.check-incomplete-payments]
 verify_jwt = false
+
+[functions.cancel-unpaid-booking]
+verify_jwt = false
