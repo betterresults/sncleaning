@@ -608,6 +608,9 @@ useEffect(() => {
           );
 
           if (chargeError || !chargeResult?.success) {
+            // Delete the booking since payment failed
+            console.log('[PaymentStep] Redirect return charge failed, deleting booking:', bookingId);
+            await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId: parseInt(bookingId) } });
             throw new Error(chargeResult?.error || 'Payment failed');
           }
 
@@ -1219,6 +1222,9 @@ useEffect(() => {
 
           if (chargeError || !chargeResult?.success) {
             const errorDetail = chargeResult?.error || chargeResult?.message || chargeError?.message || 'Card was declined or payment could not be processed';
+            // Delete the booking since payment failed
+            console.log('[PaymentStep] Charge failed, deleting booking:', result.bookingId);
+            await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId: result.bookingId } });
             throw new Error(`Payment failed: ${errorDetail}`);
           }
         } else if (chargeTiming === 'authorize') {
@@ -1236,6 +1242,9 @@ useEffect(() => {
 
           if (authError || !authResult?.success) {
             const errorDetail = authResult?.error || authResult?.message || authError?.message || 'Card authorization was declined.';
+            // Delete the booking since authorization failed
+            console.log('[PaymentStep] Authorization failed, deleting booking:', result.bookingId);
+            await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId: result.bookingId } });
             throw new Error(`Authorization failed: ${errorDetail}`);
           }
           console.log('[PaymentStep] Payment authorized successfully');
@@ -1382,8 +1391,11 @@ useEffect(() => {
 
           if (chargeError || !chargeResult?.success) {
             console.error('[PaymentStep] Charge failed:', chargeError || chargeResult);
-            // Navigate to payment failed page with booking ID
-            navigate(`/payment-failed?bookingId=${bookingId}&error=${encodeURIComponent(chargeResult?.error || chargeError?.message || 'Payment was declined. Please try a different card.')}`);
+            // Delete the booking since payment failed
+            console.log('[PaymentStep] Charge failed, deleting booking:', bookingId);
+            await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId } });
+            // Navigate to payment failed page
+            navigate(`/payment-failed?error=${encodeURIComponent(chargeResult?.error || chargeError?.message || 'Payment was declined. Please try a different card.')}`);
             return;
           }
           console.log('[PaymentStep] Payment charged successfully');

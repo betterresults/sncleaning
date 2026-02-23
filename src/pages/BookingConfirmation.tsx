@@ -60,7 +60,10 @@ const BookingConfirmation = () => {
         console.log('[BookingConfirmation] Redirect status not succeeded:', redirectStatus);
         // Payment failed during redirect - show the error but keep the booking
         if (redirectStatus === 'failed') {
-          navigate(`/payment-failed?bookingId=${bookingId}&error=Payment%20was%20declined`);
+          // Delete the booking since payment failed
+          console.log('[BookingConfirmation] Redirect failed, deleting booking:', bookingId);
+          await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId: parseInt(bookingId as string) } });
+          navigate(`/payment-failed?error=Payment%20was%20declined`);
         }
         return;
       }
@@ -101,7 +104,11 @@ const BookingConfirmation = () => {
 
         if (paymentError || !paymentResult?.success) {
           console.error('[BookingConfirmation] Payment processing failed:', paymentError || paymentResult);
-          // Don't navigate away - show the confirmation but note the payment issue
+          // Delete the booking since payment failed
+          console.log('[BookingConfirmation] Payment failed, deleting booking:', bookingId);
+          await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId: parseInt(bookingId as string) } });
+          navigate(`/payment-failed?error=${encodeURIComponent(paymentResult?.error || 'Payment could not be processed. Please try again.')}`);
+          return;
         } else {
           console.log('[BookingConfirmation] Payment processed successfully:', paymentResult);
           setPaymentSuccess(true);

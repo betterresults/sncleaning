@@ -803,13 +803,15 @@ export const useAirbnbBookingSubmit = () => {
 
         if (paymentError) {
           console.error('Payment authorization failed:', paymentError);
-          // Booking is still created, just payment failed
+          // Delete the booking since payment failed
+          console.log('[useAirbnbBookingSubmit] Payment failed, deleting booking:', booking.id);
+          await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId: booking.id } });
           toast({
-            title: "Booking Created",
-            description: "Booking created but payment authorization failed. We'll contact you to complete payment.",
+            title: "Payment Failed",
+            description: "Your payment could not be processed. The booking was not created. Please try again.",
             variant: "destructive"
           });
-          return { success: true, bookingId: booking.id, customerId, paymentFailed: true };
+          return { success: false, error: 'Payment failed' };
         }
       }
 
