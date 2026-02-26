@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Loader2, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
+import { CreditCard, Loader2, CheckCircle, AlertCircle, Calendar, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { playSuccessSound } from '@/utils/soundEffects';
@@ -159,6 +159,39 @@ const CustomerDirectPaymentDialog = ({
     }
   };
 
+  const handleSetAsDefault = async (methodId: string) => {
+    try {
+      await supabase
+        .from('customer_payment_methods')
+        .update({ is_default: false })
+        .eq('customer_id', customerId);
+
+      const { error } = await supabase
+        .from('customer_payment_methods')
+        .update({ is_default: true })
+        .eq('id', methodId);
+
+      if (error) throw error;
+
+      setPaymentMethods(prev =>
+        prev.map(pm => ({ ...pm, is_default: pm.id === methodId }))
+      );
+      setSelectedPaymentMethodId(methodId);
+
+      toast({
+        title: 'Default Updated',
+        description: 'Default payment method has been changed.',
+      });
+    } catch (error) {
+      console.error('Error setting default:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update default payment method.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handlePayAllBookings = async () => {
     if (unpaidBookings.length === 0) {
       toast({
@@ -286,9 +319,22 @@ const CustomerDirectPaymentDialog = ({
                                 <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Expired</span>
                               )}
                             </div>
-                            <span className={`text-sm ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
-                              {method.card_exp_month}/{method.card_exp_year}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {!method.is_default && !isExpired && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSetAsDefault(method.id);
+                                  }}
+                                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                                >
+                                  Set as Default
+                                </button>
+                              )}
+                              <span className={`text-sm ${isExpired ? 'text-red-500' : 'text-gray-500'}`}>
+                                {method.card_exp_month}/{method.card_exp_year}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
