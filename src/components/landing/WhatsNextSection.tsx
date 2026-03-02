@@ -1,4 +1,4 @@
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, MessageCircle, Mail, Phone } from 'lucide-react';
 
 const WhatsNextSection = () => (
   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
@@ -25,12 +25,32 @@ const WhatsNextSection = () => (
 
     <p className="text-sm text-white/70 mt-5">If you need to change anything, it's easy. Message us and we'll update your plan.</p>
 
-    <div className="mt-4 pt-4 border-t border-white/20 space-y-2">
-      <p className="text-sm font-semibold text-white">Get in touch:</p>
-      <div className="flex flex-col gap-1.5 text-sm">
-        <a href="https://wa.me/442038355033" target="_blank" rel="noopener noreferrer" className="text-[#7EDFD6] hover:underline inline-flex items-center gap-1">📱 WhatsApp: 0203 835 5033</a>
-        <a href="mailto:info@sncleaningservices.co.uk" className="text-[#7EDFD6] hover:underline">✉️ info@sncleaningservices.co.uk</a>
-        <a href="tel:+442038355033" className="text-[#7EDFD6] hover:underline">📞 0203 835 5033</a>
+    <div className="mt-5 pt-5 border-t border-white/20">
+      <p className="text-sm font-semibold text-white text-center mb-4">Get in touch:</p>
+      <div className="grid grid-cols-3 gap-3">
+        <a
+          href="https://wa.me/442038355033"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center gap-2 bg-white/10 hover:bg-white/20 rounded-xl py-4 px-2 transition-colors"
+        >
+          <MessageCircle className="h-7 w-7 text-[#25D366]" />
+          <span className="text-xs font-medium text-white">WhatsApp</span>
+        </a>
+        <a
+          href="mailto:info@sncleaningservices.co.uk"
+          className="flex flex-col items-center gap-2 bg-white/10 hover:bg-white/20 rounded-xl py-4 px-2 transition-colors"
+        >
+          <Mail className="h-7 w-7 text-[#7EDFD6]" />
+          <span className="text-xs font-medium text-white">Email</span>
+        </a>
+        <a
+          href="tel:+442038355033"
+          className="flex flex-col items-center gap-2 bg-white/10 hover:bg-white/20 rounded-xl py-4 px-2 transition-colors"
+        >
+          <Phone className="h-7 w-7 text-[#7EDFD6]" />
+          <span className="text-xs font-medium text-white">Call</span>
+        </a>
       </div>
     </div>
   </div>
