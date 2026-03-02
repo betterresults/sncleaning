@@ -29,7 +29,7 @@ const WhatsNextSection = () => (
       <p className="text-sm font-semibold text-white text-center mb-4">Get in touch:</p>
       <div className="grid grid-cols-3 gap-3">
         <a
-          href="https://api.whatsapp.com/send?phone=442038355033&text=Hi%2C%20I%20just%20booked%20a%20cleaning%20service"
+          href="https://wa.me/+442038355033"
           target="_blank"
           rel="noopener noreferrer"
           className="flex flex-col items-center gap-2 bg-white/10 hover:bg-white/20 rounded-xl py-4 px-2 transition-colors"
