@@ -7,15 +7,15 @@ const WhatsNextSection = () => (
     <div className="space-y-4">
       <div className="flex items-start gap-3">
         <CheckCircle className="h-5 w-5 text-[#7EDFD6] flex-shrink-0 mt-0.5" />
-        <span className="text-sm text-white/90">We review your details and confirm the plan for your home (service, frequency, and any priorities)</span>
+        <span className="text-sm text-white/90">We review your booking details and get in touch if we need any additional information</span>
       </div>
       <div className="flex items-start gap-3">
         <CheckCircle className="h-5 w-5 text-[#7EDFD6] flex-shrink-0 mt-0.5" />
-        <span className="text-sm text-white/90">Your dedicated supervisor is assigned to your property and checks the cleaning plan, checklist, and photo reports</span>
+        <span className="text-sm text-white/90">Your dedicated supervisor is assigned on site for your property</span>
       </div>
       <div className="flex items-start gap-3">
         <CheckCircle className="h-5 w-5 text-[#7EDFD6] flex-shrink-0 mt-0.5" />
-        <span className="text-sm text-white/90">We confirm your first clean date and arrival window</span>
+        <span className="text-sm text-white/90">Sit back, relax, and meet your cleaner on your chosen date and time</span>
       </div>
       <div className="flex items-start gap-3">
         <CheckCircle className="h-5 w-5 text-[#7EDFD6] flex-shrink-0 mt-0.5" />
