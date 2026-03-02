@@ -721,7 +721,7 @@ export const useAirbnbBookingSubmit = () => {
             days_of_the_week: dayOfWeek,
             hours: String(regularHours),
             cost_per_hour: costPerHour,
-            total_cost: recurringCost,
+            total_cost: Math.round((recurringCost || 0) * 100) / 100,
             payment_method: bookingData.paymentMethod || null,
             start_date: dateStr || null,
             start_time: time24ForDB ? `${time24ForDB}:00+00` : null,
