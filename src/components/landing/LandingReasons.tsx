@@ -26,7 +26,7 @@ const LandingReasons = () => {
     <section className="bg-white py-14 md:py-20">
       <div className="max-w-5xl mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-[#185166] text-center mb-4">
-          3 Key Reasons Clients Choose SN Clean
+          3 Key Reasons Clients Choose SN Cleaning Services
         </h2>
         <p className="text-center text-gray-500 mb-12 max-w-2xl mx-auto">
           We don't just clean — we give you full visibility and control over the process.
