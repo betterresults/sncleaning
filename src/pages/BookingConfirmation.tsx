@@ -265,7 +265,7 @@ const BookingConfirmation = () => {
             <CheckCircle className="h-20 w-20 text-green-500 relative" />
           </div>
           <h1 className="text-3xl font-extrabold text-[#185166] mb-2">Thank You!</h1>
-          <p className="text-gray-600 mb-2">Your booking request has been received.</p>
+          <p className="text-gray-600 mb-2">Your booking has been received.</p>
           <p className="text-sm text-gray-500 mb-6">We'll send you a confirmation email shortly.</p>
           <Button onClick={() => navigate('/auth')} className="bg-[#18A5A5] hover:bg-[#159090] h-12 px-8 text-base font-bold rounded-xl">
             Log In to Your Account
