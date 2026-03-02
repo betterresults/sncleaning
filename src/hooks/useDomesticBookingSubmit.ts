@@ -351,7 +351,7 @@ export const useDomesticBookingSubmit = () => {
         total_hours: totalHours,
         recommended_hours: regularHours,
         cleaning_cost_per_hour: bookingData.hourlyRate || 0,
-        total_cost: bookingData.totalCost || 0,
+        total_cost: Math.round((bookingData.totalCost || 0) * 100) / 100,
         
         payment_method: bookingData.paymentMethod || (hasPaymentMethods ? 'Stripe' : null),
         payment_status: 'Unpaid',
@@ -506,7 +506,7 @@ export const useDomesticBookingSubmit = () => {
           days_of_the_week: dayOfWeek,
           hours: String(regularHours), // Regular hours for ongoing cleaning (stored as string in DB)
           cost_per_hour: bookingData.hourlyRate || 0,
-          total_cost: recurringCost,
+          total_cost: Math.round((recurringCost || 0) * 100) / 100,
           payment_method: bookingData.paymentMethod || null,
           start_date: dateStr || null,
           start_time: time24ForDB ? `${time24ForDB}:00+00` : null,
