@@ -2,7 +2,7 @@ import { Play } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-const VIDEO_PATH = 'landing-video.mp4';
+const VIDEO_PATH = 'Landing Page video.mp4';
 
 const LandingVideoPlaceholder = () => {
   const [isPlaying, setIsPlaying] = useState(false);
