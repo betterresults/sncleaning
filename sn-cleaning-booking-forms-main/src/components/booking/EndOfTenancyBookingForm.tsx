@@ -455,10 +455,15 @@ const EndOfTenancyBookingForm: React.FC = () => {
     setBookingData(prev => {
       const newData = { ...prev, ...updates };
       
-      // Only recalculate totals if NOT explicitly provided in updates
-      // This allows EndOfTenancySummary to sync the correct database-calculated values
-      // without them being overwritten by the simple estimate calculation
-      if (!('totalCost' in updates) && !('estimatedHours' in updates)) {
+      // IMPORTANT: Never overwrite totalCost with the simple estimate calculation.
+      // The EndOfTenancySummary component uses database-driven useEndOfTenancyCalculations 
+      // hook which is the ONLY source of truth for pricing. It syncs the correct totalCost
+      // back to this parent via onUpdate({ totalCost, estimatedHours }).
+      // The simple calculateTotals was causing price discrepancies between the form display
+      // and the booking/email because it doesn't account for condition %, furniture %,
+      // oven costs from DB, first-time discounts, additional services, etc.
+      // Only use the simple estimate for initial rough calculation when no DB value exists yet.
+      if (!('totalCost' in updates) && !('estimatedHours' in updates) && prev.totalCost === 0 && prev.estimatedHours === null) {
         const { estimatedHours, totalCost } = calculateTotals(newData);
         newData.estimatedHours = estimatedHours;
         newData.totalCost = totalCost;

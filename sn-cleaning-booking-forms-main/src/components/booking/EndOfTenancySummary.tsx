@@ -72,27 +72,31 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
     return total;
   };
 
-  // Update parent when total changes - sync the calculated total to parent
-  // This ensures the correct price is used during booking submission
-  // SKIP syncing for quote links - they should preserve the original quoted price
+  // CRITICAL: Sync the database-calculated total to parent form data.
+  // This ensures the EXACT price shown in the summary is what gets saved to the booking.
+  // The parent's updateBookingData will NOT overwrite this with the simple estimate.
   useEffect(() => {
     // For quote links, don't recalculate or sync - preserve the quoted price
     if (isFromQuoteLink) return;
     
     if (onUpdate && !calculations.isLoading) {
       const displayTotal = getDisplayTotal();
+      // Round to 2 decimal places to avoid floating point issues
+      const roundedTotal = Math.round(displayTotal * 100) / 100;
+      const roundedHours = Math.round(calculations.estimatedHours * 100) / 100;
+      
       // Only update if the values are actually different (with small tolerance for floating point)
-      const totalDiff = Math.abs(displayTotal - (data.totalCost || 0));
-      const hoursDiff = Math.abs(calculations.estimatedHours - (data.estimatedHours || 0));
+      const totalDiff = Math.abs(roundedTotal - (data.totalCost || 0));
+      const hoursDiff = Math.abs(roundedHours - (data.estimatedHours || 0));
       if (totalDiff > 0.01 || hoursDiff > 0.01) {
-        console.log('[EndOfTenancySummary] Syncing totalCost to parent:', displayTotal, 'estimatedHours:', calculations.estimatedHours);
+        console.log('[EndOfTenancySummary] Syncing totalCost to parent:', roundedTotal, 'estimatedHours:', roundedHours);
         onUpdate({ 
-          totalCost: displayTotal,
-          estimatedHours: calculations.estimatedHours,
+          totalCost: roundedTotal,
+          estimatedHours: roundedHours,
         });
       }
     }
-  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice, data.totalCost, data.estimatedHours, isFromQuoteLink]);
+  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice, isFromQuoteLink]);
   
   // Format property description
   const getPropertyDescription = () => {
