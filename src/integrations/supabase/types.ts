@@ -783,7 +783,7 @@ export type Database = {
           is_auto_checked_in: boolean | null
           is_auto_checked_out: boolean | null
           updated_at: string
-          work_duration: unknown
+          work_duration: string | null
         }
         Insert: {
           booking_id: number
@@ -797,7 +797,7 @@ export type Database = {
           is_auto_checked_in?: boolean | null
           is_auto_checked_out?: boolean | null
           updated_at?: string
-          work_duration?: unknown
+          work_duration?: string | null
         }
         Update: {
           booking_id?: number
@@ -811,7 +811,7 @@ export type Database = {
           is_auto_checked_in?: boolean | null
           is_auto_checked_out?: boolean | null
           updated_at?: string
-          work_duration?: unknown
+          work_duration?: string | null
         }
         Relationships: [
           {
