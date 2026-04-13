@@ -51,9 +51,11 @@ const AddressSelector = ({ customerId, onAddressSelect }: AddressSelectorProps) 
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching addresses:', error);
+        console.error('[AddressSelector] Error fetching addresses:', error);
         return;
       }
+
+      console.log('[AddressSelector] Fetched', data?.length || 0, 'addresses for customer', customerId);
 
       setAddresses(data || []);
       
@@ -71,19 +73,17 @@ const AddressSelector = ({ customerId, onAddressSelect }: AddressSelectorProps) 
   };
 
   useEffect(() => {
+    // Reset selected address when customer changes
+    setSelectedAddress(null);
+    onAddressSelect(null);
+    
     if (customerId) {
+      console.log('[AddressSelector] Fetching addresses for customer:', customerId);
       fetchAddresses();
     } else {
       // Clear addresses and selection when no customer
       setAddresses([]);
-      setSelectedAddress(null);
     }
-  }, [customerId]);
-
-  // Reset selected address when customer changes
-  useEffect(() => {
-    setSelectedAddress(null);
-    onAddressSelect(null);
   }, [customerId]);
 
   const handleAddressSelect = (address: Address) => {
