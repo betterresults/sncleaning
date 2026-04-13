@@ -51,9 +51,11 @@ const AddressSelector = ({ customerId, onAddressSelect }: AddressSelectorProps) 
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching addresses:', error);
+        console.error('[AddressSelector] Error fetching addresses:', error);
         return;
       }
+
+      console.log('[AddressSelector] Fetched', data?.length || 0, 'addresses for customer', customerId);
 
       setAddresses(data || []);
       
