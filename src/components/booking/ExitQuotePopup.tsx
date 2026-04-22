@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Mail, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateForStorage } from '@/lib/bookingDate';
 
 // Generic item for carpet/upholstery/mattress
 interface CleaningItem {
@@ -121,7 +122,7 @@ export const ExitQuotePopup: React.FC<ExitQuotePopupProps> = ({
             serviceFrequency: quoteData.serviceFrequency,
             hasOvenCleaning: quoteData.hasOvenCleaning,
             ovenType: quoteData.ovenType,
-            selectedDate: quoteData.selectedDate?.toISOString(),
+            selectedDate: formatDateForStorage(quoteData.selectedDate),
             selectedTime: quoteData.selectedTime,
             postcode: quoteData.postcode,
             shortNoticeCharge: quoteData.shortNoticeCharge,

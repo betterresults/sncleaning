@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const parseDatePreserveLocalDay = (value?: string | null): Date | null => {
+  if (!value) return null;
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (!match) return null;
+  const result = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+  return Number.isNaN(result.getTime()) ? null : result;
+};
+
 interface CreatePublicBookingRequest {
   // Customer details
   firstName: string;
@@ -175,7 +183,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (data.selectedDate) {
       try {
-        const d = new Date(data.selectedDate);
+        const d = parseDatePreserveLocalDay(data.selectedDate);
+        if (!d) throw new Error('Invalid selectedDate');
         dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         
         if (data.selectedTime) {
