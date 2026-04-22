@@ -13,6 +13,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
+import { parseDatePreserveLocalDay } from '@/lib/bookingDate';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
 export interface BookingData {
@@ -224,7 +225,7 @@ const AirbnbBookingForm: React.FC = () => {
         postcode: postcode || prev.postcode,
         hasOvenCleaning: hasOven || prev.hasOvenCleaning,
         ovenType: ovenType || prev.ovenType,
-        selectedDate: dateStr ? new Date(dateStr) : prev.selectedDate,
+        selectedDate: dateStr ? (parseDatePreserveLocalDay(dateStr) || prev.selectedDate) : prev.selectedDate,
         selectedTime: time || prev.selectedTime,
         email: email || prev.email,
         // Preserve the exact quoted pricing

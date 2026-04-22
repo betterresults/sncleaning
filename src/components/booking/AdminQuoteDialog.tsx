@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home, Clock, Eye, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { formatDateForStorage } from '@/lib/bookingDate';
 
 interface CarpetCleaningItem {
   id: string;
@@ -237,7 +238,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       postcode: quoteData.postcode,
       oven_cleaning: quoteData.hasOvenCleaning,
       oven_size: quoteData.ovenType,
-      selected_date: quoteData.selectedDate ? quoteData.selectedDate.toISOString().split('T')[0] : null,
+      selected_date: formatDateForStorage(quoteData.selectedDate),
       // Default to 10:00 AM if no time selected and not flexible - ensures quote links work for step 3
       selected_time: extractStartTime(quoteData.selectedTime) || (flexibleTimeOverride || quoteData.flexibility === 'flexible-time' ? null : '10:00:00'),
       is_flexible: quoteData.flexibility === 'flexible-time' || flexibleTimeOverride, // Store flexibility setting (from form OR admin override)
@@ -342,7 +343,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 serviceFrequency: quoteData.serviceFrequency,
                 hasOvenCleaning: quoteData.hasOvenCleaning,
                 ovenType: quoteData.ovenType,
-                selectedDate: quoteData.selectedDate?.toISOString(),
+                selectedDate: formatDateForStorage(quoteData.selectedDate),
                 selectedTime: quoteData.selectedTime,
                 postcode: quoteData.postcode,
                 shortNoticeCharge: quoteData.shortNoticeCharge,

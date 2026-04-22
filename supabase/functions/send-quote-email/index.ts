@@ -46,9 +46,18 @@ interface QuoteEmailRequest {
   serviceType: string;
 }
 
+const parseDatePreserveLocalDay = (value: string | null): Date | null => {
+  if (!value) return null;
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (!match) return null;
+  const result = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+  return Number.isNaN(result.getTime()) ? null : result;
+};
+
 const formatDate = (dateStr: string | null): string => {
   if (!dateStr) return 'Not selected';
-  const date = new Date(dateStr);
+  const date = parseDatePreserveLocalDay(dateStr);
+  if (!date) return 'Not selected';
   return date.toLocaleDateString('en-GB', { 
     weekday: 'long', 
     day: 'numeric', 

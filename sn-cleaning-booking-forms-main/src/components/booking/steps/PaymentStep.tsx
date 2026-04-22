@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { User } from 'lucide-react';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
+import { combineLocalDateAndTime, formatDateForStorage } from '@/lib/bookingDate';
 
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
@@ -399,9 +400,8 @@ useEffect(() => {
   const isUrgentBooking = useMemo(() => {
     if (!data.selectedDate || !data.selectedTime) return false;
     
-    const bookingDateTime = new Date(
-      `${data.selectedDate.toISOString().split('T')[0]}T${data.selectedTime}:00`
-    );
+    const bookingDateTime = combineLocalDateAndTime(data.selectedDate, data.selectedTime);
+    if (!bookingDateTime) return false;
     const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
     return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
@@ -817,7 +817,7 @@ useEffect(() => {
               : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
             serviceFrequency: data.serviceFrequency,
             ovenType: data.ovenType,
-            selectedDate: data.selectedDate?.toISOString(),
+            selectedDate: formatDateForStorage(data.selectedDate),
             selectedTime: data.selectedTime,
             flexibility: data.flexibility,
             shortNoticeCharge: data.shortNoticeCharge,
@@ -1304,7 +1304,7 @@ useEffect(() => {
               : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
             serviceFrequency: data.serviceFrequency,
             ovenType: data.ovenType,
-            selectedDate: data.selectedDate?.toISOString(),
+            selectedDate: formatDateForStorage(data.selectedDate),
             selectedTime: data.selectedTime,
             flexibility: data.flexibility,
             shortNoticeCharge: data.shortNoticeCharge,
@@ -1452,7 +1452,7 @@ useEffect(() => {
               : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
             serviceFrequency: data.serviceFrequency,
             ovenType: data.ovenType,
-            selectedDate: data.selectedDate?.toISOString(),
+            selectedDate: formatDateForStorage(data.selectedDate),
             selectedTime: data.selectedTime,
             flexibility: data.flexibility,
             shortNoticeCharge: data.shortNoticeCharge,
@@ -1493,7 +1493,7 @@ useEffect(() => {
               total_cost: data.totalCost,
               // For Domestic: cleaning_type = frequency OR 'Deep Cleaning' if first deep clean selected
               cleaning_type: data.wantsFirstDeepClean ? 'Deep Cleaning' : (data.serviceFrequency || 'onetime'),
-              date_time: data.selectedDate?.toISOString()
+              date_time: formatDateForStorage(data.selectedDate)
             },
             collect_only: false,
             send_email: false

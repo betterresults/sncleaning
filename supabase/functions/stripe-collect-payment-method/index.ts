@@ -9,6 +9,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const parseDatePreserveLocalDay = (value?: string | null): Date | null => {
+  if (!value) return null;
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+  if (!match) return null;
+  const result = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), 12, 0, 0, 0);
+  return Number.isNaN(result.getTime()) ? null : result;
+};
+
 interface CollectPaymentMethodRequest {
   customer_id: number;
   email: string;
@@ -191,8 +199,9 @@ const handler = async (req: Request): Promise<Response> => {
           const isCollectOnly = collect_only === true;
           const hasBookingData = !isCollectOnly && booking_details;
           
-          const bookingDate = hasBookingData && booking_details?.date_time ? 
-            new Date(booking_details.date_time).toLocaleDateString('en-GB', { 
+          const parsedBookingDate = hasBookingData ? parseDatePreserveLocalDay(booking_details?.date_time) : null;
+          const bookingDate = parsedBookingDate ? 
+            parsedBookingDate.toLocaleDateString('en-GB', { 
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 

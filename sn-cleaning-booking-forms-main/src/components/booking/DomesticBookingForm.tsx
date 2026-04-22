@@ -14,6 +14,7 @@ import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
+import { formatDateForStorage, parseDatePreserveLocalDay } from '@/lib/bookingDate';
 // Helper function to convert bedroom string to number (studio = 0)
 const parseBedroomsToNumber = (bedrooms: string | undefined): number | undefined => {
   if (!bedrooms) return undefined;
@@ -409,7 +410,7 @@ const DomesticBookingForm: React.FC = () => {
         postcode: postcode || prev.postcode,
         hasOvenCleaning: hasOven || prev.hasOvenCleaning,
         ovenType: ovenType || prev.ovenType,
-        selectedDate: dateStr ? new Date(dateStr) : prev.selectedDate,
+        selectedDate: dateStr ? (parseDatePreserveLocalDay(dateStr) || prev.selectedDate) : prev.selectedDate,
         selectedTime: time || prev.selectedTime,
         flexibility: flexibility || prev.flexibility, // Apply flexibility from URL
         email: email || prev.email,
@@ -514,7 +515,7 @@ const DomesticBookingForm: React.FC = () => {
           serviceFrequency: (data.frequency as 'weekly' | 'biweekly' | 'monthly' | 'onetime' | '') || prev.serviceFrequency,
           hasOvenCleaning: data.oven_cleaning || prev.hasOvenCleaning,
           ovenType: data.oven_size || prev.ovenType,
-          selectedDate: data.selected_date ? new Date(data.selected_date) : prev.selectedDate,
+          selectedDate: data.selected_date ? (parseDatePreserveLocalDay(data.selected_date) || prev.selectedDate) : prev.selectedDate,
           selectedTime: data.selected_time || prev.selectedTime,
           flexibility: data.is_flexible ? 'flexible-time' : prev.flexibility, // Apply flexibility from DB
           firstName: data.first_name || prev.firstName,
@@ -887,7 +888,7 @@ const DomesticBookingForm: React.FC = () => {
         frequency: frequencyMap[bookingData.serviceFrequency] || bookingData.serviceFrequency || null,
         oven_cleaning: bookingData.hasOvenCleaning,
         oven_size: bookingData.ovenType || null,
-        selected_date: bookingData.selectedDate ? bookingData.selectedDate.toISOString().split('T')[0] : null,
+        selected_date: formatDateForStorage(bookingData.selectedDate),
         selected_time: bookingData.selectedTime || null,
         is_flexible: bookingData.flexibility === 'flexible-time' || bookingData.flexibility === 'flexible-date',
         property_access: bookingData.propertyAccess || null,

@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { CarpetCleaningItem } from './CarpetCleaningForm';
+import { parseDatePreserveLocalDay } from '@/lib/bookingDate';
 
 // Helper function to convert bedroom string to number (studio = 0)
 const parseBedroomsToNumber = (bedrooms: string | undefined): number | undefined => {
@@ -278,7 +279,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
       
       // Parse date
       const dateStr = searchParams.get('date');
-      const selectedDate = dateStr ? new Date(dateStr) : null;
+      const selectedDate = dateStr ? parseDatePreserveLocalDay(dateStr) : null;
       
       // Parse time
       const selectedTime = searchParams.get('time') || '';
