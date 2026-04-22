@@ -41,7 +41,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   const [waiveShortNotice, setWaiveShortNotice] = useState(false);
 
   // Use the calculation hook with database prices - but skip for quote links which use pre-calculated prices
-  const calculations = useEndOfTenancyCalculations(data, data.isFirstTimeCustomer || false);
+  const calculations = useEndOfTenancyCalculations(data, false);
   
   // For quote links, preserve the exact quoted price without recalculation
   const quotedTotal = isFromQuoteLink ? (data.totalCost || 0) : null;
@@ -278,16 +278,6 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         </div>
       )}
 
-      {/* First-Time Customer Discount */}
-      {data.isFirstTimeCustomer && calculations.firstTimeDiscount > 0 && (
-        <div className="flex justify-between items-center mt-3 pt-3 border-t border-green-200 bg-green-50 -mx-4 px-4 py-2">
-          <span className="text-green-700 font-medium">
-            New Customer Discount (10%)
-          </span>
-          <span className="text-green-700 font-semibold">-£{calculations.firstTimeDiscount.toFixed(2)}</span>
-        </div>
-      )}
-
       {/* Total */}
       <div className="flex justify-between items-center mt-4 pt-4 border-t-2 border-primary">
         <span className="text-lg font-semibold text-foreground">Total</span>
@@ -423,14 +413,6 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         <div className="flex justify-between items-center bg-amber-50 -mx-4 px-4 py-2 rounded">
           <span className="text-amber-700 font-medium">Short Notice Charge</span>
           <span className="text-amber-700 font-semibold">£{calculations.shortNoticeCharge.toFixed(2)}</span>
-        </div>
-      )}
-
-      {/* First-Time Customer Discount */}
-      {data.isFirstTimeCustomer && calculations.firstTimeDiscount > 0 && (
-        <div className="flex justify-between items-center bg-green-50 -mx-4 px-4 py-2 rounded">
-          <span className="text-green-700 font-medium text-sm">New Customer (10% off)</span>
-          <span className="text-green-700 font-semibold">-£{calculations.firstTimeDiscount.toFixed(2)}</span>
         </div>
       )}
     </div>

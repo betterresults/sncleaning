@@ -34,7 +34,7 @@ export interface EndOfTenancyCalculationResult {
   steamCleaningTotal: number; // Carpet/upholstery/mattress total
   steamCleaningDiscount: number; // 20% discount on steam cleaning when combined
   steamCleaningFinal: number; // Steam cleaning after discount
-  firstTimeDiscount: number;  // 10% first-time customer discount
+  firstTimeDiscount: number;
   shortNoticeCharge: number;
   subtotalBeforeDiscounts: number;
   totalCost: number;
@@ -43,7 +43,6 @@ export interface EndOfTenancyCalculationResult {
 }
 
 const CARPET_DISCOUNT_PERCENTAGE = 0.20; // 20% off carpet when combined
-const FIRST_TIME_DISCOUNT_PERCENTAGE = 0.10; // 10% off for first-time customers
 
 const useEndOfTenancyFieldConfigs = () => {
   return useQuery({
@@ -64,7 +63,7 @@ const useEndOfTenancyFieldConfigs = () => {
 
 export const useEndOfTenancyCalculations = (
   data: EndOfTenancyBookingData,
-  isFirstTimeCustomer: boolean = false
+  _isFirstTimeCustomer: boolean = false
 ): EndOfTenancyCalculationResult => {
   const { data: fieldConfigs, isLoading } = useEndOfTenancyFieldConfigs();
 
@@ -217,9 +216,8 @@ export const useEndOfTenancyCalculations = (
     const shortNoticeCharge = data.shortNoticeCharge || 0;
     const subtotalBeforeDiscounts = adjustedBaseCost + ovenCleaningCost + blindsTotal + extrasTotal + additionalServicesTotal + steamCleaningFinal + shortNoticeCharge;
 
-    // 7. Apply 10% first-time customer discount
-    const firstTimeDiscount = isFirstTimeCustomer ? subtotalBeforeDiscounts * FIRST_TIME_DISCOUNT_PERCENTAGE : 0;
-    const totalCost = subtotalBeforeDiscounts - firstTimeDiscount;
+    const firstTimeDiscount = 0;
+    const totalCost = subtotalBeforeDiscounts;
 
     // Convert time from minutes to hours
     const estimatedHours = adjustedTime / 60;
@@ -243,7 +241,7 @@ export const useEndOfTenancyCalculations = (
       estimatedHours,
       isLoading,
     };
-  }, [fieldConfigs, data, isFirstTimeCustomer, isLoading]);
+  }, [fieldConfigs, data, isLoading]);
 
   return calculations;
 };

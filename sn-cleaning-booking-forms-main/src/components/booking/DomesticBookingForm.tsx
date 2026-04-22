@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { isEligibleForFirstTimeDiscount } from '../../utils/discountEligibility';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DomesticPropertyStep } from './steps/DomesticPropertyStep';
@@ -188,7 +187,7 @@ const DomesticBookingForm: React.FC = () => {
     estimatedAdditionalHours: null,
     hourlyRate: 25, // Default to one-time rate, will be synced from database calculations
     totalCost: 0,
-    isFirstTimeCustomer: isEligibleForFirstTimeDiscount(), // Only true if user came from landing page
+    isFirstTimeCustomer: false
   });
 
   // Reset form to initial state - called after sending a quote to prepare for new quote
@@ -231,7 +230,7 @@ const DomesticBookingForm: React.FC = () => {
       estimatedAdditionalHours: null,
       hourlyRate: 25, // Default to one-time rate, will be synced from database calculations
       totalCost: 0,
-      isFirstTimeCustomer: isEligibleForFirstTimeDiscount(),
+      isFirstTimeCustomer: false,
     });
     setCurrentStep(1); // Go back to step 1
     setStoredQuotePrice(null);
@@ -254,12 +253,6 @@ const DomesticBookingForm: React.FC = () => {
       if (isAdminMode && bookingData.adminRemoveShortNoticeCharge) {
         total -= calculations.shortNoticeCharge || 0;
       }
-      // CRITICAL: Only apply first-time discount if NOT in quote link mode
-      // Quote link prices already include the discount (calculated_quote in DB is the final price)
-      // Re-applying the discount would cause a £67.50 quote to show as £60.75
-      if (bookingData.isFirstTimeCustomer && !isQuoteLinkMode) {
-        total = total * 0.90;
-      }
       if (isAdminMode && bookingData.adminDiscountPercentage) {
         total -= total * bookingData.adminDiscountPercentage / 100;
       }
@@ -274,10 +267,6 @@ const DomesticBookingForm: React.FC = () => {
       let total = calculations.firstDeepCleanCost;
       if (isAdminMode && bookingData.adminRemoveShortNoticeCharge) {
         total -= calculations.shortNoticeCharge || 0;
-      }
-      // Apply first-time customer 10% discount
-      if (bookingData.isFirstTimeCustomer) {
-        total = total * 0.90;
       }
       if (isAdminMode && bookingData.adminDiscountPercentage) {
         total -= total * bookingData.adminDiscountPercentage / 100;
@@ -298,11 +287,6 @@ const DomesticBookingForm: React.FC = () => {
 
     total += calculations.equipmentOneTimeCost || 0;
     total += calculations.ovenCleaningCost || 0;
-    
-    // Apply first-time customer discount
-    if (bookingData.isFirstTimeCustomer) {
-      total = total * 0.90;
-    }
     
     // Apply admin discounts
     if (isAdminMode && bookingData.adminDiscountPercentage) {
@@ -447,7 +431,7 @@ const DomesticBookingForm: React.FC = () => {
           ? parseFloat(weeklyHours) 
           : (quotedHours ? parseFloat(quotedHours) : prev.estimatedHours),
         shortNoticeCharge: shortNotice ? parseFloat(shortNotice) : prev.shortNoticeCharge,
-        isFirstTimeCustomer: isFirstTime !== null ? isFirstTime === '1' : prev.isFirstTimeCustomer,
+        isFirstTimeCustomer: false,
         // Use admin override to lock in the quoted price so it doesn't get recalculated
         adminTotalCostOverride: quotedCost ? parseFloat(quotedCost) : prev.adminTotalCostOverride,
         // Agent attribution for sales agent tracking
@@ -539,7 +523,7 @@ const DomesticBookingForm: React.FC = () => {
           phone: data.phone || prev.phone,
           postcode: data.postcode || prev.postcode,
           estimatedHours: data.recommended_hours || prev.estimatedHours,
-          isFirstTimeCustomer: data.is_first_time_customer ?? prev.isFirstTimeCustomer,
+          isFirstTimeCustomer: false,
           additionalRooms: data.additional_rooms ? (typeof data.additional_rooms === 'object' ? data.additional_rooms as any : prev.additionalRooms) : prev.additionalRooms,
           // Load the exact quoted price if available
           totalCost: data.calculated_quote || prev.totalCost,
@@ -653,7 +637,7 @@ const DomesticBookingForm: React.FC = () => {
             setBookingData(prev => ({
               ...prev,
               customerId: customerId,
-              isFirstTimeCustomer: !hasPreviousBookings // Not first time if they have previous bookings
+              isFirstTimeCustomer: false
             }));
           }
         }
@@ -662,7 +646,7 @@ const DomesticBookingForm: React.FC = () => {
         setIsAdminMode(false);
         setBookingData(prev => ({
           ...prev,
-          isFirstTimeCustomer: isEligibleForFirstTimeDiscount()
+          isFirstTimeCustomer: false
         }));
       }
     };
@@ -715,7 +699,7 @@ const DomesticBookingForm: React.FC = () => {
       }
       
       // NOTE: Do NOT recalculate totalCost here. The correct totalCost (including discounts like
-      // first-time customer 10% off, equipment costs, oven cleaning, etc.) is calculated in 
+      // equipment costs, oven cleaning, etc.) is calculated in 
       // DomesticBookingSummary.tsx and synced back via the onUpdate prop. Any recalculation here
       // would overwrite the correct discounted price with an incorrect base calculation.
       
@@ -1170,8 +1154,8 @@ const DomesticBookingForm: React.FC = () => {
             flexibility: bookingData.flexibility, // Pass flexibility setting
             postcode: bookingData.postcode,
             shortNoticeCharge: bookingData.shortNoticeCharge,
-            isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
-            discountAmount: bookingData.isFirstTimeCustomer ? calculatedTotal * 0.10 / 0.90 : 0,
+            isFirstTimeCustomer: false,
+            discountAmount: 0,
             firstName: bookingData.firstName,
             lastName: bookingData.lastName,
             phone: bookingData.phone,
@@ -1211,8 +1195,8 @@ const DomesticBookingForm: React.FC = () => {
           selectedTime: bookingData.selectedTime,
           postcode: bookingData.postcode,
           shortNoticeCharge: bookingData.shortNoticeCharge,
-          isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
-          discountAmount: bookingData.isFirstTimeCustomer ? calculatedTotal * 0.10 / 0.90 : 0,
+          isFirstTimeCustomer: false,
+          discountAmount: 0,
         }}
         sessionId={sessionId}
         serviceType="Domestic"
