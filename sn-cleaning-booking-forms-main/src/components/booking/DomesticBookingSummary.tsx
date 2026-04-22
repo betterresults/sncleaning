@@ -107,11 +107,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         total -= calculations.shortNoticeCharge || 0;
       }
       
-      // Apply first-time customer 10% discount
-      if (data.isFirstTimeCustomer) {
-        total = total * 0.90;
-      }
-      
       // Apply admin discounts
       if (isAdminMode && data.adminDiscountPercentage) {
         total -= total * data.adminDiscountPercentage / 100;
@@ -131,11 +126,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         total -= calculations.shortNoticeCharge || 0;
       }
       
-      // Apply first-time customer 10% discount
-      if (data.isFirstTimeCustomer) {
-        total = total * 0.90;
-      }
-      
       // Apply admin discounts
       if (isAdminMode && data.adminDiscountPercentage) {
         total -= total * data.adminDiscountPercentage / 100;
@@ -166,12 +156,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     
     total += additionalCharges - discounts;
     
-    // Apply new client 10% discount FIRST (before admin adjustments)
-    if (data.isFirstTimeCustomer) {
-      total = total * 0.90;
-    }
-    
-    // Apply admin discounts AFTER the first-time discount (so admin sees £X and subtracts £Y to get £X-Y)
     const subtotalAfterFirstTime = total;
     if (isAdminMode && data.adminDiscountPercentage) {
       total -= subtotalAfterFirstTime * data.adminDiscountPercentage / 100;
@@ -183,13 +167,8 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     return Math.max(0, total);
   };
   
-  // Calculate subtotal before first-time discount (for display purposes)
-  // This shows the price BEFORE the 10% first-time customer discount
-  // Admin discounts are applied AFTER first-time discount, so they're not included here
   const calculateSubtotalBeforeFirstTimeDiscount = () => {
     if (isAdminMode && data.adminTotalCostOverride !== undefined && data.adminTotalCostOverride !== null) {
-      // When total is overridden, we can't show a meaningful "before discount" price
-      // Return the override value (the 10% banner won't show in this case anyway due to override)
       return data.adminTotalCostOverride;
     }
     
@@ -201,7 +180,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
         total -= calculations.shortNoticeCharge || 0;
       }
       
-      // Don't include admin discounts here - they're applied after first-time discount
       return Math.max(0, total);
     }
     
@@ -224,7 +202,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     
     total += additionalCharges - discounts;
     
-    // Don't include admin discounts here - they're applied after first-time discount
     return Math.max(0, total);
   };
 
@@ -238,11 +215,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     
     // Start with base rate
     let rate = effectiveHourlyRate;
-    
-    // If first-time customer, apply 10% discount to the rate
-    if (data.isFirstTimeCustomer) {
-      rate = rate * 0.90;
-    }
     
     // If admin percentage discount, apply it to the rate
     if (isAdminMode && data.adminDiscountPercentage) {
@@ -315,7 +287,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     data.regularRecurringCost,
     data.wantsFirstDeepClean,
     shortNoticeInfo.charge,
-    data.isFirstTimeCustomer,
   ]);
 
   const renderSummaryContent = () => (
@@ -524,7 +495,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             {isAdminMode && (
               <p className="text-sm text-muted-foreground">
                 £{displayHourlyRate.toFixed(2)}/hour
-                {(data.isFirstTimeCustomer || data.adminDiscountPercentage || data.adminDiscountAmount) && displayHourlyRate < effectiveHourlyRate && (
+                {(data.adminDiscountPercentage || data.adminDiscountAmount) && displayHourlyRate < effectiveHourlyRate && (
                   <span className="ml-1 line-through text-gray-400">£{effectiveHourlyRate.toFixed(2)}</span>
                 )}
               </p>
@@ -543,11 +514,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                 {calculations.wantsFirstDeepClean ? 'First Clean' : 'Total'}
               </span>
               <div className="text-right">
-                {data.isFirstTimeCustomer && !(data.adminTotalCostOverride && data.adminTotalCostOverride > 0) && (
-                  <span className="text-sm text-muted-foreground line-through mr-2">
-                    £{calculateSubtotalBeforeFirstTimeDiscount().toFixed(2)}
-                  </span>
-                )}
                 <span className="text-2xl font-bold text-primary">
                   £{calculateTotal().toFixed(2)}
                 </span>
@@ -563,7 +529,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                   £{(() => {
                     if (calculations.wantsFirstDeepClean) {
                       let recurringTotal = calculations.regularRecurringCost;
-                      if (data.isFirstTimeCustomer) recurringTotal = recurringTotal * 0.90;
                       if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
                         recurringTotal = recurringTotal * data.daysPerWeek;
                       }
@@ -579,7 +544,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                     if (calculations.shortNoticeCharge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge)) {
                       recurringTotal -= calculations.shortNoticeCharge;
                     }
-                    if (data.isFirstTimeCustomer) recurringTotal = recurringTotal * 0.90;
                     if (data.serviceFrequency === 'weekly' && data.daysPerWeek > 1) {
                       recurringTotal = recurringTotal * data.daysPerWeek;
                     }
@@ -712,30 +676,12 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
             </div>
           )}
           
-          {/* First-time discount banner - only show when NOT using quoted price */}
-          {data.isFirstTimeCustomer && !(data.adminTotalCostOverride && data.adminTotalCostOverride > 0) && (
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-200">
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">New clients 10% off</span>
-              </div>
-              <span className="text-sm font-bold text-green-600">
-                -£{(calculateSubtotalBeforeFirstTimeDiscount() * 0.10).toFixed(2)}
-              </span>
-            </div>
-          )}
-          
           {/* Total */}
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-foreground">
               {calculations.wantsFirstDeepClean ? 'First Clean' : 'Total'}
             </span>
             <div className="text-right">
-              {data.isFirstTimeCustomer && !(data.adminTotalCostOverride && data.adminTotalCostOverride > 0) && (
-                <span className="text-sm text-muted-foreground line-through mr-2">
-                  £{calculateSubtotalBeforeFirstTimeDiscount().toFixed(2)}
-                </span>
-              )}
               <span className="text-2xl font-bold text-primary">
                 £{calculateTotal().toFixed(2)}
               </span>
@@ -761,10 +707,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                     // For first deep clean, use the regular recurring cost from calculations
                     if (calculations.wantsFirstDeepClean) {
                       let recurringTotal = calculations.regularRecurringCost;
-                      // Apply first-time discount to recurring
-                      if (data.isFirstTimeCustomer) {
-                        recurringTotal = recurringTotal * 0.90;
-                      }
                       // Apply admin discounts to recurring if option is checked
                       if (isAdminMode && data.adminApplyDiscountToRecurring) {
                         if (data.adminDiscountPercentage) {
@@ -793,10 +735,6 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
                     // Exclude short notice charge from recurring
                     if (calculations.shortNoticeCharge > 0 && !(isAdminMode && data.adminRemoveShortNoticeCharge)) {
                       recurringTotal -= calculations.shortNoticeCharge;
-                    }
-                    // Apply new client 10% discount to recurring as well
-                    if (data.isFirstTimeCustomer) {
-                      recurringTotal = recurringTotal * 0.90;
                     }
                     // Apply admin discounts to recurring if option is checked
                     if (isAdminMode && data.adminApplyDiscountToRecurring) {

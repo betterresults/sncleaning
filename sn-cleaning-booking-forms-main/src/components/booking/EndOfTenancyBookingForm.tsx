@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { isEligibleForFirstTimeDiscount } from '../../utils/discountEligibility';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EndOfTenancyPropertyStep } from './steps/EndOfTenancyPropertyStep';
@@ -166,7 +165,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     estimatedHours: null,
     hourlyRate: HOURLY_RATE,
     totalCost: 0,
-    isFirstTimeCustomer: isEligibleForFirstTimeDiscount(), // Only true if user came from landing page
+    isFirstTimeCustomer: false
   });
 
   // Calculate totals - this is a quick estimate for tracking purposes
@@ -244,7 +243,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
       estimatedHours: null,
       hourlyRate: HOURLY_RATE,
       totalCost: 0,
-      isFirstTimeCustomer: isEligibleForFirstTimeDiscount(),
+      isFirstTimeCustomer: false,
     });
     setCurrentStep(1);
     setShowQuoteDialog(false);
@@ -346,7 +345,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
         totalCost: quotedCost ? parseFloat(quotedCost) : prev.totalCost,
         estimatedHours: quotedHours ? parseFloat(quotedHours) : prev.estimatedHours,
         shortNoticeCharge: shortNotice ? parseFloat(shortNotice) : undefined,
-        isFirstTimeCustomer: firstTime === '1',
+        isFirstTimeCustomer: false,
       }));
       
       // Jump directly to payment step (step 4)
@@ -419,7 +418,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
             setBookingData(prev => ({
               ...prev,
               customerId: customerId,
-              isFirstTimeCustomer: !hasPreviousBookings // Not first time if they have previous bookings
+              isFirstTimeCustomer: false
             }));
           }
         }
@@ -428,7 +427,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
         setIsAdminMode(false);
         setBookingData(prev => ({
           ...prev,
-          isFirstTimeCustomer: isEligibleForFirstTimeDiscount()
+          isFirstTimeCustomer: false
         }));
       }
     };
@@ -824,8 +823,8 @@ const EndOfTenancyBookingForm: React.FC = () => {
             flexibility: bookingData.flexibility,
             postcode: bookingData.postcode,
             shortNoticeCharge: bookingData.shortNoticeCharge,
-            isFirstTimeCustomer: bookingData.isFirstTimeCustomer,
-            discountAmount: bookingData.isFirstTimeCustomer ? bookingData.totalCost * 0.10 / 0.90 : 0,
+            isFirstTimeCustomer: false,
+            discountAmount: 0,
             firstName: bookingData.firstName,
             lastName: bookingData.lastName,
             phone: bookingData.phone,
