@@ -14,6 +14,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
+import { parseDatePreserveLocalDay } from '@/lib/bookingDate';
 
 export interface CarpetCleaningItem {
   id: string;
