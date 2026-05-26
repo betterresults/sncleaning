@@ -333,7 +333,9 @@ export type Database = {
           ironing: string | null
           ironing_hours: number | null
           key_collection: string | null
+          last_failed_invoice_id: string | null
           last_name: string | null
+          last_payment_attempt_at: string | null
           linen_management: boolean | null
           linen_used: Json | null
           linens: string | null
@@ -341,6 +343,7 @@ export type Database = {
           occupied: string | null
           oven_size: string | null
           parking_details: string | null
+          payment_attempt_count: number
           payment_method: string | null
           payment_status: string | null
           payment_term: string | null
@@ -409,7 +412,9 @@ export type Database = {
           ironing?: string | null
           ironing_hours?: number | null
           key_collection?: string | null
+          last_failed_invoice_id?: string | null
           last_name?: string | null
+          last_payment_attempt_at?: string | null
           linen_management?: boolean | null
           linen_used?: Json | null
           linens?: string | null
@@ -417,6 +422,7 @@ export type Database = {
           occupied?: string | null
           oven_size?: string | null
           parking_details?: string | null
+          payment_attempt_count?: number
           payment_method?: string | null
           payment_status?: string | null
           payment_term?: string | null
@@ -485,7 +491,9 @@ export type Database = {
           ironing?: string | null
           ironing_hours?: number | null
           key_collection?: string | null
+          last_failed_invoice_id?: string | null
           last_name?: string | null
+          last_payment_attempt_at?: string | null
           linen_management?: boolean | null
           linen_used?: Json | null
           linens?: string | null
@@ -493,6 +501,7 @@ export type Database = {
           occupied?: string | null
           oven_size?: string | null
           parking_details?: string | null
+          payment_attempt_count?: number
           payment_method?: string | null
           payment_status?: string | null
           payment_term?: string | null
@@ -1912,12 +1921,15 @@ export type Database = {
           ironing: string | null
           ironing_hours: number | null
           key_collection: string | null
+          last_failed_invoice_id: string | null
           last_name: string | null
+          last_payment_attempt_at: string | null
           linens: string | null
           mattress_items: string | null
           occupied: string | null
           oven_size: string | null
           parking_details: string | null
+          payment_attempt_count: number
           payment_method: string | null
           payment_status: string | null
           payment_term: string | null
@@ -1980,12 +1992,15 @@ export type Database = {
           ironing?: string | null
           ironing_hours?: number | null
           key_collection?: string | null
+          last_failed_invoice_id?: string | null
           last_name?: string | null
+          last_payment_attempt_at?: string | null
           linens?: string | null
           mattress_items?: string | null
           occupied?: string | null
           oven_size?: string | null
           parking_details?: string | null
+          payment_attempt_count?: number
           payment_method?: string | null
           payment_status?: string | null
           payment_term?: string | null
@@ -2048,12 +2063,15 @@ export type Database = {
           ironing?: string | null
           ironing_hours?: number | null
           key_collection?: string | null
+          last_failed_invoice_id?: string | null
           last_name?: string | null
+          last_payment_attempt_at?: string | null
           linens?: string | null
           mattress_items?: string | null
           occupied?: string | null
           oven_size?: string | null
           parking_details?: string | null
+          payment_attempt_count?: number
           payment_method?: string | null
           payment_status?: string | null
           payment_term?: string | null

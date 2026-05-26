@@ -36,11 +36,12 @@ serve(async (req) => {
     // CRITICAL: Exclude cancelled bookings to prevent charging for cancelled services
     const { data: bookingsToAuthorize, error: authorizeError } = await supabaseClient
       .from('bookings')
-      .select('id, date_time, total_cost, customer, payment_status, invoice_id, booking_status')
+      .select('id, date_time, total_cost, customer, payment_status, invoice_id, booking_status, payment_attempt_count, last_payment_attempt_at')
       .gte('date_time', authorizationWindowStart.toISOString())
       .lte('date_time', authorizationWindowEnd.toISOString())
-      .in('payment_status', ['Unpaid', 'pending', 'failed']) // ONLY truly unpaid bookings
+      .in('payment_status', ['Unpaid', 'pending']) // Do NOT auto-retry 'failed' — Stripe Radar will block repeat attempts
       .is('invoice_id', null) // Skip bookings that already have an invoice/payment intent
+      .lt('payment_attempt_count', 3) // Cap automatic retries to prevent infinite loops
       .not('customer', 'is', null)
       .not('booking_status', 'ilike', '%cancelled%') // Skip cancelled bookings
 
@@ -49,8 +50,13 @@ serve(async (req) => {
     } else if (bookingsToAuthorize && bookingsToAuthorize.length > 0) {
       console.log(`Found ${bookingsToAuthorize.length} potential bookings for authorization`)
       
-      // Filter bookings to only include customers with payment methods
+      // Filter bookings: must have a payment method AND respect 6-hour back-off between attempts
+      const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000)
       for (const booking of bookingsToAuthorize) {
+        if (booking.last_payment_attempt_at && new Date(booking.last_payment_attempt_at) > sixHoursAgo) {
+          console.log(`Skipping booking ${booking.id} - last attempt was less than 6 hours ago`)
+          continue
+        }
         const { data: paymentMethods, error: pmError } = await supabaseClient
           .from('customer_payment_methods')
           .select('id')
