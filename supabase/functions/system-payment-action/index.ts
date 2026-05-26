@@ -171,6 +171,39 @@ serve(async (req) => {
           }
         )
       }
+
+      // Stop hammering Stripe after repeated failures (prevents Radar from blocking the card)
+      const currentAttempts = booking.payment_attempt_count || 0
+      if (currentAttempts >= 3) {
+        console.log(`Booking ${bookingId} reached max payment attempts (${currentAttempts}) - marking failed_permanent`)
+        const table = isUpcoming ? 'bookings' : 'past_bookings'
+        await supabaseClient
+          .from(table)
+          .update({ payment_status: 'failed_permanent' })
+          .eq('id', bookingId)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Maximum payment attempts reached - manual intervention required',
+            action: 'authorize',
+            bookingId,
+            attemptCount: currentAttempts,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
+      }
+
+      // Record this attempt BEFORE calling Stripe so concurrent crons see it
+      {
+        const table = isUpcoming ? 'bookings' : 'past_bookings'
+        await supabaseClient
+          .from(table)
+          .update({
+            payment_attempt_count: currentAttempts + 1,
+            last_payment_attempt_at: new Date().toISOString(),
+          })
+          .eq('id', bookingId)
+      }
       
       // Create payment intent for authorization only
       const paymentIntentResponse = await fetch('https://api.stripe.com/v1/payment_intents', {
@@ -196,16 +229,18 @@ serve(async (req) => {
       if (paymentIntent.error) {
         console.error(`Authorization failed for booking ${bookingId}:`, JSON.stringify(paymentIntent.error))
         
-        // Update booking status to failed in correct table
-        if (isUpcoming) {
+        // Update booking status to failed and persist the failed PI id so cron's `invoice_id is null`
+        // filter naturally excludes this booking from the next retry pass.
+        {
+          const table = isUpcoming ? 'bookings' : 'past_bookings'
+          const newAttempts = currentAttempts + 1
+          const finalStatus = newAttempts >= 3 ? 'failed_permanent' : 'failed'
           await supabaseClient
-            .from('bookings')
-            .update({ payment_status: 'failed' })
-            .eq('id', bookingId)
-        } else if (isPast) {
-          await supabaseClient
-            .from('past_bookings')
-            .update({ payment_status: 'failed' })
+            .from(table)
+            .update({
+              payment_status: finalStatus,
+              last_failed_invoice_id: paymentIntent.error?.payment_intent?.id || null,
+            })
             .eq('id', bookingId)
         }
         
