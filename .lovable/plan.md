@@ -1,98 +1,59 @@
+## What's happening
 
+Looking at booking **111136** (£46, customer `management@thestgroup.co.uk`, scheduled May 26 09:00):
 
-# Landing Page and Funnel Pages Plan
+- `payment_status = 'failed'`, `invoice_id = NULL`
+- Every Stripe row in your screenshot ("Authorization for booking 111136") is from our system retrying the same card every hour.
+- After the first decline, Stripe **Radar** starts auto-blocking every subsequent attempt on that card → that's why you see "Blocked Blocked Blocked…".
 
-Based on the uploaded document, we need to create 3 new pages that form a marketing funnel for SN Cleaning Services.
+## Root cause (in `stripe-process-payments` + `system-payment-action`)
 
----
+1. The hourly cron `process-stripe-payments-hourly` queries:
+   ```ts
+   .in('payment_status', ['Unpaid', 'pending', 'failed'])
+   .is('invoice_id', null)
+   ```
+   So any `failed` booking with no invoice_id is retried **every hour, forever**.
 
-## Page 1: VSL Landing Page (`/get-quote` or `/lp`)
+2. In `system-payment-action` (authorize branch), when Stripe returns an error or a non-`requires_capture` status, the code sets `payment_status = 'failed'` but **never stores the failed PaymentIntent id**. So the booking re-enters the retry pool on the next cron tick.
 
-The main landing page visitors see from ads or organic traffic.
+3. Each retry creates a brand-new PaymentIntent on the same card. Stripe Radar's "block if prior PI was blocked/declined" rule then blocks all follow-ups → snowball of "Blocked" entries.
 
-**Sections (top to bottom):**
-1. **Hero Section** - Headline: "Reliable & Consistent Cleaning In London & Essex", subheadline about in-house trained staff, supervisors, checklists, and photo reports
-2. **Video Placeholder** - An empty video container/placeholder area (no actual video content - just a styled box ready for a video embed later)
-3. **CTA Button** - "Get my FREE personalised quote" - scrolls to lead form or navigates to Page 2
-4. **Testimonials Section** - 3 review cards with the testimonials from the document
-5. **Body Section** (from pages 6-7) - "3 key reasons clients choose SN Clean" with trust copy about consistency, checklists, and photo reports
-6. **Second CTA Button** - Same "Get my FREE personalised quote"
+This started "yesterday" because the card had one legitimate decline and the loop took over from there.
 
-**Design:** Uses existing brand colors (`#18A5A5`, `#185166`), mobile-first, clean and conversion-focused.
+## Fix
 
----
+### 1. Stop the infinite retry in `stripe-process-payments`
+Remove `'failed'` from the authorization payment_status filter. Only retry truly untouched bookings: `['Unpaid', 'pending']`.
 
-## Page 2: Free Quote Lead Capture (`/free-quote`)
+### 2. Add an attempt cap + record last attempt
+Add `payment_attempt_count` and `last_payment_attempt_at` columns to `bookings`. In `system-payment-action`:
+- Increment counter on every authorize attempt.
+- Refuse to retry if `payment_attempt_count >= 3` (mark `payment_status = 'failed_permanent'` / `requires_manual`).
+- Store the failed PaymentIntent id in `invoice_id` (or a new `last_failed_invoice_id` column) so the cron's `invoice_id is null` filter naturally excludes it.
 
-The lead capture step before sending users into the booking form.
+### 3. Add a minimum back-off
+In the cron query, also exclude bookings whose `last_payment_attempt_at` is within the last 6 hours, so even retries that do happen don't hammer the card.
 
-**Sections:**
-1. **Headline** - "Get Your Free Cleaning Quote... in under 2 Minutes"
-2. **Sub-headline** - "Plus Get 10% Off Your First Cleaning If You Checkout Using The Hassle Free Portal"
-3. **Lead Form** - Full Name + Email fields, "Next" button
-4. **Trust Badges** - 3 checkmarks: "Free Quote & Hassle Free Sign Up In Under 2 Minutes", "Trusted by London & Essex Homeowners", "Easy Support On WhatsApp"
-5. **Testimonials** - Same 3 reviews
+### 4. Clean up booking 111136 manually
+- Set `payment_status = 'requires_manual'` (or similar) so the cron leaves it alone.
+- Reach out to the customer to update the card — Stripe Radar will keep blocking the existing one for a while.
 
-**On submit:** Saves the lead to the `quote_leads` table (already exists in the system), then redirects to `/services` (the existing ChooseService page) with name and email passed as query params.
+### 5. (Optional) Surface in admin UI
+Add a small badge / filter "Payment failed – manual action needed" so these don't disappear silently.
 
----
+## Files to change
 
-## Page 3: Post-Payment Confirmation Update
+- `supabase/functions/stripe-process-payments/index.ts` — narrow filter, add back-off check.
+- `supabase/functions/system-payment-action/index.ts` — attempt counter, persist failed PI id, stop retrying past cap.
+- New migration: add `payment_attempt_count int default 0`, `last_payment_attempt_at timestamptz`, and a `failed_permanent` status convention on `bookings` (and same on `past_bookings`).
+- Admin bookings list: optional badge for the new status.
 
-The existing `/booking-confirmation` page already handles this. We will add an enhanced version of the "what happens next" content from the document:
+## Why this is safe
 
-- "Payment received. You're booked in."
-- 4-step checklist: review details, assign supervisor, confirm first clean date, photo reports after each clean
-- Contact options: WhatsApp, Email, Phone
+- No change to successful authorize/capture paths.
+- Existing 'authorized' / 'paid' bookings untouched.
+- Cron still picks up genuinely new unpaid bookings within the 24h window.
+- Stops creating new PaymentIntents on cards Stripe has already flagged.
 
-This updates the existing `BookingConfirmation.tsx` rather than creating a new page.
-
----
-
-## Technical Details
-
-### New Files to Create
-- `src/pages/LandingPage.tsx` - The VSL landing page (Page 1)
-- `src/pages/FreeQuote.tsx` - The lead capture page (Page 2)
-- `src/components/landing/LandingHero.tsx` - Hero section component
-- `src/components/landing/LandingVideoPlaceholder.tsx` - Video placeholder component
-- `src/components/landing/LandingTestimonials.tsx` - Testimonials section
-- `src/components/landing/LandingReasons.tsx` - "3 key reasons" section
-- `src/components/landing/LandingCTA.tsx` - Reusable CTA button component
-- `src/components/landing/FreeQuoteForm.tsx` - Lead capture form component
-- `src/components/landing/TrustBadges.tsx` - Trust badges component
-
-### Files to Modify
-- `src/App.tsx` - Add routes for `/lp` and `/free-quote`
-- `src/pages/BookingConfirmation.tsx` - Add the "what happens next" steps from the document
-
-### Routing and Flow
-
-```text
-Ad / Link --> /lp (Landing Page)
-                |
-                v
-         CTA "Get my FREE quote"
-                |
-                v
-           /free-quote (Lead Capture: Name + Email)
-                |
-                v
-         Save lead to quote_leads table
-                |
-                v
-           /services (Existing ChooseService page - pick service type)
-                |
-                v
-     /domestic or /airbnb or /end-of-tenancy (Existing booking forms)
-                |
-                v
-     /booking-confirmation (Enhanced with "what happens next")
-```
-
-### UTM Tracking
-The landing page will use the existing `captureTrackingParams()` logic from `ChooseService.tsx` to capture UTM parameters on arrival, ensuring ad attribution is preserved through the funnel.
-
-### No Design Changes to Existing Pages
-All existing pages remain untouched in terms of design. Only the `BookingConfirmation.tsx` gets the additional "what happens next" content added below the existing confirmation UI.
-
+Want me to proceed with all 4 code changes + the migration, or just the urgent fix (#1 + cleanup of 111136) first?
