@@ -130,6 +130,11 @@ export const getCustomerNavigation = (hasLinenAccess: boolean = false) => [
     icon: Plus,
   },
   {
+    title: "Request a Quote",
+    url: "/customer/quote-request",
+    icon: FileText,
+  },
+  {
     title: "Completed Bookings",
     url: "/customer-completed-bookings",
     icon: Calendar,
