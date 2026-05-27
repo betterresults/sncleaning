@@ -62,7 +62,9 @@ const QuoteRequest: React.FC = () => {
         uploadedUrls.push(data.publicUrl);
       }
 
+      const quoteRequestId = crypto.randomUUID();
       const payload = {
+        id: quoteRequestId,
         ...parsed.data,
         phone: parsed.data.phone || null,
         description: parsed.data.description || null,
@@ -71,16 +73,14 @@ const QuoteRequest: React.FC = () => {
         customer_id: customerId || null,
       };
 
-      const { data: inserted, error } = await supabase
+      const { error } = await supabase
         .from('quote_requests')
-        .insert(payload as any)
-        .select('id')
-        .single();
+        .insert(payload as any);
       if (error) throw error;
 
       await supabase.functions.invoke('send-quote-request-notification', {
         body: {
-          id: inserted.id,
+          id: quoteRequestId,
           name: payload.name,
           email: payload.email,
           phone: payload.phone,
