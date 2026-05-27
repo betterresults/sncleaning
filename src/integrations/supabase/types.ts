@@ -2494,6 +2494,54 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          customer_id: number | null
+          description: string | null
+          email: string | null
+          id: string
+          name: string | null
+          phone: string | null
+          photo_urls: string[]
+          postcode: string
+          service: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          customer_id?: number | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          photo_urls?: string[]
+          postcode: string
+          service: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          customer_id?: number | null
+          description?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          phone?: string | null
+          photo_urls?: string[]
+          postcode?: string
+          service?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       recurring_services: {
         Row: {
           address: string | null

@@ -68,6 +68,8 @@ import AdminProfitTracking from "./pages/AdminProfitTracking";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminNotificationManagement from "./pages/AdminNotificationManagement";
 import ApplyToWork from "./pages/ApplyToWork";
+import QuoteRequest from "./pages/QuoteRequest";
+import AdminQuoteRequests from "./pages/AdminQuoteRequests";
 import LandingPage from "./pages/LandingPage";
 import FreeQuote from "./pages/FreeQuote";
 
@@ -146,6 +148,9 @@ const App = () => (
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
             <Route path="/payment-failed" element={<PaymentFailed />} />
             <Route path="/apply" element={<ApplyToWork />} />
+            <Route path="/quote-request" element={<QuoteRequest />} />
+            <Route path="/customer/quote-request" element={<QuoteRequest />} />
+            <Route path="/admin-quote-requests" element={<AdminQuoteRequests />} />
             <Route path="/lp" element={<LandingPage />} />
             <Route path="/get-quote" element={<LandingPage />} />
             <Route path="/free-quote" element={<FreeQuote />} />
