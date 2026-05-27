@@ -12,7 +12,7 @@ import { Loader2, Upload, X, CheckCircle2 } from 'lucide-react';
 
 const schema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120),
-  email: z.string().trim().email('Invalid email').max(255).optional().or(z.literal('')),
+  email: z.string().trim().email('Valid email is required').max(255),
   phone: z.string().trim().max(40).optional().or(z.literal('')),
   postcode: z.string().trim().min(2, 'Postcode is required').max(20),
   service: z.string().trim().min(2, 'Please describe the service').max(200),
@@ -64,7 +64,6 @@ const QuoteRequest: React.FC = () => {
 
       const payload = {
         ...parsed.data,
-        email: parsed.data.email || null,
         phone: parsed.data.phone || null,
         description: parsed.data.description || null,
         street: parsed.data.street || null,
@@ -147,8 +146,8 @@ const QuoteRequest: React.FC = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={form.email} onChange={update('email')} placeholder="you@example.com" />
+                <Label htmlFor="email">Email *</Label>
+                <Input id="email" type="email" value={form.email} onChange={update('email')} placeholder="you@example.com" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
