@@ -2506,6 +2506,9 @@ export type Database = {
           phone: string | null
           photo_urls: string[]
           postcode: string
+          quote_message: string | null
+          quoted_at: string | null
+          quoted_price: number | null
           service: string
           status: string
           street: string | null
@@ -2522,6 +2525,9 @@ export type Database = {
           phone?: string | null
           photo_urls?: string[]
           postcode: string
+          quote_message?: string | null
+          quoted_at?: string | null
+          quoted_price?: number | null
           service: string
           status?: string
           street?: string | null
@@ -2538,6 +2544,9 @@ export type Database = {
           phone?: string | null
           photo_urls?: string[]
           postcode?: string
+          quote_message?: string | null
+          quoted_at?: string | null
+          quoted_price?: number | null
           service?: string
           status?: string
           street?: string | null
