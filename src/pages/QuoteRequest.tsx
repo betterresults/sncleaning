@@ -146,7 +146,7 @@ const QuoteRequest: React.FC = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input id="email" type="email" value={form.email} onChange={update('email')} placeholder="you@example.com" required />
               </div>
               <div className="space-y-2">
