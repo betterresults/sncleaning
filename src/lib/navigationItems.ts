@@ -234,6 +234,11 @@ export const adminNavigation = [
     icon: MessageCircle,
   },
   {
+    title: "Quote Requests",
+    url: "/admin-quote-requests",
+    icon: FileText,
+  },
+  {
     title: "Views",
     icon: BarChart3,
     subItems: [
