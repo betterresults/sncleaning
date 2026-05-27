@@ -19,6 +19,7 @@ type QuoteRequest = {
   email: string | null;
   phone: string | null;
   postcode: string;
+  street: string | null;
   service: string;
   description: string | null;
   photo_urls: string[];
@@ -107,7 +108,7 @@ const AdminQuoteRequests: React.FC = () => {
                         </div>
 
                         <div className="grid md:grid-cols-3 gap-3 text-sm text-slate-700 mb-3">
-                          <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#18A5A5]" /> <strong>{q.postcode}</strong></div>
+                          <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-[#18A5A5]" /> <strong>{q.postcode}</strong>{q.street ? <span className="text-slate-500">— {q.street}</span> : null}</div>
                           {q.email && <a href={`mailto:${q.email}`} className="flex items-center gap-2 hover:underline"><Mail className="w-4 h-4 text-[#18A5A5]" /> {q.email}</a>}
                           {q.phone && <a href={`tel:${q.phone}`} className="flex items-center gap-2 hover:underline"><Phone className="w-4 h-4 text-[#18A5A5]" /> {q.phone}</a>}
                         </div>

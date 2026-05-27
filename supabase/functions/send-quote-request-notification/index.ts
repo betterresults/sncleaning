@@ -14,6 +14,7 @@ interface Payload {
   email?: string;
   phone?: string;
   postcode: string;
+  street?: string;
   service: string;
   description?: string;
   photo_urls: string[];
@@ -45,6 +46,7 @@ const handler = async (req: Request): Promise<Response> => {
             <tr><td style="padding:6px 0;color:#666;">Email</td><td>${body.email || "—"}</td></tr>
             <tr><td style="padding:6px 0;color:#666;">Phone</td><td>${body.phone || "—"}</td></tr>
             <tr><td style="padding:6px 0;color:#666;">Postcode</td><td><strong>${body.postcode}</strong></td></tr>
+            <tr><td style="padding:6px 0;color:#666;">Street / Nickname</td><td>${body.street || "—"}</td></tr>
             <tr><td style="padding:6px 0;color:#666;">Service</td><td><strong>${body.service}</strong></td></tr>
             <tr><td style="padding:6px 0;color:#666;vertical-align:top;">Description</td><td style="white-space:pre-wrap;">${body.description || "—"}</td></tr>
           </table>
