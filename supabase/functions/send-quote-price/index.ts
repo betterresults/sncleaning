@@ -70,9 +70,17 @@ serve(async (req) => {
             ${qr.street ? `<tr><td style="padding:6px 0;color:#666;">Street / Nickname</td><td>${qr.street}</td></tr>` : ""}
           </table>
 
-          <div style="margin-top:24px;text-align:center;">
-            <a href="https://sncleaningservices.co.uk/free-quote" style="display:inline-block;background:#18A5A5;color:#fff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:bold;">Book this clean</a>
-          </div>
+          ${(() => {
+            const waText =
+              `Hi, please book my ${qr.service} clean.` +
+              `\nAddress / Postcode: ${qr.postcode}${qr.street ? ` — ${qr.street}` : ""}` +
+              `\nQuoted price: ${formattedPrice}` +
+              `\nQuote ref: ${qr.id}`;
+            const waUrl = `https://wa.me/442038355033?text=${encodeURIComponent(waText)}`;
+            return `<div style="margin-top:24px;text-align:center;">
+              <a href="${waUrl}" style="display:inline-block;background:#25D366;color:#fff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:bold;">Book this clean on WhatsApp</a>
+            </div>`;
+          })()}
 
           <div style="margin-top:24px;padding:14px;background:#f7f7f7;border-radius:4px;font-size:13px;color:#555;">
             Questions? Reply to this email, call <a href="tel:+442038355033" style="color:#18A5A5;">0203 835 5033</a>, or WhatsApp <a href="https://wa.me/+442038355033" style="color:#18A5A5;">+44 20 3835 5033</a>.
