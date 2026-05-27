@@ -68,6 +68,8 @@ import AdminProfitTracking from "./pages/AdminProfitTracking";
 import AdminActivityLogs from "./pages/AdminActivityLogs";
 import AdminNotificationManagement from "./pages/AdminNotificationManagement";
 import ApplyToWork from "./pages/ApplyToWork";
+import QuoteRequest from "./pages/QuoteRequest";
+import AdminQuoteRequests from "./pages/AdminQuoteRequests";
 import LandingPage from "./pages/LandingPage";
 import FreeQuote from "./pages/FreeQuote";
 
