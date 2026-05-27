@@ -17,6 +17,7 @@ const schema = z.object({
   postcode: z.string().trim().min(2, 'Postcode is required').max(20),
   service: z.string().trim().min(2, 'Please describe the service').max(200),
   description: z.string().trim().max(2000).optional().or(z.literal('')),
+  street: z.string().trim().max(200).optional().or(z.literal('')),
 });
 
 const QuoteRequest: React.FC = () => {
@@ -25,7 +26,7 @@ const QuoteRequest: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', postcode: '', service: '', description: '',
+    name: '', email: '', phone: '', postcode: '', street: '', service: '', description: '',
   });
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -66,6 +67,7 @@ const QuoteRequest: React.FC = () => {
         email: parsed.data.email || null,
         phone: parsed.data.phone || null,
         description: parsed.data.description || null,
+        street: parsed.data.street || null,
         photo_urls: uploadedUrls,
         customer_id: customerId || null,
       };
@@ -84,6 +86,7 @@ const QuoteRequest: React.FC = () => {
           email: payload.email,
           phone: payload.phone,
           postcode: payload.postcode,
+          street: payload.street,
           service: payload.service,
           description: payload.description,
           photo_urls: uploadedUrls,
@@ -91,7 +94,7 @@ const QuoteRequest: React.FC = () => {
       });
 
       setDone(true);
-      setForm({ name: '', email: '', phone: '', postcode: '', service: '', description: '' });
+      setForm({ name: '', email: '', phone: '', postcode: '', street: '', service: '', description: '' });
       setPhotos([]);
     } catch (err: any) {
       console.error(err);
@@ -135,6 +138,14 @@ const QuoteRequest: React.FC = () => {
                 <Label htmlFor="postcode">Postcode *</Label>
                 <Input id="postcode" value={form.postcode} onChange={update('postcode')} placeholder="SW1A 1AA" required />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="street">Street / Nickname</Label>
+              <Input id="street" value={form.street} onChange={update('street')} placeholder="e.g. 12 Baker Street, or 'Mum's flat'" />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" value={form.email} onChange={update('email')} placeholder="you@example.com" />
