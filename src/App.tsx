@@ -148,6 +148,9 @@ const App = () => (
             <Route path="/booking-confirmation" element={<BookingConfirmation />} />
             <Route path="/payment-failed" element={<PaymentFailed />} />
             <Route path="/apply" element={<ApplyToWork />} />
+            <Route path="/quote-request" element={<QuoteRequest />} />
+            <Route path="/customer/quote-request" element={<QuoteRequest />} />
+            <Route path="/admin-quote-requests" element={<AdminQuoteRequests />} />
             <Route path="/lp" element={<LandingPage />} />
             <Route path="/get-quote" element={<LandingPage />} />
             <Route path="/free-quote" element={<FreeQuote />} />
