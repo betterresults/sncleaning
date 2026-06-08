@@ -896,6 +896,44 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           </SelectContent>
                         </Select>
                       </div>
+                      {formData.paymentStatus === 'Partially Paid' && (
+                        <>
+                          <div>
+                            <Label htmlFor="amountPaid" className="text-sm font-medium">Amount Paid (£)</Label>
+                            <Input
+                              id="amountPaid"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max={formData.totalCost}
+                              value={formData.amountPaid}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                const capped = Math.min(Math.max(val, 0), formData.totalCost || 0);
+                                handleInputChange('amountPaid', capped);
+                              }}
+                              className="mt-1"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="amountRemaining" className="text-sm font-medium">Remaining (£)</Label>
+                            <Input
+                              id="amountRemaining"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              max={formData.totalCost}
+                              value={Number(Math.max((formData.totalCost || 0) - (formData.amountPaid || 0), 0).toFixed(2))}
+                              onChange={(e) => {
+                                const remaining = parseFloat(e.target.value) || 0;
+                                const capped = Math.min(Math.max(remaining, 0), formData.totalCost || 0);
+                                handleInputChange('amountPaid', Number(((formData.totalCost || 0) - capped).toFixed(2)));
+                              }}
+                              className="mt-1"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </AccordionContent>
