@@ -221,6 +221,7 @@ interface BookingInvoicePDFProps {
     total_cost: number;
     total_hours?: number | null;
     payment_status: string;
+    amount_paid?: number | null;
     additional_details?: string;
   };
   customer?: {
@@ -395,35 +396,61 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
             <View style={styles.serviceTable}>
               {/* Table Header */}
               <View style={styles.tableHeader}>
-                <Text style={[styles.tableCol1, styles.tableHeaderText]}>Description</Text>
-                <Text style={[styles.tableCol2, styles.tableHeaderText]}>Hours</Text>
-                <Text style={[styles.tableCol3, styles.tableHeaderText]}>Amount</Text>
+                <Text style={[{ width: '75%' }, styles.tableHeaderText]}>Description</Text>
+                <Text style={[{ width: '25%', textAlign: 'right' }, styles.tableHeaderText]}>Amount</Text>
               </View>
 
               {/* Service Row */}
               <View style={styles.tableRow}>
-                <View style={styles.tableCol1}>
+                <View style={{ width: '75%' }}>
                   <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>
                     {humanize(booking.cleaning_type) || humanize(booking.service_type)}
                   </Text>
                 </View>
-                <Text style={styles.tableCol2}>
-                  {booking.total_hours ? `${booking.total_hours}h` : '-'}
-                </Text>
-                <Text style={styles.tableCol3}>
+                <Text style={{ width: '25%', textAlign: 'right' }}>
                   £{booking.total_cost?.toFixed(2) || '0.00'}
                 </Text>
               </View>
-              
-              {/* Total Section */}
-              <View style={styles.totalSection}>
+
+              {(() => {
+                const total = Number(booking.total_cost) || 0;
+                const paid = Number(booking.amount_paid) || 0;
+                const balance = Math.max(total - paid, 0);
+                const isPartial = paid > 0 && paid < total;
+                const isFullyPaid = paid >= total && total > 0;
+                return (
+                  <>
+                    {(isPartial || isFullyPaid) && (
+                      <>
+                        <View style={[styles.tableRow, { backgroundColor: '#f9fafb' }]}>
+                          <Text style={{ width: '75%', color: '#065f46' }}>Amount Paid</Text>
+                          <Text style={{ width: '25%', textAlign: 'right', color: '#065f46' }}>
+                            £{paid.toFixed(2)}
+                          </Text>
+                        </View>
+                        <View style={[styles.tableRow, { backgroundColor: '#f9fafb' }]}>
+                          <Text style={{ width: '75%', color: balance > 0 ? '#991b1b' : '#065f46' }}>
+                            {balance > 0 ? 'Balance Due' : 'Balance'}
+                          </Text>
+                          <Text style={{ width: '25%', textAlign: 'right', color: balance > 0 ? '#991b1b' : '#065f46' }}>
+                            £{balance.toFixed(2)}
+                          </Text>
+                        </View>
+                      </>
+                    )}
+                    <View style={styles.totalSection}>
                 <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Total Due</Text>
-                  <Text style={styles.totalValue}>
-                    £{booking.total_cost?.toFixed(2) || '0.00'}
-                  </Text>
+                        <Text style={styles.totalLabel}>
+                          {isFullyPaid ? 'Total Paid' : isPartial ? 'Balance Due' : 'Total Due'}
+                        </Text>
+                        <Text style={styles.totalValue}>
+                          £{(isPartial ? balance : total).toFixed(2)}
+                        </Text>
+                      </View>
                 </View>
-              </View>
+                  </>
+                );
+              })()}
             </View>
           </View>
 

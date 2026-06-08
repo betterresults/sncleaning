@@ -23,6 +23,7 @@ interface Booking {
   total_cost: number;
   total_hours?: number | null;
   payment_status: string;
+  amount_paid?: number | null;
   additional_details?: string;
   customer?: number;
 }
@@ -206,7 +207,7 @@ export const BookingInvoiceDialog: React.FC<BookingInvoiceDialogProps> = ({
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{bookingTime} {booking.total_hours ? `(${booking.total_hours}h)` : ''}</span>
+                <span>{bookingTime}</span>
               </div>
             </div>
             <div className="space-y-3">
@@ -221,16 +222,34 @@ export const BookingInvoiceDialog: React.FC<BookingInvoiceDialogProps> = ({
             </div>
           </div>
 
-          {/* Total */}
-          <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Banknote className="h-5 w-5 text-muted-foreground" />
-              <span className="font-medium">Total Amount</span>
-            </div>
-            <span className="text-2xl font-bold text-primary">
-              £{booking.total_cost?.toFixed(2) || '0.00'}
-            </span>
-          </div>
+          {/* Totals */}
+          {(() => {
+            const total = Number(booking.total_cost) || 0;
+            const paid = Number(booking.amount_paid) || 0;
+            const balance = Math.max(total - paid, 0);
+            const showBreakdown = paid > 0;
+            return (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Total Amount</span>
+                  <span className="font-medium">£{total.toFixed(2)}</span>
+                </div>
+                {showBreakdown && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Amount Paid</span>
+                    <span className="font-medium text-green-700">£{paid.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-medium">{balance > 0 ? 'Balance Due' : 'Paid in Full'}</span>
+                  </div>
+                  <span className="text-2xl font-bold text-primary">£{balance.toFixed(2)}</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Actions */}
           <div className="grid grid-cols-2 gap-3 pt-2">
