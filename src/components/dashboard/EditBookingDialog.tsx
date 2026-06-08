@@ -101,7 +101,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     deposit: 0,
     linenManagement: false,
     linenUsed: [],
-    frequently: ''
+    frequently: '',
+    amountPaid: 0
   });
 
   // Format datetime for input field
@@ -186,7 +187,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         deposit: booking.deposit || 0,
         linenManagement: booking.linen_management || false,
         linenUsed: booking.linen_used || [],
-        frequently: frequently
+        frequently: frequently,
+        amountPaid: Number(booking.amount_paid) || 0
       });
       const isAirbnb = booking.service_type?.toLowerCase() === 'airbnb';
       setIsSameDayCleaning(isAirbnb && frequently === 'Same Day');
@@ -344,7 +346,12 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         linen_management: formData.linenManagement,
         linen_used: formData.linenUsed,
         frequently: frequently,
-        same_day: isSameDayCleaning
+        same_day: isSameDayCleaning,
+        amount_paid: formData.paymentStatus === 'Partially Paid'
+          ? Number((formData.amountPaid || 0).toFixed(2))
+          : formData.paymentStatus === 'Paid'
+            ? Number((formData.totalCost || 0).toFixed(2))
+            : 0
       };
 
       // Add sales agent assignment if changed

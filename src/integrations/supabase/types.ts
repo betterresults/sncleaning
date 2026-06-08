@@ -291,6 +291,7 @@ export type Database = {
           additional_details: string | null
           address: string | null
           agency: string | null
+          amount_paid: number | null
           booking_id: number | null
           booking_status: string | null
           carpet_items: string | null
@@ -370,6 +371,7 @@ export type Database = {
           additional_details?: string | null
           address?: string | null
           agency?: string | null
+          amount_paid?: number | null
           booking_id?: number | null
           booking_status?: string | null
           carpet_items?: string | null
@@ -449,6 +451,7 @@ export type Database = {
           additional_details?: string | null
           address?: string | null
           agency?: string | null
+          amount_paid?: number | null
           booking_id?: number | null
           booking_status?: string | null
           carpet_items?: string | null
@@ -1882,6 +1885,7 @@ export type Database = {
           additional_details: string | null
           address: string | null
           agency: string | null
+          amount_paid: number | null
           booking_id: number | null
           booking_status: string | null
           carpet_items: string | null
@@ -1953,6 +1957,7 @@ export type Database = {
           additional_details?: string | null
           address?: string | null
           agency?: string | null
+          amount_paid?: number | null
           booking_id?: number | null
           booking_status?: string | null
           carpet_items?: string | null
@@ -2024,6 +2029,7 @@ export type Database = {
           additional_details?: string | null
           address?: string | null
           agency?: string | null
+          amount_paid?: number | null
           booking_id?: number | null
           booking_status?: string | null
           carpet_items?: string | null
