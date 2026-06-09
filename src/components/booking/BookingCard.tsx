@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera, ExternalLink, FileText } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 
 interface BaseBooking {
@@ -36,6 +36,7 @@ interface BookingCardProps<T extends BaseBooking> {
   onSeePhotos?: (booking: T) => void;
   onUploadPhotos?: (booking: T) => void;
   onPaymentAction?: (booking: T) => void;
+  onViewInvoice?: (booking: T) => void;
   hasReview?: boolean;
   isOverdue?: boolean;
 }
@@ -50,6 +51,7 @@ const BookingCard = <T extends BaseBooking>({
   onSeePhotos,
   onUploadPhotos,
   onPaymentAction,
+  onViewInvoice,
   hasReview,
   isOverdue = false
 }: BookingCardProps<T>) => {
