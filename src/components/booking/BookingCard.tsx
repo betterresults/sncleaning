@@ -299,6 +299,22 @@ const BookingCard = <T extends BaseBooking>({
                   </Button>
                 );
               }
+
+              // Add Invoice button if available
+              if (onViewInvoice) {
+                actions.push(
+                  <Button
+                    key="invoice"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewInvoice?.(booking)}
+                    className="bg-[#18A5A5]/10 hover:bg-[#18A5A5]/20 text-[#185166] hover:text-[#185166] border-[#18A5A5]/40 hover:border-[#18A5A5]"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Invoice</span>
+                  </Button>
+                );
+              }
               
               // Render based on number of actions
               if (actions.length === 1) {
