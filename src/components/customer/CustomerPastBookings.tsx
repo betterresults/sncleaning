@@ -1435,6 +1435,29 @@ const CustomerPastBookings = () => {
           }}
         />
       )}
+
+      <BookingInvoiceDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+        booking={selectedBookingForInvoice ? {
+          id: selectedBookingForInvoice.id,
+          date_time: selectedBookingForInvoice.date_time,
+          first_name: selectedBookingForInvoice.first_name || '',
+          last_name: selectedBookingForInvoice.last_name || '',
+          email: selectedBookingForInvoice.email || '',
+          phone_number: selectedBookingForInvoice.phone_number || '',
+          address: selectedBookingForInvoice.address,
+          postcode: selectedBookingForInvoice.postcode,
+          cleaning_type: selectedBookingForInvoice.cleaning_type || '',
+          service_type: selectedBookingForInvoice.service_type,
+          total_cost: parseFloat(selectedBookingForInvoice.total_cost) || 0,
+          total_hours: selectedBookingForInvoice.total_hours,
+          payment_status: selectedBookingForInvoice.payment_status,
+          amount_paid: selectedBookingForInvoice.amount_paid,
+          additional_details: selectedBookingForInvoice.additional_details,
+          customer: selectedBookingForInvoice.customer,
+        } : null}
+      />
     </div>
   );
 };
