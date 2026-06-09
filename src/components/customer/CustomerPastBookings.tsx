@@ -12,6 +12,7 @@ import PhotoManagementDialog from '@/components/dashboard/PhotoManagementDialog'
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import EditBookingDialog from './EditBookingDialog';
+import { BookingInvoiceDialog } from '@/components/bookings/BookingInvoiceDialog';
 import { format, isAfter, isBefore, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import CustomerBookingPaymentDialog from '@/components/customer/CustomerBookingPaymentDialog';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,8 @@ const CustomerPastBookings = () => {
   const [selectedBookingForEdit, setSelectedBookingForEdit] = useState<PastBooking | null>(null);
   const [uploadPhotosDialogOpen, setUploadPhotosDialogOpen] = useState(false);
   const [selectedBookingForUpload, setSelectedBookingForUpload] = useState<PastBooking | null>(null);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [selectedBookingForInvoice, setSelectedBookingForInvoice] = useState<any | null>(null);
   
   // Filter states
   const [timePeriod, setTimePeriod] = useState('all');
@@ -1056,6 +1059,10 @@ const CustomerPastBookings = () => {
                        onUploadPhotos={userRole === 'admin' ? (b) => handleUploadPhotos(booking) : undefined}
                        onPaymentAction={booking.payment_status?.toLowerCase().includes('paid') ? undefined : (b) => handlePaymentAction(booking)}
                        onEdit={(b) => handleEdit(booking)}
+                       onViewInvoice={() => {
+                         setSelectedBookingForInvoice(booking);
+                         setInvoiceDialogOpen(true);
+                       }}
                        hasReview={reviews[booking.id] || false}
                        isOverdue={overdueInvoices.includes(booking)}
                      />
@@ -1428,6 +1435,29 @@ const CustomerPastBookings = () => {
           }}
         />
       )}
+
+      <BookingInvoiceDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+        booking={selectedBookingForInvoice ? {
+          id: selectedBookingForInvoice.id,
+          date_time: selectedBookingForInvoice.date_time,
+          first_name: selectedBookingForInvoice.first_name || '',
+          last_name: selectedBookingForInvoice.last_name || '',
+          email: selectedBookingForInvoice.email || '',
+          phone_number: selectedBookingForInvoice.phone_number || '',
+          address: selectedBookingForInvoice.address,
+          postcode: selectedBookingForInvoice.postcode,
+          cleaning_type: selectedBookingForInvoice.cleaning_type || '',
+          service_type: selectedBookingForInvoice.service_type,
+          total_cost: parseFloat(selectedBookingForInvoice.total_cost) || 0,
+          total_hours: selectedBookingForInvoice.total_hours,
+          payment_status: selectedBookingForInvoice.payment_status,
+          amount_paid: selectedBookingForInvoice.amount_paid,
+          additional_details: selectedBookingForInvoice.additional_details,
+          customer: selectedBookingForInvoice.customer,
+        } : null}
+      />
     </div>
   );
 };

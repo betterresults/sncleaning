@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera, ExternalLink } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera, ExternalLink, FileText } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 
 interface BaseBooking {
@@ -36,6 +36,7 @@ interface BookingCardProps<T extends BaseBooking> {
   onSeePhotos?: (booking: T) => void;
   onUploadPhotos?: (booking: T) => void;
   onPaymentAction?: (booking: T) => void;
+  onViewInvoice?: (booking: T) => void;
   hasReview?: boolean;
   isOverdue?: boolean;
 }
@@ -50,6 +51,7 @@ const BookingCard = <T extends BaseBooking>({
   onSeePhotos,
   onUploadPhotos,
   onPaymentAction,
+  onViewInvoice,
   hasReview,
   isOverdue = false
 }: BookingCardProps<T>) => {
@@ -294,6 +296,22 @@ const BookingCard = <T extends BaseBooking>({
                   >
                     <Camera className="h-4 w-4" />
                     <span className="ml-1 hidden sm:inline">Upload</span>
+                  </Button>
+                );
+              }
+
+              // Add Invoice button if available
+              if (onViewInvoice) {
+                actions.push(
+                  <Button
+                    key="invoice"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewInvoice?.(booking)}
+                    className="bg-[#18A5A5]/10 hover:bg-[#18A5A5]/20 text-[#185166] hover:text-[#185166] border-[#18A5A5]/40 hover:border-[#18A5A5]"
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span className="ml-1 hidden sm:inline">Invoice</span>
                   </Button>
                 );
               }
