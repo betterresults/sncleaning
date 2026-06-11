@@ -34,26 +34,32 @@ const faqs = [
 
 const LandingFAQ = () => {
   return (
-    <section className="bg-[#F5FAFB] py-14 md:py-20">
+    <section className="bg-[#faf5ea] py-16 md:py-24">
       <div className="max-w-3xl mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#185166] text-center mb-4">
-          Frequently Asked Questions
-        </h2>
-        <p className="text-center text-gray-500 mb-10">
-          Everything you need to know before booking your clean.
-        </p>
+        <div className="text-center mb-12">
+          <div className="inline-block h-px w-12 bg-[#c9a84c] mb-5" />
+          <h2
+            className="text-3xl md:text-4xl font-semibold text-[#0d1b3d] tracking-wide mb-3 uppercase"
+            style={{ fontFamily: '"Playfair Display", serif' }}
+          >
+            Frequently Asked Questions
+          </h2>
+          <p className="text-[#0d1b3d]/60 text-sm md:text-base tracking-wide">
+            Everything you need to know before booking your clean.
+          </p>
+        </div>
 
         <Accordion type="single" collapsible className="space-y-3">
           {faqs.map((item, i) => (
             <AccordionItem
               key={i}
               value={`item-${i}`}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm px-5"
+              className="bg-white border border-[#c9a84c]/25 shadow-sm px-5"
             >
-              <AccordionTrigger className="text-left text-[#185166] font-semibold hover:no-underline">
+              <AccordionTrigger className="text-left text-[#0d1b3d] font-semibold hover:no-underline">
                 {item.q}
               </AccordionTrigger>
-              <AccordionContent className="text-gray-600 text-sm leading-relaxed">
+              <AccordionContent className="text-[#0d1b3d]/70 text-sm leading-relaxed">
                 {item.a}
               </AccordionContent>
             </AccordionItem>

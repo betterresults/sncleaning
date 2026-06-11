@@ -20,9 +20,9 @@ const LandingVideoPlaceholder = () => {
   };
 
   return (
-    <section className="bg-white py-12 md:py-16">
+    <section className="bg-[#f5efe2] py-12 md:py-16">
       <div className="max-w-3xl mx-auto px-4">
-        <div className="aspect-video rounded-2xl overflow-hidden bg-black relative group">
+        <div className="aspect-video overflow-hidden bg-black relative group border-2 border-[#c9a84c]/40 shadow-lg">
           <video
             ref={videoRef}
             src={videoUrl}

@@ -45,7 +45,7 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#f5efe2]" style={{ fontFamily: 'Inter, sans-serif' }}>
       <LandingHero />
       <LandingVideoPlaceholder />
       <LandingCTA />
@@ -57,8 +57,12 @@ const LandingPage = () => {
       <LandingCTA />
 
       {/* Footer */}
-      <footer className="bg-[#185166] text-white/70 text-center py-6 text-sm">
-        © {new Date().getFullYear()} SN Cleaning Services. All rights reserved.
+      <footer className="bg-[#0d1b3d] text-[#f5efe2]/70 text-center py-8 text-sm tracking-widest border-t-2 border-[#c9a84c]">
+        <div className="inline-block h-px w-10 bg-[#c9a84c] mb-3" />
+        <div className="uppercase" style={{ fontFamily: '"Playfair Display", serif', letterSpacing: '0.3em' }}>
+          SN Cleaning Services
+        </div>
+        <div className="mt-2 text-xs">© {new Date().getFullYear()} All rights reserved.</div>
       </footer>
     </div>
   );
