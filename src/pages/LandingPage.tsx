@@ -4,6 +4,9 @@ import LandingVideoPlaceholder from '@/components/landing/LandingVideoPlaceholde
 import LandingCTA from '@/components/landing/LandingCTA';
 import LandingTestimonials from '@/components/landing/LandingTestimonials';
 import LandingReasons from '@/components/landing/LandingReasons';
+import LandingHowItWorks from '@/components/landing/LandingHowItWorks';
+import LandingServices from '@/components/landing/LandingServices';
+import LandingFAQ from '@/components/landing/LandingFAQ';
 
 const LandingPage = () => {
   useEffect(() => {
@@ -46,8 +49,11 @@ const LandingPage = () => {
       <LandingHero />
       <LandingVideoPlaceholder />
       <LandingCTA />
+      <LandingHowItWorks />
+      <LandingServices />
       <LandingTestimonials />
       <LandingReasons />
+      <LandingFAQ />
       <LandingCTA />
 
       {/* Footer */}
