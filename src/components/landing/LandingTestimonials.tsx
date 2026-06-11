@@ -20,25 +20,31 @@ const testimonials = [
 
 const LandingTestimonials = () => {
   return (
-    <section className="bg-[#f8fafa] py-14 md:py-20">
+    <section className="bg-[#faf5ea] py-16 md:py-24">
       <div className="max-w-5xl mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#185166] text-center mb-10">
-          What Our Clients Say
-        </h2>
+        <div className="text-center mb-12">
+          <div className="inline-block h-px w-12 bg-[#c9a84c] mb-5" />
+          <h2
+            className="text-3xl md:text-4xl font-semibold text-[#0d1b3d] tracking-wide uppercase"
+            style={{ fontFamily: '"Playfair Display", serif' }}
+          >
+            What Our Clients Say
+          </h2>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+              className="bg-white p-7 shadow-sm border border-[#c9a84c]/25"
             >
               <div className="flex gap-1 mb-3">
                 {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <Star key={j} className="h-4 w-4 fill-[#c9a84c] text-[#c9a84c]" />
                 ))}
               </div>
-              <p className="text-gray-700 text-sm leading-relaxed mb-4">{t.text}</p>
-              <p className="font-semibold text-[#185166] text-sm">{t.name}</p>
+              <p className="text-[#0d1b3d]/80 text-sm leading-relaxed mb-4">{t.text}</p>
+              <p className="font-semibold text-[#0d1b3d] text-sm tracking-wide">— {t.name}</p>
             </div>
           ))}
         </div>

@@ -20,28 +20,39 @@ const steps = [
 
 const LandingHowItWorks = () => {
   return (
-    <section className="bg-[#F5FAFB] py-14 md:py-20">
+    <section className="bg-[#faf5ea] py-16 md:py-24">
       <div className="max-w-5xl mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#185166] text-center mb-4">
-          How It Works
-        </h2>
-        <p className="text-center text-gray-500 mb-12 max-w-2xl mx-auto">
-          Booking a professional clean has never been easier.
-        </p>
+        <div className="text-center mb-14">
+          <div className="inline-block h-px w-12 bg-[#c9a84c] mb-5" />
+          <h2
+            className="text-3xl md:text-4xl font-semibold text-[#0d1b3d] tracking-wide mb-3 uppercase"
+            style={{ fontFamily: '"Playfair Display", serif' }}
+          >
+            How It Works
+          </h2>
+          <p className="text-[#0d1b3d]/60 max-w-2xl mx-auto text-sm md:text-base tracking-wide">
+            Booking a professional clean has never been easier.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((s, i) => {
             const Icon = s.icon;
             return (
-              <div key={i} className="relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-[#185166] text-white text-sm font-bold flex items-center justify-center shadow">
+              <div key={i} className="relative bg-white border border-[#c9a84c]/20 p-8 text-center shadow-sm">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-[#0d1b3d] text-[#c9a84c] text-sm font-bold flex items-center justify-center shadow-md border-2 border-[#c9a84c]" style={{ fontFamily: '"Playfair Display", serif' }}>
                   {i + 1}
                 </div>
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#18A5A5]/10 mb-5 mt-2">
-                  <Icon className="h-7 w-7 text-[#18A5A5]" />
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-[#c9a84c]/40 mb-5 mt-3">
+                  <Icon className="h-6 w-6 text-[#c9a84c]" />
                 </div>
-                <h3 className="text-lg font-bold text-[#185166] mb-3">{s.title}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{s.description}</p>
+                <h3
+                  className="text-lg font-semibold text-[#0d1b3d] mb-3 uppercase tracking-wider"
+                  style={{ fontFamily: '"Playfair Display", serif' }}
+                >
+                  {s.title}
+                </h3>
+                <p className="text-[#0d1b3d]/70 text-sm leading-relaxed">{s.description}</p>
               </div>
             );
           })}

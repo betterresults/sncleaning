@@ -5,13 +5,14 @@ const LandingCTA = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="text-center py-8">
+    <div className="text-center py-10 bg-[#f5efe2]">
       <button
         onClick={() => navigate('/free-quote')}
-        className="inline-flex items-center gap-3 bg-[#18A5A5] hover:bg-[#159090] text-white text-lg md:text-xl font-bold px-8 md:px-12 py-4 md:py-5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        className="inline-flex items-center gap-3 bg-[#0d1b3d] hover:bg-[#0a1530] text-white text-base md:text-lg font-semibold tracking-wide px-10 md:px-14 py-4 md:py-5 rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border-b-2 border-[#c9a84c]"
+        style={{ fontFamily: 'Inter, sans-serif' }}
       >
-        Get my FREE personalised quote
-        <ArrowRight className="h-6 w-6" />
+        GET MY FREE PERSONALISED QUOTE
+        <ArrowRight className="h-5 w-5 text-[#c9a84c]" />
       </button>
     </div>
   );
