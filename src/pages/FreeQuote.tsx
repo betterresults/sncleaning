@@ -148,74 +148,78 @@ const FreeQuote = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#185166] via-[#1a5f75] to-[#18A5A5]">
+    <div className="min-h-screen bg-[#f5efe2]" style={{ fontFamily: 'Inter, sans-serif' }}>
       {/* Hero header */}
-      <div className="pt-12 pb-6 px-4 text-center">
-        <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium mb-6">
-          <Sparkles className="h-4 w-4" />
+      <div className="pt-14 pb-8 px-4 text-center">
+        <div className="inline-block h-px w-12 bg-[#c9a84c] mb-5" />
+        <div className="inline-flex items-center gap-2 text-[#c9a84c] px-4 py-1 text-xs font-semibold mb-4 uppercase tracking-[0.25em]">
+          <Sparkles className="h-3.5 w-3.5" />
           Quick & Easy
         </div>
-        <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-3 leading-tight">
+        <h1
+          className="text-3xl md:text-5xl font-semibold text-[#0d1b3d] mb-4 leading-tight uppercase tracking-wide"
+          style={{ fontFamily: '"Playfair Display", serif' }}
+        >
           Get Your Instant Quote
           <br />
-          <span className="text-[#7EDFD6]">In Under 2 Minutes</span>
+          <span className="text-[#c9a84c]">In Under 2 Minutes</span>
         </h1>
-        <p className="text-white/80 text-base md:text-lg max-w-md mx-auto">
+        <p className="text-[#0d1b3d]/70 text-base md:text-lg max-w-md mx-auto">
           Fill in the short form below with a few details about your property and we'll generate your tailored, no-obligation price instantly — no calls, no waiting around.
         </p>
       </div>
 
       {/* Form card */}
       <div className="px-4 pb-12">
-        <div className="max-w-lg mx-auto bg-white rounded-3xl shadow-2xl p-6 md:p-8">
+        <div className="max-w-lg mx-auto bg-white shadow-xl p-6 md:p-8 border border-[#c9a84c]/30">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Personal details */}
             <div>
-              <label className="block text-sm font-semibold text-[#185166] mb-1.5">Full Name</label>
+              <label className="block text-xs font-semibold text-[#0d1b3d] mb-1.5 uppercase tracking-wider">Full Name</label>
               <Input
                 type="text"
                 placeholder="e.g. John Smith"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
+                className="h-12 text-base rounded-none border-gray-300 focus:border-[#c9a84c] focus-visible:ring-[#c9a84c]/30"
                 maxLength={100}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-[#185166] mb-1.5">Email</label>
+              <label className="block text-xs font-semibold text-[#0d1b3d] mb-1.5 uppercase tracking-wider">Email</label>
               <Input
                 type="email"
                 placeholder="john@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
+                className="h-12 text-base rounded-none border-gray-300 focus:border-[#c9a84c] focus-visible:ring-[#c9a84c]/30"
                 maxLength={255}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-[#185166] mb-1.5">Phone</label>
+              <label className="block text-xs font-semibold text-[#0d1b3d] mb-1.5 uppercase tracking-wider">Phone</label>
               <PhoneInput
                 value={phone}
                 onChange={(val) => setPhone(val)}
                 placeholder="7123 456 789"
-                className="rounded-xl"
+                className="rounded-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-[#185166] mb-1.5">Postcode</label>
+              <label className="block text-xs font-semibold text-[#0d1b3d] mb-1.5 uppercase tracking-wider">Postcode</label>
               <Input
                 type="text"
                 placeholder="e.g. E1 6AN"
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value.toUpperCase())}
-                className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
+                className="h-12 text-base rounded-none border-gray-300 focus:border-[#c9a84c] focus-visible:ring-[#c9a84c]/30"
                 maxLength={10}
               />
             </div>
 
             {/* Service selection */}
             <div>
-              <label className="block text-sm font-semibold text-[#185166] mb-2">What do you need?</label>
+              <label className="block text-xs font-semibold text-[#0d1b3d] mb-2 uppercase tracking-wider">What do you need?</label>
               <div className="grid grid-cols-2 gap-3">
                 {services.map((service) => {
                   const Icon = service.icon;
@@ -225,14 +229,14 @@ const FreeQuote = () => {
                       key={service.id}
                       type="button"
                       onClick={() => setSelectedService(service.id)}
-                      className={`flex flex-col items-center gap-1.5 p-4 rounded-xl border-2 transition-all duration-200 text-center ${
+                      className={`flex flex-col items-center gap-1.5 p-4 border transition-all duration-200 text-center ${
                         isSelected
-                          ? 'border-[#18A5A5] bg-[#18A5A5]/10 shadow-md'
-                          : 'border-gray-200 bg-gray-50 hover:border-[#18A5A5]/50'
+                          ? 'border-[#c9a84c] bg-[#faf5ea] shadow-md'
+                          : 'border-gray-200 bg-white hover:border-[#c9a84c]/60'
                       }`}
                     >
-                      <Icon className={`h-6 w-6 ${isSelected ? 'text-[#18A5A5]' : 'text-[#185166]/60'}`} />
-                      <span className={`text-xs font-semibold leading-tight ${isSelected ? 'text-[#185166]' : 'text-[#185166]/70'}`}>
+                      <Icon className={`h-6 w-6 ${isSelected ? 'text-[#c9a84c]' : 'text-[#0d1b3d]/60'}`} />
+                      <span className={`text-xs font-semibold leading-tight uppercase tracking-wider ${isSelected ? 'text-[#0d1b3d]' : 'text-[#0d1b3d]/70'}`}>
                         {service.title}
                       </span>
                     </button>
@@ -246,24 +250,24 @@ const FreeQuote = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 bg-[#18A5A5] hover:bg-[#159090] text-white font-bold text-lg h-14 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-60 mt-2"
+              className="w-full flex items-center justify-center gap-2 bg-[#0d1b3d] hover:bg-[#0a1530] text-white font-semibold text-base h-14 rounded-sm shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-60 mt-2 uppercase tracking-widest border-b-2 border-[#c9a84c]"
             >
               {submitting ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
                   Get My Free Quote
-                  <ArrowRight className="h-5 w-5" />
+                  <ArrowRight className="h-5 w-5 text-[#c9a84c]" />
                 </>
               )}
             </button>
           </form>
 
           {/* Trust badges */}
-          <div className="mt-6 space-y-2">
+          <div className="mt-6 space-y-2 pt-5 border-t border-[#c9a84c]/20">
             {trustItems.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-[#185166]/80">
-                <CheckCircle2 className="h-4 w-4 text-[#18A5A5] flex-shrink-0" />
+              <div key={i} className="flex items-center gap-2 text-sm text-[#0d1b3d]/80">
+                <CheckCircle2 className="h-4 w-4 text-[#c9a84c] flex-shrink-0" />
                 <span>{item}</span>
               </div>
             ))}
@@ -272,9 +276,7 @@ const FreeQuote = () => {
       </div>
 
       {/* Testimonials */}
-      <div className="bg-white">
-        <LandingTestimonials />
-      </div>
+      <LandingTestimonials />
     </div>
   );
 };
