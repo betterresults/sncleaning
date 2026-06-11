@@ -161,7 +161,7 @@ const FreeQuote = () => {
           <span className="text-[#7EDFD6]">In Under 2 Minutes</span>
         </h1>
         <p className="text-white/80 text-base md:text-lg max-w-md mx-auto">
-          Plus get <span className="font-bold text-white">10% off</span> your first clean when you book through our portal
+          Tell us a little about your space and we'll send your tailored quote
         </p>
       </div>
 
