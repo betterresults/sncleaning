@@ -1,11 +1,11 @@
-import heroCleaningBg from '@/assets/hero-cleaning-bg.jpg';
+import heroAsset from '@/assets/hero-luxury-interior.jpg.asset.json';
 
 const LandingHero = () => {
   return (
-    <section className="bg-[#0d1b3d]">
+    <section className="bg-[#0b2545]">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 min-h-[520px] md:min-h-[600px]">
         {/* LEFT: Navy text panel with gold accents */}
-        <div className="relative bg-[#0d1b3d] text-white px-6 md:px-14 py-14 md:py-20 flex flex-col justify-center overflow-hidden">
+        <div className="relative bg-gradient-to-br from-[#0b2545] via-[#0b2545] to-[#08203d] text-white px-6 md:px-14 py-14 md:py-20 flex flex-col justify-center overflow-hidden">
           {/* Subtle gold dot pattern */}
           <div className="absolute inset-0 opacity-[0.08] pointer-events-none">
             <div
@@ -71,10 +71,10 @@ const LandingHero = () => {
         <div className="relative min-h-[300px] lg:min-h-full">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${heroCleaningBg})` }}
+            style={{ backgroundImage: `url(${heroAsset.url})` }}
           />
-          {/* Tint to harmonize with palette */}
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent to-[#0d1b3d]/40 lg:to-[#0d1b3d]/20" />
+          {/* Soft tint to harmonize with palette */}
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent to-[#0b2545]/35 lg:to-[#0b2545]/15" />
           {/* Gold inset frame */}
           <div className="absolute inset-4 md:inset-6 border border-[#c9a84c]/40 pointer-events-none" />
         </div>
