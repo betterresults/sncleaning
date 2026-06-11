@@ -201,6 +201,26 @@ const BookingConfirmation = () => {
         if (error) throw error;
         setBooking(data);
 
+        // Fire Meta Pixel Purchase event (once per booking)
+        if (data?.id && data?.total_cost) {
+          try {
+            const firedKey = `fbq_purchase_fired_${data.id}`;
+            if (!sessionStorage.getItem(firedKey) && typeof (window as any).fbq === 'function') {
+              (window as any).fbq('track', 'Purchase', {
+                value: Number(data.total_cost),
+                currency: 'GBP',
+                content_ids: [String(data.id)],
+                content_type: 'product',
+                content_name: data.service_type,
+              });
+              sessionStorage.setItem(firedKey, '1');
+              console.log('📈 Meta Pixel Purchase event fired:', data.total_cost);
+            }
+          } catch (e) {
+            console.error('Meta Pixel fire error:', e);
+          }
+        }
+
         // Fetch service type label from company_settings
         if (data?.service_type) {
           const { data: settingData } = await supabase
