@@ -1,4 +1,4 @@
-import heroAsset from '@/assets/hero-luxury-interior.jpg.asset.json';
+import heroAsset from '@/assets/hero-cleaner.jpg.asset.json';
 
 const LandingHero = () => {
   return (
