@@ -156,12 +156,12 @@ const FreeQuote = () => {
           Quick & Easy
         </div>
         <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-3 leading-tight">
-          Get Your Free Quote
+          Get Your Instant Quote
           <br />
           <span className="text-[#7EDFD6]">In Under 2 Minutes</span>
         </h1>
         <p className="text-white/80 text-base md:text-lg max-w-md mx-auto">
-          Tell us a little about your space and we'll send your tailored quote
+          Fill in the short form below with a few details about your property and we'll generate your tailored, no-obligation price instantly — no calls, no waiting around.
         </p>
       </div>
 
