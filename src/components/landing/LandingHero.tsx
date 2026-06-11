@@ -2,50 +2,82 @@ import heroCleaningBg from '@/assets/hero-cleaning-bg.jpg';
 
 const LandingHero = () => {
   return (
-    <section className="relative overflow-hidden text-white">
-      {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${heroCleaningBg})` }}
-      />
+    <section className="bg-[#0d1b3d]">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 min-h-[520px] md:min-h-[600px]">
+        {/* LEFT: Navy text panel with gold accents */}
+        <div className="relative bg-[#0d1b3d] text-white px-6 md:px-14 py-14 md:py-20 flex flex-col justify-center overflow-hidden">
+          {/* Subtle gold dot pattern */}
+          <div className="absolute inset-0 opacity-[0.08] pointer-events-none">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 2px 2px, #c9a84c 1px, transparent 0)',
+                backgroundSize: '28px 28px',
+              }}
+            />
+          </div>
 
-      {/* Navy overlay to match brand palette */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0d1b3d]/92 to-[#0a1530]/88" />
+          {/* Gold corner ornament */}
+          <div className="absolute top-6 left-6 w-12 h-12 border-t border-l border-[#c9a84c]/60 hidden md:block" />
+          <div className="absolute bottom-6 right-6 w-12 h-12 border-b border-r border-[#c9a84c]/60 hidden md:block" />
 
-      {/* Subtle dot pattern */}
-      <div className="absolute inset-0 opacity-[0.07]">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 2px 2px, #c9a84c 1px, transparent 0)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-      </div>
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="h-px w-10 bg-[#c9a84c]" />
+              <span className="text-[#c9a84c] uppercase tracking-[0.28em] text-[10px] md:text-xs font-semibold">
+                London &amp; Essex
+              </span>
+            </div>
 
-      <div className="relative max-w-4xl mx-auto px-4 py-20 md:py-28 text-center">
-        <div className="inline-block h-px w-12 bg-[#c9a84c] mb-5" />
-        <div className="text-[#c9a84c] uppercase tracking-[0.3em] text-xs md:text-sm font-semibold mb-6">
-          London &amp; Essex's Trusted Cleaning Company
+            <h1
+              className="text-4xl md:text-5xl lg:text-6xl font-semibold leading-[1.05] mb-6 uppercase"
+              style={{ fontFamily: '"Playfair Display", serif' }}
+            >
+              Reliable &amp;
+              <br />
+              Consistent
+              <br />
+              <span className="text-[#c9a84c] italic font-medium normal-case" style={{ fontFamily: '"Playfair Display", serif' }}>
+                Cleaning
+              </span>
+              <span className="text-white/90"> Done Right.</span>
+            </h1>
+
+            <div className="h-px w-16 bg-[#c9a84c] mb-6" />
+
+            <p className="text-sm md:text-base text-white/75 max-w-md leading-relaxed mb-8">
+              In-house trained staff, dedicated supervisors, detailed checklists, and photo reports after every clean — so you never have to worry.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-xs uppercase tracking-widest text-white/70">
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-[#c9a84c] rounded-full" />
+                Trusted &amp; Reliable
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-[#c9a84c] rounded-full" />
+                Vetted Team
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-[#c9a84c] rounded-full" />
+                Photo Reports
+              </span>
+            </div>
+          </div>
         </div>
 
-        <h1
-          className="text-3xl md:text-5xl lg:text-6xl font-semibold leading-tight mb-6 uppercase tracking-wide"
-          style={{ fontFamily: '"Playfair Display", serif' }}
-        >
-          Reliable &amp; Consistent
-          <br />
-          <span className="text-[#c9a84c]">Cleaning In London &amp; Essex</span>
-        </h1>
-
-        <div className="flex justify-center mb-6">
-          <div className="h-px w-16 bg-[#c9a84c]/60" />
+        {/* RIGHT: Photo with soft gold frame */}
+        <div className="relative min-h-[300px] lg:min-h-full">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${heroCleaningBg})` }}
+          />
+          {/* Tint to harmonize with palette */}
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent to-[#0d1b3d]/40 lg:to-[#0d1b3d]/20" />
+          {/* Gold inset frame */}
+          <div className="absolute inset-4 md:inset-6 border border-[#c9a84c]/40 pointer-events-none" />
         </div>
-
-        <p className="text-base md:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
-          In-house trained staff, dedicated supervisors, detailed checklists, and photo reports after every clean — so you never have to worry.
-        </p>
       </div>
     </section>
   );
