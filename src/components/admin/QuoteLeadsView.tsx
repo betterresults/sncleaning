@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
-import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar, ArrowUpDown, Send } from 'lucide-react';
+import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar, ArrowUpDown, Send, ClipboardList } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
