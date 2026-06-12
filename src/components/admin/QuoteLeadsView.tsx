@@ -580,6 +580,10 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
               <Send className="h-4 w-4" />
               Sent Quotes
             </TabsTrigger>
+            <TabsTrigger value="lead_form" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 gap-1">
+              <ClipboardList className="h-4 w-4" />
+              Lead Form ({timeFilteredLeads.filter(l => l.first_name || l.email || l.phone || l.postcode).length})
+            </TabsTrigger>
             <TabsTrigger value="leads" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm px-4">
               All Leads ({filteredLeads.length})
             </TabsTrigger>
@@ -591,6 +595,81 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
 
         <TabsContent value="sent_quotes" className="space-y-4">
           <SentQuotesTab agentUserId={agentUserId} isAgent={isAgent} />
+        </TabsContent>
+
+        <TabsContent value="lead_form" className="space-y-4">
+          <Card className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
+                      <TableHead className="font-semibold text-gray-600">Submitted</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Name</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Email</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Phone</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Postcode</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Source</TableHead>
+                      <TableHead className="font-semibold text-gray-600">Progress</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {timeFilteredLeads
+                      .filter(l => l.first_name || l.email || l.phone || l.postcode)
+                      .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
+                      .map((lead) => {
+                        const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || '—';
+                        const progressLabel = lead.converted_booking_id
+                          ? 'Booked'
+                          : (lead.furthest_step || 'lead_captured').replace(/_/g, ' ');
+                        const progressClass = lead.converted_booking_id
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : lead.furthest_step === 'booking_attempted'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : lead.furthest_step === 'quote_viewed'
+                          ? 'bg-teal-50 text-teal-700 border-teal-200'
+                          : 'bg-gray-50 text-gray-700 border-gray-200';
+                        return (
+                          <TableRow key={lead.id} className="hover:bg-gray-50/50">
+                            <TableCell className="text-sm whitespace-nowrap">
+                              {lead.created_at ? (
+                                <div>
+                                  <p className="font-medium text-gray-900">{format(new Date(lead.created_at), 'dd MMM yyyy')}</p>
+                                  <p className="text-gray-400 text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
+                                </div>
+                              ) : '—'}
+                            </TableCell>
+                            <TableCell className="text-sm font-medium text-gray-900">{fullName}</TableCell>
+                            <TableCell className="text-sm text-gray-700">{lead.email || '—'}</TableCell>
+                            <TableCell className="text-sm text-gray-700 whitespace-nowrap">{lead.phone || '—'}</TableCell>
+                            <TableCell className="text-sm text-gray-700 uppercase">{lead.postcode || '—'}</TableCell>
+                            <TableCell className="text-sm">
+                              {lead.source ? (
+                                <Badge variant="outline" className="capitalize text-xs">{lead.source.replace(/_/g, ' ')}</Badge>
+                              ) : (
+                                <span className="text-gray-400 text-xs">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={`capitalize text-xs ${progressClass}`}>
+                                {progressLabel}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    {timeFilteredLeads.filter(l => l.first_name || l.email || l.phone || l.postcode).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-gray-400 py-12">
+                          No lead form submissions in this time period
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="leads" className="space-y-4">
