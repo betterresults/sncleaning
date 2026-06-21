@@ -68,28 +68,12 @@ const BookingConfirmation = () => {
 
     const poll = async () => {
       if (cancelled) return;
-      const { data } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('stripe_checkout_session_id', stripeSessionId)
-        .maybeSingle();
+      const { data } = await supabase.functions.invoke('resolve-checkout-booking', {
+        body: { sessionId: stripeSessionId },
+      });
       if (cancelled) return;
-      if (data?.id) {
-        setResolvedBookingId(String(data.id));
-        setPaymentSuccess(true);
-        setWaitingForWebhook(false);
-        localStorage.removeItem('payment_redirect_in_progress');
-        return;
-      }
-
-      const { data: quoteLead } = await supabase
-        .from('quote_leads')
-        .select('converted_booking_id')
-        .eq('stripe_checkout_session_id', stripeSessionId)
-        .maybeSingle();
-      if (cancelled) return;
-      if (quoteLead?.converted_booking_id) {
-        setResolvedBookingId(String(quoteLead.converted_booking_id));
+      if (data?.bookingId) {
+        setResolvedBookingId(String(data.bookingId));
         setPaymentSuccess(true);
         setWaitingForWebhook(false);
         localStorage.removeItem('payment_redirect_in_progress');
