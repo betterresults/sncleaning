@@ -336,7 +336,7 @@ const handler = async (req: Request): Promise<Response> => {
       cleaning_cost_per_hour: data.hourlyRate || 0,
       total_cost: data.totalCost || 0,
       payment_method: data.paymentMethod || null,
-      payment_status: 'Unpaid',
+      payment_status: data.paymentStatus || 'Unpaid',
       booking_status: 'active',
       access: data.propertyAccess || null,
       additional_details: JSON.stringify(additionalDetailsJson),
