@@ -341,6 +341,7 @@ export type Database = {
           linen_used: Json | null
           linens: string | null
           mattress_items: string | null
+          meta_event_id: string | null
           occupied: string | null
           oven_size: string | null
           parking_details: string | null
@@ -421,6 +422,7 @@ export type Database = {
           linen_used?: Json | null
           linens?: string | null
           mattress_items?: string | null
+          meta_event_id?: string | null
           occupied?: string | null
           oven_size?: string | null
           parking_details?: string | null
@@ -501,6 +503,7 @@ export type Database = {
           linen_used?: Json | null
           linens?: string | null
           mattress_items?: string | null
+          meta_event_id?: string | null
           occupied?: string | null
           oven_size?: string | null
           parking_details?: string | null
