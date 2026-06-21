@@ -120,13 +120,29 @@ const NothingToPayPanel: React.FC<{ totalCost: number }> = ({ totalCost }) => (
   </div>
 );
 
-// Lightweight Google reviews trust block. Quotes are placeholders until the
-// business sends the real ones — easy to swap in this single array.
+// Real Google reviews for SN Cleaning Services.
+const GOOGLE_REVIEWS_URL = 'https://share.google/vTiLLwrd8zfpKO1zZ';
 const GOOGLE_REVIEWS: { name: string; quote: string }[] = [
-  // TODO: replace with real Google reviews
-  { name: 'Sarah M.', quote: 'Brilliant end-of-tenancy clean — got my full deposit back. Highly recommend SN Cleaning.' },
-  { name: 'James P.', quote: 'Booked last minute and the team turned up on time, friendly and very thorough.' },
-  { name: 'Aisha R.', quote: 'Best cleaning service I have used in London. Professional from start to finish.' },
+  {
+    name: 'Google reviewer',
+    quote:
+      'Cleaning service is reliable and efficient. Excellent work from Amelia. Happy to recommend Silvia Nedeva and her team.',
+  },
+  {
+    name: 'Google reviewer',
+    quote:
+      'Very good service, on time and hard workers. I have never seen the flat that clean — recommended for end of tenancy cleaning.',
+  },
+  {
+    name: 'Google reviewer',
+    quote:
+      'Fantastic service. My bathroom looks like new after a 2 hour deep clean. Would recommend this company to friends and family.',
+  },
+  {
+    name: 'Google reviewer',
+    quote:
+      'Absolutely brilliant service! Blown away by the quality of the end of tenancy clean after my tenant trashed my property. Thank you so much.',
+  },
 ];
 
 const GoogleReviewsBlock: React.FC = () => (
@@ -139,7 +155,7 @@ const GoogleReviewsBlock: React.FC = () => (
       </div>
       <p className="text-sm font-medium text-gray-700">Rated 5★ on Google by our customers</p>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
       {GOOGLE_REVIEWS.map((r, idx) => (
         <div key={idx} className="rounded-xl border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-0.5 mb-2">
@@ -152,6 +168,14 @@ const GoogleReviewsBlock: React.FC = () => (
         </div>
       ))}
     </div>
+    <a
+      href={GOOGLE_REVIEWS_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-block text-xs font-medium text-blue-600 hover:underline"
+    >
+      Read all reviews on Google →
+    </a>
   </div>
 );
 
