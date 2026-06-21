@@ -761,8 +761,8 @@ const PropertyStep: React.FC<PropertyStepProps> = ({ data, onUpdate, onNext }) =
           </h2>
           <p className="text-sm text-slate-600 mb-4">
             {(data.serviceType === 'deep' || data.alreadyCleaned === false) 
-              ? "For deep cleaning services, we will provide professional cleaning products to ensure the highest quality results."
-              : "We recommend choosing our professional cleaning products as they significantly improve cleaning quality and effectiveness compared to regular store-bought products."
+              ? "For deep cleaning services, professional cleaning products are included in our prices to ensure the highest quality results."
+              : "Professional cleaning products are included in our prices — they significantly improve cleaning quality and effectiveness compared to regular store-bought products."
             }
           </p>
           
