@@ -57,7 +57,7 @@ const BookingConfirmation = () => {
 
   // When the user returns from Stripe-hosted Checkout the only id we have is
   // session_id. The stripe-webhook creates the booking row server-side, so we
-  // poll bookings.stripe_checkout_session_id until it appears (or 30s elapses).
+  // poll both the booking link and the quote lead conversion until one appears.
   useEffect(() => {
     if (!stripeSessionId || bookingId) return;
     let cancelled = false;
@@ -68,19 +68,18 @@ const BookingConfirmation = () => {
 
     const poll = async () => {
       if (cancelled) return;
-      const { data } = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('stripe_checkout_session_id', stripeSessionId)
-        .maybeSingle();
+      const { data } = await supabase.functions.invoke('resolve-checkout-booking', {
+        body: { sessionId: stripeSessionId },
+      });
       if (cancelled) return;
-      if (data?.id) {
-        setResolvedBookingId(String(data.id));
+      if (data?.bookingId) {
+        setResolvedBookingId(String(data.bookingId));
         setPaymentSuccess(true);
         setWaitingForWebhook(false);
         localStorage.removeItem('payment_redirect_in_progress');
         return;
       }
+
       elapsed += intervalMs;
       if (elapsed >= maxMs) {
         // Stop spinning so the page can render a fallback / error message
