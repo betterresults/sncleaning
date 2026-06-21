@@ -2749,7 +2749,9 @@ useEffect(() => {
                   )}
                   <div className="bg-white/80 rounded-lg p-4 border border-primary/10">
                     <p className="text-sm text-gray-700">
-                      💳 £{data.totalCost.toFixed(2)} will be authorized on your saved card now and charged after your cleaning is completed.
+                      {isUrgentBooking
+                        ? <>💳 £{data.totalCost.toFixed(2)} will be authorized on your saved card now and charged after your cleaning is completed.</>
+                        : <>💳 Nothing to pay today — your saved card will only be charged after your cleaning is completed (£{data.totalCost.toFixed(2)}).</>}
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
                       ✅ Free cancellation or rescheduling up to 48 hours before your booking.
@@ -2784,7 +2786,9 @@ useEffect(() => {
                     )}
                     <div className="bg-white/80 rounded-lg p-4 border border-green-200">
                       <p className="text-sm text-gray-700">
-                        💳 £{data.totalCost?.toFixed(2) || '0.00'} will be authorized on your saved card now and charged after your cleaning is completed.
+                        {isUrgentBooking
+                          ? <>💳 £{data.totalCost?.toFixed(2) || '0.00'} will be authorized on your saved card now and charged after your cleaning is completed.</>
+                          : <>💳 Nothing to pay today — your saved card will only be charged after your cleaning is completed (£{data.totalCost?.toFixed(2) || '0.00'}).</>}
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
                         ✅ Free cancellation or rescheduling up to 48 hours before your booking.
