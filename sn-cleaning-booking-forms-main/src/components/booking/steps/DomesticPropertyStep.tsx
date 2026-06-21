@@ -679,7 +679,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
             Cleaning supplies
           </h2>
           <p className="text-sm text-slate-600 mb-4">
-            We recommend choosing our professional cleaning products as they significantly improve cleaning quality and effectiveness compared to regular store-bought products.
+            Professional cleaning products are included in our prices — they significantly improve cleaning quality and effectiveness compared to regular store-bought products.
           </p>
           
           <div className="grid grid-cols-3 gap-4">
