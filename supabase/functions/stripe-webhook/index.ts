@@ -182,6 +182,7 @@ const handler = async (req: Request): Promise<Response> => {
                   additional_details: `Payment captured via Stripe webhook: £${amountPaid} (Session: ${sessionId})` 
                 })
                 .eq('id', upcoming.id);
+              await fireMetaPurchase(supabaseAdmin, upcoming.id, 'bookings');
               break;
             }
 
@@ -201,6 +202,7 @@ const handler = async (req: Request): Promise<Response> => {
                   additional_details: `Payment captured via Stripe webhook: £${amountPaid} (Session: ${sessionId})` 
                 })
                 .eq('id', past.id);
+              await fireMetaPurchase(supabaseAdmin, past.id, 'past_bookings');
               break;
             }
 
@@ -242,6 +244,7 @@ const handler = async (req: Request): Promise<Response> => {
                 additional_details: `Payment captured via Stripe webhook: £${amountCaptured} (PI: ${piId})` 
               })
               .eq('id', upcoming.id);
+            await fireMetaPurchase(supabaseAdmin, upcoming.id, 'bookings');
             break;
           }
 
@@ -261,6 +264,7 @@ const handler = async (req: Request): Promise<Response> => {
                 additional_details: `Payment captured via Stripe webhook: £${amountCaptured} (PI: ${piId})` 
               })
               .eq('id', past.id);
+            await fireMetaPurchase(supabaseAdmin, past.id, 'past_bookings');
             break;
           }
 
