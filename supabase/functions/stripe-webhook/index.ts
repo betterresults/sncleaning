@@ -57,6 +57,114 @@ async function fireMetaPurchase(
   }
 }
 
+/**
+ * Create a booking row from a quote_leads payload after the customer has saved
+ * their card via Stripe Checkout (setup mode). Idempotent — if a booking
+ * already exists for this Stripe session / setup intent, returns early.
+ *
+ * `linkRef` is the Stripe identifier used to dedupe + later look up the
+ * booking (checkout session id or setup intent id).
+ */
+async function createBookingFromQuoteLead(
+  stripe: any,
+  supabaseAdmin: any,
+  quoteLeadId: string,
+  options: {
+    sessionId?: string | null;
+    setupIntentId?: string | null;
+    customerId?: string | null;
+    paymentMethodId?: string | null;
+  },
+): Promise<number | null> {
+  try {
+    const linkRef = options.sessionId || options.setupIntentId || '';
+    // Idempotency: bail if a booking already exists for this session/intent.
+    if (options.sessionId) {
+      const { data: existing } = await supabaseAdmin
+        .from('bookings')
+        .select('id')
+        .eq('stripe_checkout_session_id', options.sessionId)
+        .maybeSingle();
+      if (existing?.id) {
+        console.log('[stripe-webhook] Booking already exists for session', options.sessionId, '->', existing.id);
+        return existing.id;
+      }
+    }
+
+    const { data: lead, error: leadErr } = await supabaseAdmin
+      .from('quote_leads')
+      .select('id, booking_payload, meta_event_id, session_id, converted_booking_id')
+      .eq('id', quoteLeadId)
+      .single();
+
+    if (leadErr || !lead?.booking_payload) {
+      console.error('[stripe-webhook] Missing quote_leads payload for', quoteLeadId, leadErr);
+      return null;
+    }
+
+    if (lead.converted_booking_id) {
+      console.log('[stripe-webhook] quote_lead', quoteLeadId, 'already converted to booking', lead.converted_booking_id);
+      return lead.converted_booking_id;
+    }
+
+    const payload = { ...(lead.booking_payload as any) };
+    payload.metaEventId = payload.metaEventId || lead.meta_event_id || null;
+    payload.paymentMethod = 'Stripe';
+    // No money is captured during setup mode — the booking is held with a
+    // saved card and charged after the cleaning is completed.
+    payload.paymentStatus = 'pending';
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const createRes = await fetch(`${supabaseUrl}/functions/v1/create-public-booking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+        'apikey': serviceKey,
+      },
+      body: JSON.stringify(payload),
+    });
+    const createJson = await createRes.json().catch(() => ({}));
+
+    if (!createRes.ok || !createJson?.success || !createJson?.bookingId) {
+      console.error('[stripe-webhook] create-public-booking failed', createRes.status, createJson);
+      return null;
+    }
+
+    const newBookingId = createJson.bookingId;
+
+    // Link the Stripe session / customer / payment method to the booking row.
+    const updates: Record<string, any> = {};
+    if (options.sessionId) {
+      updates.stripe_checkout_session_id = options.sessionId;
+      updates.invoice_id = options.sessionId;
+    }
+    if (Object.keys(updates).length > 0) {
+      const { error: updErr } = await supabaseAdmin
+        .from('bookings')
+        .update(updates)
+        .eq('id', newBookingId);
+      if (updErr) console.warn('[stripe-webhook] booking link update failed', updErr);
+    }
+
+    await supabaseAdmin
+      .from('quote_leads')
+      .update({
+        status: 'completed',
+        furthest_step: 'booking_completed',
+        converted_booking_id: newBookingId,
+      })
+      .eq('id', quoteLeadId);
+
+    console.log(`[stripe-webhook] Created booking ${newBookingId} from quote_lead ${quoteLeadId} (ref ${linkRef})`);
+    return newBookingId;
+  } catch (err) {
+    console.error('[stripe-webhook] createBookingFromQuoteLead error', err);
+    return null;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -97,7 +205,26 @@ const handler = async (req: Request): Promise<Response> => {
       case 'setup_intent.succeeded': {
         console.log('Processing setup_intent.succeeded event');
         const setupIntent = event.data.object;
-        
+
+        // If this setup was started by create-checkout-session for a new
+        // customer booking, the quote_lead_id is on metadata. Create the
+        // booking row now (idempotent — safe to fire alongside
+        // checkout.session.completed).
+        const quoteLeadId = setupIntent?.metadata?.quote_lead_id;
+        if (quoteLeadId) {
+          const paymentMethodId = typeof setupIntent.payment_method === 'string'
+            ? setupIntent.payment_method
+            : setupIntent.payment_method?.id || null;
+          const bookingId = await createBookingFromQuoteLead(stripe, supabaseAdmin, String(quoteLeadId), {
+            setupIntentId: setupIntent.id,
+            customerId: setupIntent.customer || null,
+            paymentMethodId,
+          });
+          if (bookingId) {
+            await fireMetaPurchase(supabaseAdmin, bookingId, 'bookings');
+          }
+        }
+
         if (setupIntent.payment_method && setupIntent.customer) {
           // Sync payment method (may already exist, that's ok)
           await syncPaymentMethodToDatabase(stripe, supabaseAdmin, setupIntent.customer, setupIntent.payment_method);
@@ -140,86 +267,35 @@ const handler = async (req: Request): Promise<Response> => {
         // now by invoking create-public-booking with the stored payload,
         // then mark it paid and link the Stripe session id.
         // ────────────────────────────────────────────────────────────────
+        // New customer-facing setup-mode Checkout: no money is taken, the
+        // card is saved and the booking is created from quote_leads.
         const quoteLeadId = session?.metadata?.quote_lead_id;
-        if (quoteLeadId && session.payment_status === 'paid') {
+        if (quoteLeadId && session.mode === 'setup') {
+          let paymentMethodId: string | null = null;
           try {
-            // Idempotency: bail if a booking already exists for this session.
-            const { data: existing } = await supabaseAdmin
-              .from('bookings')
-              .select('id')
-              .eq('stripe_checkout_session_id', session.id)
-              .maybeSingle();
-            if (existing?.id) {
-              console.log('[stripe-webhook] Booking already exists for session', session.id, '->', existing.id);
-              break;
+            if (session.setup_intent) {
+              const si = await stripe.setupIntents.retrieve(session.setup_intent);
+              paymentMethodId = typeof si.payment_method === 'string'
+                ? si.payment_method
+                : si.payment_method?.id || null;
+              if (paymentMethodId && session.customer) {
+                await syncPaymentMethodToDatabase(stripe, supabaseAdmin, session.customer, paymentMethodId);
+              }
             }
-
-            const { data: lead, error: leadErr } = await supabaseAdmin
-              .from('quote_leads')
-              .select('id, booking_payload, meta_event_id, session_id')
-              .eq('id', quoteLeadId)
-              .single();
-
-            if (leadErr || !lead?.booking_payload) {
-              console.error('[stripe-webhook] Missing quote_leads payload for', quoteLeadId, leadErr);
-              return new Response(JSON.stringify({ received: true, warning: 'missing_payload' }), {
-                status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              });
-            }
-
-            const payload = { ...(lead.booking_payload as any) };
-            payload.metaEventId = payload.metaEventId || lead.meta_event_id || null;
-            payload.paymentMethod = 'Stripe';
-
-            const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-            const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-            const createRes = await fetch(`${supabaseUrl}/functions/v1/create-public-booking`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${serviceKey}`,
-                'apikey': serviceKey,
-              },
-              body: JSON.stringify(payload),
-            });
-            const createJson = await createRes.json().catch(() => ({}));
-
-            if (!createRes.ok || !createJson?.success || !createJson?.bookingId) {
-              console.error('[stripe-webhook] create-public-booking failed', createRes.status, createJson);
-              return new Response(JSON.stringify({ received: true, warning: 'booking_create_failed' }), {
-                status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              });
-            }
-
-            const newBookingId = createJson.bookingId;
-            const amountPaid = (session.amount_total || 0) / 100;
-
-            await supabaseAdmin
-              .from('bookings')
-              .update({
-                payment_status: 'paid',
-                stripe_checkout_session_id: session.id,
-                invoice_id: session.id,
-              })
-              .eq('id', newBookingId);
-
-            await supabaseAdmin
-              .from('quote_leads')
-              .update({
-                status: 'completed',
-                furthest_step: 'booking_completed',
-                converted_booking_id: newBookingId,
-              })
-              .eq('id', quoteLeadId);
-
-            console.log(`[stripe-webhook] Created booking ${newBookingId} (£${amountPaid}) for session ${session.id}`);
-            await fireMetaPurchase(supabaseAdmin, newBookingId, 'bookings');
-            break;
-          } catch (err) {
-            console.error('[stripe-webhook] Error creating booking from checkout session', err);
-            // Fall through so Stripe still gets a 200; we'll inspect logs.
-            break;
+          } catch (e) {
+            console.error('[stripe-webhook] retrieve setup_intent failed', e);
           }
+
+          const bookingId = await createBookingFromQuoteLead(stripe, supabaseAdmin, String(quoteLeadId), {
+            sessionId: session.id,
+            setupIntentId: session.setup_intent || null,
+            customerId: session.customer || null,
+            paymentMethodId,
+          });
+          if (bookingId) {
+            await fireMetaPurchase(supabaseAdmin, bookingId, 'bookings');
+          }
+          break;
         }
 
         // Handle setup mode sessions (payment method collection)
