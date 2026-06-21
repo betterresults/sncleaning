@@ -69,6 +69,29 @@ const useSimpleAuth = () => {
 const emailSchema = z.string().email('Please enter a valid email address');
 const ukPhoneSchema = z.string().regex(/^\+44\d{10}$/, 'UK phone must be +44 followed by 10 digits');
 
+// Customer-facing notice shown in place of the inline card form when the
+// booking will be completed via Stripe-hosted Checkout (redirect flow).
+const StripeCheckoutNotice: React.FC<{ totalCost: number }> = ({ totalCost }) => (
+  <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-3">
+    <div className="flex items-start gap-3">
+      <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-gray-900">
+          Secure payment with Stripe
+        </p>
+        <p className="text-sm text-gray-600">
+          Click <span className="font-medium">Confirm &amp; Pay</span> below to enter your card on
+          Stripe's secure checkout page. You'll be brought right back here once
+          your payment of <strong>£{totalCost.toFixed(2)}</strong> is complete.
+        </p>
+      </div>
+    </div>
+    <p className="text-xs text-gray-500 pl-8">
+      ✅ Free cancellation or rescheduling up to 48 hours before your booking.
+    </p>
+  </div>
+);
+
 // PaymentElement wrapper component with its own Elements context
 interface PaymentElementWrapperProps {
   clientSecret: string;
@@ -379,6 +402,27 @@ useEffect(() => {
     fetchCustomerData();
   }
 }, [effectiveCustomerId, isAdminMode]);
+
+// URL pre-fill: pull firstName / lastName / phone / email from the query string
+// when the booking form doesn't already have them. The /free-quote form
+// forwards these so the customer doesn't have to retype anything on the
+// payment page (only email used to be pre-filled before).
+useEffect(() => {
+  if (isAdminMode) return;
+  const updates: Record<string, string> = {};
+  const qpFirstName = searchParams.get('firstName');
+  const qpLastName = searchParams.get('lastName');
+  const qpPhone = searchParams.get('phone');
+  const qpEmail = searchParams.get('email');
+  if (qpFirstName && !data.firstName) updates.firstName = qpFirstName;
+  if (qpLastName && !data.lastName) updates.lastName = qpLastName;
+  if (qpPhone && !data.phone) updates.phone = qpPhone;
+  if (qpEmail && !data.email) updates.email = qpEmail;
+  if (Object.keys(updates).length > 0) {
+    onUpdate(updates as any);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isAdminMode]);
   
   // Fetch company payment methods from settings (for admin mode)
   useEffect(() => {
@@ -439,6 +483,16 @@ useEffect(() => {
   const defaultPaymentMethod = effectiveCustomerId && paymentMethods.length > 0 
     ? (paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0])
     : null;
+
+  // Customer card-redirect mode: any customer paying by card who does NOT have a
+  // saved card on file goes to Stripe-hosted Checkout instead of entering card
+  // details inline. Admins, saved-card customers, and returning guests who
+  // chose their saved card all keep the existing in-page flows.
+  const useStripeCheckoutRedirect =
+    !isAdminMode &&
+    paymentType === 'card' &&
+    !defaultPaymentMethod &&
+    !(guestPaymentMethods.length > 0 && useGuestSavedCard);
 
   // Calculate if booking is urgent (within 48 hours) - only authorize for urgent bookings
   const isUrgentBooking = useMemo(() => {
@@ -556,6 +610,12 @@ useEffect(() => {
       // IMPORTANT: For quote link users (isFromQuoteLink), always create SetupIntent regardless of admin mode
       const shouldSkipForAdmin = isAdminMode && !isFromQuoteLink;
       if (shouldSkipForAdmin || paymentType !== 'card' || hasPaymentMethods || loadingSetupIntent) {
+        return;
+      }
+
+      // Customer card-redirect mode does not need an inline SetupIntent —
+      // they'll be redirected to Stripe Checkout instead.
+      if (useStripeCheckoutRedirect) {
         return;
       }
       
@@ -1250,6 +1310,95 @@ useEffect(() => {
         agentUserId: data.agentUserId, // Agent attribution from quote link
         guestCustomerId: guestCustomerId // Pass guest customer ID for saved card lookup
       };
+
+      // ──────────────────────────────────────────────────────────────
+      // NEW: customer card-redirect path. Send the booking payload to
+      // create-checkout-session, which stashes it on quote_leads and
+      // returns a Stripe-hosted Checkout URL. The booking row is only
+      // created in the stripe-webhook handler after payment succeeds.
+      // ──────────────────────────────────────────────────────────────
+      if (useStripeCheckoutRedirect) {
+        const stripePayload = {
+          metaEventId: metaEventIdRef.current,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          houseNumber: data.houseNumber,
+          street: data.street,
+          postcode: data.postcode,
+          city: data.city,
+          addressId: data.addressId,
+          propertyType: data.propertyType,
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          toilets: data.toilets,
+          numberOfFloors: data.numberOfFloors,
+          additionalRooms: data.additionalRooms,
+          propertyFeatures: data.propertyFeatures,
+          serviceType: (() => {
+            switch (subServiceType) {
+              case 'domestic': return 'Domestic';
+              case 'airbnb': return 'Air BnB';
+              case 'carpet': return 'Carpet Cleaning';
+              case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+              case 'commercial': return 'Commercial';
+              default: return subServiceType;
+            }
+          })(),
+          cleaningType: subServiceType === 'end-of-tenancy'
+            ? 'End of Tenancy'
+            : subServiceType === 'carpet'
+              ? 'Carpet Cleaning'
+              : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
+          serviceFrequency: data.serviceFrequency,
+          ovenType: data.ovenType,
+          selectedDate: formatDateForStorage(data.selectedDate),
+          selectedTime: data.selectedTime,
+          flexibility: data.flexibility,
+          shortNoticeCharge: data.shortNoticeCharge,
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          totalCost: data.totalCost,
+          estimatedHours: data.estimatedHours,
+          totalHours: data.totalHours,
+          hourlyRate: domesticCalculations?.hourlyRate || data.hourlyRate || 25,
+          weeklyCost: data.weeklyCost,
+          notes: data.notes,
+          paymentMethod: 'Stripe',
+          agentUserId: data.agentUserId,
+          wantsFirstDeepClean: data.wantsFirstDeepClean,
+          firstDeepCleanExtraHours: data.firstDeepCleanExtraHours || domesticCalculations.firstDeepCleanExtraHours,
+          firstDeepCleanHours: domesticCalculations.firstDeepCleanHours,
+        };
+
+        const quoteSessionId = localStorage.getItem('quote_session_id') || undefined;
+        const baseSuccess = `${window.location.origin}/booking-confirmation`;
+        const cancelUrl = `${window.location.origin}${location.pathname}${location.search || ''}`;
+
+        localStorage.setItem('payment_redirect_in_progress', 'true');
+
+        const { data: checkoutResult, error: checkoutError } = await supabase.functions.invoke(
+          'create-checkout-session',
+          {
+            body: {
+              bookingPayload: stripePayload,
+              metaEventId: metaEventIdRef.current,
+              quoteSessionId,
+              successUrl: baseSuccess,
+              cancelUrl,
+            },
+          }
+        );
+
+        if (checkoutError || !checkoutResult?.url) {
+          localStorage.removeItem('payment_redirect_in_progress');
+          throw new Error(checkoutResult?.error || checkoutError?.message || 'Could not start payment');
+        }
+
+        window.location.assign(checkoutResult.url);
+        return;
+      }
 
       // Check if using a saved payment method (customer's, admin-selected, or guest with saved card)
       const usingSavedPaymentMethod = (customerId && defaultPaymentMethod) || 
@@ -2608,6 +2757,8 @@ useEffect(() => {
                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
                           <span className="ml-2 text-sm text-gray-600">Loading payment options...</span>
                         </div>
+                      ) : useStripeCheckoutRedirect ? (
+                        <StripeCheckoutNotice totalCost={data.totalCost || 0} />
                       ) : setupIntentClientSecret && stripePromise ? (
                         <PaymentElementWrapper
                           clientSecret={setupIntentClientSecret}
@@ -2653,6 +2804,8 @@ useEffect(() => {
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       <span className="ml-2 text-sm text-gray-600">Loading payment options...</span>
                     </div>
+                  ) : useStripeCheckoutRedirect ? (
+                    <StripeCheckoutNotice totalCost={data.totalCost || 0} />
                   ) : setupIntentClientSecret && stripePromise ? (
                     <PaymentElementWrapper
                       clientSecret={setupIntentClientSecret}
