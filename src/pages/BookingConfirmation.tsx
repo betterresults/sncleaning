@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Calendar, Clock, MapPin, Loader2, Sparkles } from 'lucide-react';
 import WhatsNextSection from '@/components/landing/WhatsNextSection';
+import { trackMetaEvent } from '@/lib/metaCapi';
 
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
@@ -18,6 +19,7 @@ interface BookingDetails {
   customer: number;
   payment_status: string;
   payment_method: string;
+  meta_event_id?: string | null;
 }
 
 interface ServiceTypeSetting {
@@ -248,30 +250,35 @@ const BookingConfirmation = () => {
       try {
         const { data, error } = await supabase
           .from('bookings')
-          .select('id, date_time, address, postcode, service_type, total_cost, customer, payment_status, payment_method')
+          .select('id, date_time, address, postcode, service_type, total_cost, customer, payment_status, payment_method, meta_event_id')
           .eq('id', bookingId)
           .maybeSingle();
 
         if (error) throw error;
         setBooking(data);
 
-        // Fire Meta Pixel Purchase event (once per booking)
+        // Fire Meta Purchase event (browser Pixel + server CAPI) with a shared
+        // event_id so Meta can deduplicate against the server-side Purchase
+        // fired by the stripe-webhook edge function.
         if (data?.id && data?.total_cost) {
           try {
             const firedKey = `fbq_purchase_fired_${data.id}`;
-            if (!sessionStorage.getItem(firedKey) && typeof (window as any).fbq === 'function') {
-              (window as any).fbq('track', 'Purchase', {
-                value: Number(data.total_cost),
-                currency: 'GBP',
-                content_ids: [String(data.id)],
-                content_type: 'product',
-                content_name: data.service_type,
+            if (!sessionStorage.getItem(firedKey)) {
+              const sharedEventId =
+                (data as any).meta_event_id || `booking-${data.id}-purchase`;
+              await trackMetaEvent('Purchase', {
+                eventId: sharedEventId,
+                customData: {
+                  value: Number(data.total_cost),
+                  currency: 'GBP',
+                  content_name: data.service_type,
+                },
               });
               sessionStorage.setItem(firedKey, '1');
-              console.log('📈 Meta Pixel Purchase event fired:', data.total_cost);
+              console.log('📈 Meta Purchase event fired (dedup id):', sharedEventId);
             }
           } catch (e) {
-            console.error('Meta Pixel fire error:', e);
+            console.error('Meta Purchase fire error:', e);
           }
         }
 
