@@ -1288,6 +1288,95 @@ useEffect(() => {
         guestCustomerId: guestCustomerId // Pass guest customer ID for saved card lookup
       };
 
+      // ──────────────────────────────────────────────────────────────
+      // NEW: customer card-redirect path. Send the booking payload to
+      // create-checkout-session, which stashes it on quote_leads and
+      // returns a Stripe-hosted Checkout URL. The booking row is only
+      // created in the stripe-webhook handler after payment succeeds.
+      // ──────────────────────────────────────────────────────────────
+      if (useStripeCheckoutRedirect) {
+        const stripePayload = {
+          metaEventId: metaEventIdRef.current,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone,
+          houseNumber: data.houseNumber,
+          street: data.street,
+          postcode: data.postcode,
+          city: data.city,
+          addressId: data.addressId,
+          propertyType: data.propertyType,
+          bedrooms: data.bedrooms,
+          bathrooms: data.bathrooms,
+          toilets: data.toilets,
+          numberOfFloors: data.numberOfFloors,
+          additionalRooms: data.additionalRooms,
+          propertyFeatures: data.propertyFeatures,
+          serviceType: (() => {
+            switch (subServiceType) {
+              case 'domestic': return 'Domestic';
+              case 'airbnb': return 'Air BnB';
+              case 'carpet': return 'Carpet Cleaning';
+              case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+              case 'commercial': return 'Commercial';
+              default: return subServiceType;
+            }
+          })(),
+          cleaningType: subServiceType === 'end-of-tenancy'
+            ? 'End of Tenancy'
+            : subServiceType === 'carpet'
+              ? 'Carpet Cleaning'
+              : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
+          serviceFrequency: data.serviceFrequency,
+          ovenType: data.ovenType,
+          selectedDate: formatDateForStorage(data.selectedDate),
+          selectedTime: data.selectedTime,
+          flexibility: data.flexibility,
+          shortNoticeCharge: data.shortNoticeCharge,
+          propertyAccess: data.propertyAccess,
+          accessNotes: data.accessNotes,
+          totalCost: data.totalCost,
+          estimatedHours: data.estimatedHours,
+          totalHours: data.totalHours,
+          hourlyRate: domesticCalculations?.hourlyRate || data.hourlyRate || 25,
+          weeklyCost: data.weeklyCost,
+          notes: data.notes,
+          paymentMethod: 'Stripe',
+          agentUserId: data.agentUserId,
+          wantsFirstDeepClean: data.wantsFirstDeepClean,
+          firstDeepCleanExtraHours: data.firstDeepCleanExtraHours || domesticCalculations.firstDeepCleanExtraHours,
+          firstDeepCleanHours: domesticCalculations.firstDeepCleanHours,
+        };
+
+        const quoteSessionId = localStorage.getItem('quote_session_id') || undefined;
+        const baseSuccess = `${window.location.origin}/booking-confirmation`;
+        const cancelUrl = `${window.location.origin}${location.pathname}${location.search || ''}`;
+
+        localStorage.setItem('payment_redirect_in_progress', 'true');
+
+        const { data: checkoutResult, error: checkoutError } = await supabase.functions.invoke(
+          'create-checkout-session',
+          {
+            body: {
+              bookingPayload: stripePayload,
+              metaEventId: metaEventIdRef.current,
+              quoteSessionId,
+              successUrl: baseSuccess,
+              cancelUrl,
+            },
+          }
+        );
+
+        if (checkoutError || !checkoutResult?.url) {
+          localStorage.removeItem('payment_redirect_in_progress');
+          throw new Error(checkoutResult?.error || checkoutError?.message || 'Could not start payment');
+        }
+
+        window.location.assign(checkoutResult.url);
+        return;
+      }
+
       // Check if using a saved payment method (customer's, admin-selected, or guest with saved card)
       const usingSavedPaymentMethod = (customerId && defaultPaymentMethod) || 
                                       (isAdminMode && selectedAdminPaymentMethod) ||
