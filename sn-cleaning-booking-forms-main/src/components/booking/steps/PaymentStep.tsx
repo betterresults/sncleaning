@@ -93,33 +93,6 @@ const StripeCheckoutNotice: React.FC<{ totalCost: number }> = ({ totalCost }) =>
   </div>
 );
 
-// "Nothing to pay today" panel — shown to customers when the booking is more
-// than 48 hours away. No card is collected here; we charge after the clean.
-const NothingToPayPanel: React.FC<{ totalCost: number }> = ({ totalCost }) => (
-  <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6 space-y-4">
-    <div className="flex items-start gap-3">
-      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-        <CalendarCheck className="h-6 w-6 text-emerald-700" />
-      </div>
-      <div className="space-y-1">
-        <p className="text-lg font-bold text-emerald-900">Nothing to pay today</p>
-        <p className="text-sm text-emerald-800">
-          Click <span className="font-semibold">Confirm</span> to secure your booking — we'll
-          assign a cleaner to you right away. You'll only be charged after your cleaning is
-          completed.
-        </p>
-      </div>
-    </div>
-    <div className="bg-white/80 rounded-lg p-4 border border-emerald-200 flex items-center justify-between">
-      <span className="text-sm text-gray-700">Total for this clean</span>
-      <span className="text-lg font-bold text-gray-900">£{totalCost.toFixed(2)}</span>
-    </div>
-    <p className="text-xs text-emerald-800/80">
-      ✅ Free cancellation or rescheduling up to 48 hours before your booking.
-    </p>
-  </div>
-);
-
 // Real Google reviews for SN Cleaning Services.
 const GOOGLE_REVIEWS_URL = 'https://share.google/vTiLLwrd8zfpKO1zZ';
 const GOOGLE_REVIEWS: { name: string; quote: string }[] = [
@@ -150,7 +123,7 @@ const GoogleReviewsBlock: React.FC = () => (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-0.5">
         {[0, 1, 2, 3, 4].map((i) => (
-          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+          <Star key={i} className="h-4 w-4" style={{ fill: '#facc15', color: '#facc15', stroke: '#facc15' }} />
         ))}
       </div>
       <p className="text-sm font-medium text-gray-700">Rated 5★ on Google by our customers</p>
@@ -160,7 +133,7 @@ const GoogleReviewsBlock: React.FC = () => (
         <div key={idx} className="rounded-xl border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-0.5 mb-2">
             {[0, 1, 2, 3, 4].map((i) => (
-              <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+              <Star key={i} className="h-3.5 w-3.5" style={{ fill: '#facc15', color: '#facc15', stroke: '#facc15' }} />
             ))}
           </div>
           <p className="text-sm text-gray-700 leading-snug">{r.quote}</p>
