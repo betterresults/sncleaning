@@ -701,6 +701,23 @@ useEffect(() => {
       onBookingAttempt();
     }
 
+    // Meta CAPI + Pixel: SubscribedButtonClick (custom event, fired even if validation/payment fails)
+    if (!isAdminMode) {
+      try {
+        const eid = await trackMetaEvent('SubscribedButtonClick', {
+          user: buildMetaUser(),
+          customData: {
+            currency: 'GBP',
+            value: data.totalCost || undefined,
+            content_name: subServiceType,
+          },
+        });
+        metaEventIdRef.current = eid;
+      } catch (e) {
+        console.warn('[PaymentStep] SubscribedButtonClick tracking failed', e);
+      }
+    }
+
     // Validate before submission
     const isEmailValid = validateEmail(data.email);
     const isPhoneValid = validatePhone(data.phone);
