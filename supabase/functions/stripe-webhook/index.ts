@@ -57,6 +57,116 @@ async function fireMetaPurchase(
   }
 }
 
+/**
+ * Create a booking row from a quote_leads payload after the customer has saved
+ * their card via Stripe Checkout (setup mode). Idempotent — if a booking
+ * already exists for this Stripe session / setup intent, returns early.
+ *
+ * `linkRef` is the Stripe identifier used to dedupe + later look up the
+ * booking (checkout session id or setup intent id).
+ */
+async function createBookingFromQuoteLead(
+  stripe: any,
+  supabaseAdmin: any,
+  quoteLeadId: string,
+  options: {
+    sessionId?: string | null;
+    setupIntentId?: string | null;
+    customerId?: string | null;
+    paymentMethodId?: string | null;
+  },
+): Promise<number | null> {
+  try {
+    const linkRef = options.sessionId || options.setupIntentId || '';
+    // Idempotency: bail if a booking already exists for this session/intent.
+    if (options.sessionId) {
+      const { data: existing } = await supabaseAdmin
+        .from('bookings')
+        .select('id')
+        .eq('stripe_checkout_session_id', options.sessionId)
+        .maybeSingle();
+      if (existing?.id) {
+        console.log('[stripe-webhook] Booking already exists for session', options.sessionId, '->', existing.id);
+        return existing.id;
+      }
+    }
+
+    const { data: lead, error: leadErr } = await supabaseAdmin
+      .from('quote_leads')
+      .select('id, booking_payload, meta_event_id, session_id, converted_booking_id')
+      .eq('id', quoteLeadId)
+      .single();
+
+    if (leadErr || !lead?.booking_payload) {
+      console.error('[stripe-webhook] Missing quote_leads payload for', quoteLeadId, leadErr);
+      return null;
+    }
+
+    if (lead.converted_booking_id) {
+      console.log('[stripe-webhook] quote_lead', quoteLeadId, 'already converted to booking', lead.converted_booking_id);
+      return lead.converted_booking_id;
+    }
+
+    const payload = { ...(lead.booking_payload as any) };
+    payload.metaEventId = payload.metaEventId || lead.meta_event_id || null;
+    payload.paymentMethod = 'Stripe';
+    // No money is captured during setup mode — the booking is held with a
+    // saved card and charged after the cleaning is completed.
+    payload.paymentStatus = 'pending';
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const createRes = await fetch(`${supabaseUrl}/functions/v1/create-public-booking`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+        'apikey': serviceKey,
+      },
+      body: JSON.stringify(payload),
+    });
+    const createJson = await createRes.json().catch(() => ({}));
+
+    if (!createRes.ok || !createJson?.success || !createJson?.bookingId) {
+      console.error('[stripe-webhook] create-public-booking failed', createRes.status, createJson);
+      return null;
+    }
+
+    const newBookingId = createJson.bookingId;
+
+    // Link the Stripe session / customer / payment method to the booking row.
+    const updates: Record<string, any> = {};
+    if (options.sessionId) {
+      updates.stripe_checkout_session_id = options.sessionId;
+      updates.invoice_id = options.sessionId;
+    }
+    if (options.customerId) updates.stripe_customer_id = options.customerId;
+    if (options.paymentMethodId) updates.stripe_payment_method_id = options.paymentMethodId;
+    if (Object.keys(updates).length > 0) {
+      const { error: updErr } = await supabaseAdmin
+        .from('bookings')
+        .update(updates)
+        .eq('id', newBookingId);
+      if (updErr) console.warn('[stripe-webhook] booking link update failed', updErr);
+    }
+
+    await supabaseAdmin
+      .from('quote_leads')
+      .update({
+        status: 'completed',
+        furthest_step: 'booking_completed',
+        converted_booking_id: newBookingId,
+      })
+      .eq('id', quoteLeadId);
+
+    console.log(`[stripe-webhook] Created booking ${newBookingId} from quote_lead ${quoteLeadId} (ref ${linkRef})`);
+    return newBookingId;
+  } catch (err) {
+    console.error('[stripe-webhook] createBookingFromQuoteLead error', err);
+    return null;
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
