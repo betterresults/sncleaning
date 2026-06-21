@@ -39,6 +39,7 @@ const BookingConfirmation = () => {
   // Get bookingId from either location state OR URL query params (for Stripe redirects)
   const bookingIdFromState = location.state?.bookingId;
   const bookingIdFromQuery = searchParams.get('bookingId');
+  const stripeSessionId = searchParams.get('session_id'); // Stripe Checkout success_url placeholder
   const paymentSetupSuccess = searchParams.get('payment_setup') === 'success';
   const isUrgent = searchParams.get('urgent') === '1';
   const setupIntentParam = searchParams.get('setup_intent'); // Stripe adds this on redirect return
@@ -46,8 +47,53 @@ const BookingConfirmation = () => {
   
   // Also check sessionStorage for pending booking (set before Stripe redirect)
   const pendingBookingId = sessionStorage.getItem('pending_booking_id');
-  
-  const bookingId = bookingIdFromState || bookingIdFromQuery || pendingBookingId;
+
+  // Booking id resolved from Stripe Checkout session id (polled below).
+  const [resolvedBookingId, setResolvedBookingId] = useState<string | null>(null);
+  const [waitingForWebhook, setWaitingForWebhook] = useState(false);
+
+  const bookingId =
+    bookingIdFromState || bookingIdFromQuery || pendingBookingId || resolvedBookingId;
+
+  // When the user returns from Stripe-hosted Checkout the only id we have is
+  // session_id. The stripe-webhook creates the booking row server-side, so we
+  // poll bookings.stripe_checkout_session_id until it appears (or 30s elapses).
+  useEffect(() => {
+    if (!stripeSessionId || bookingId) return;
+    let cancelled = false;
+    let elapsed = 0;
+    const intervalMs = 1500;
+    const maxMs = 30_000;
+    setWaitingForWebhook(true);
+
+    const poll = async () => {
+      if (cancelled) return;
+      const { data } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('stripe_checkout_session_id', stripeSessionId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data?.id) {
+        setResolvedBookingId(String(data.id));
+        setPaymentSuccess(true);
+        setWaitingForWebhook(false);
+        localStorage.removeItem('payment_redirect_in_progress');
+        return;
+      }
+      elapsed += intervalMs;
+      if (elapsed >= maxMs) {
+        setWaitingForWebhook(false);
+        return;
+      }
+      setTimeout(poll, intervalMs);
+    };
+    poll();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [stripeSessionId, bookingId]);
 
   // Handle payment method linking and payment processing after Stripe redirect
   useEffect(() => {
