@@ -554,14 +554,16 @@ useEffect(() => {
     !defaultPaymentMethod &&
     !(guestPaymentMethods.length > 0 && useGuestSavedCard);
 
-  // Calculate if booking is urgent (within 48 hours) - only authorize for urgent bookings
+  // Calculate if booking is urgent (within 24 hours) - only authorize for urgent bookings.
+  // For bookings >24h away we only SAVE the card (no charge, no auth) and capture
+  // the cleaning fee after the job is completed.
   const isUrgentBooking = useMemo(() => {
     if (!data.selectedDate || !data.selectedTime) return false;
     
     const bookingDateTime = combineLocalDateAndTime(data.selectedDate, data.selectedTime);
     if (!bookingDateTime) return false;
     const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
-    return hoursUntilBooking <= 48;
+    return hoursUntilBooking <= 24;
   }, [data.selectedDate, data.selectedTime]);
 
   // Bank transfer is only available for admin mode
