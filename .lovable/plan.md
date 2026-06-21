@@ -1,61 +1,52 @@
-## Payment page rework (customer flow only)
 
-Admin flow stays untouched throughout.
+## Goal
+Report this booking (Saiji@doctors.org.uk) — and future WhatsApp/phone conversions — to Meta as a **Purchase** so it shows up in Ads Manager and is matched back to the Facebook click that started the quote.
 
-### 1. Charge-timing rules
+## How Meta will match it
+Two matching signals are sent together so Meta can attribute the conversion:
+1. **Hashed PII (Advanced Matching)** — email, phone, first name, last name, city, external_id. Strong match for users logged into Facebook.
+2. **fbc / fbp cookies** — perfect match when present. Today we do NOT store `fbclid` on quote_leads, so for this specific customer we rely on PII only. We will start saving it from now on so future offline conversions match exactly.
 
-- **More than 48 hours away** → no card collected, no Stripe charge today. Booking is created immediately on Confirm. Card will be requested/charged after the cleaning is completed (handled separately later — out of scope for this change).
-- **Within 48 hours** → card is authorized now (existing Stripe redirect / saved-card flow). Capture still happens after the clean (existing behavior unchanged).
+`action_source` will be set to **`business_messaging`** (since the deal closed over WhatsApp) instead of `website` — this is the value Meta expects for offline/messaging conversions and unlocks the offline attribution window (up to 7 days post-click).
 
-The 48h cutoff matches the existing `isUrgentBooking` memo and your 48h free-cancellation policy.
+## What gets built
 
-### 2. UI changes on `PaymentStep.tsx`
+### 1. DB — capture fbclid on quote_leads (forward-looking)
+- Add `fbclid text`, `fbc text`, `fbp text`, `landing_url text` to `public.quote_leads`.
+- `FbclidCapture` / quote form already reads the cookies — extend it to also persist them onto the `quote_leads` row via `track-funnel-event`.
 
-- **Header**: replace the "Pay" framing with a single H2 "Confirm your booking".
-- **Back button**: replace the current full-width "Back" outline button with a small icon-only chevron-left button anchored to the left of the footer (still hidden in quote-link mode).
-- **Primary button copy**:
-  - >48h: `Confirm booking`
-  - ≤48h with new card: `Authorize £X & confirm` (card is held, not captured)
-  - ≤48h with saved card: `Authorize £X & confirm`
-  - Admin / test modes: unchanged
-- **>48h block** (new): replaces the Stripe Checkout notice / PaymentElement card entirely with a friendly panel:
-  - Title: "Nothing to pay today"
-  - Body: "Click Confirm to secure your booking — we'll assign a cleaner right away. You'll only be charged after your cleaning is completed. Free cancellation or rescheduling up to 48 hours before."
-  - Small total summary line: "Total for this clean: £X.XX"
-- **≤48h block**: keep current card-entry / saved-card UI but reword the helper text from "will be charged when you complete booking" to "will be authorized now and charged after your cleaning is completed".
-- **Google reviews block** (new, above the footer): a 3-card horizontal grid with star row + quote + reviewer name. Hardcoded placeholders until you send real ones — clearly marked `TODO` so they're easy to swap.
+### 2. Edge function — `meta-capi-offline-purchase`
+Admin-only function (verifies caller is admin via `has_role`). Input: `{ booking_id }`.
 
-### 3. Submit logic on `PaymentStep.tsx`
+Steps:
+1. Load booking + customer (`email`, `phone`, `first_name`, `last_name`, `city`, `total_cost`, `quote_session_id` if present).
+2. Look up the matching `quote_leads` row (by `session_id` → fall back to email/phone) to recover `fbc`, `fbp`, `landing_url`, `utm_*`.
+3. Build the CAPI payload:
+   - `event_name: "Purchase"`
+   - `event_id: "booking_<id>"` (idempotent — prevents double-counting if pressed twice or if the Pixel also fires later)
+   - `action_source: "business_messaging"`
+   - `event_source_url`: stored `landing_url` or the public site URL
+   - `user_data`: hashed em / ph / fn / ln / ct / external_id + raw fbc/fbp when available
+   - `custom_data`: `{ currency: "GBP", value: total_cost, content_name: service_type, content_category: "cleaning" }`
+4. POST to `graph.facebook.com/v21.0/<PIXEL_ID>/events` using `META_PIXEL_ID` + `META_ADS_ACCESS_TOKEN` (already configured).
+5. Record the send on the booking (`meta_capi_purchase_sent_at`, `meta_capi_event_id`) so the UI can show "Reported to Meta ✓" and block duplicate sends.
 
-Add a branch at the top of `handleSubmit`:
+### 3. Admin UI — "Send to Meta Ads" button
+On the booking detail page (admin only):
+- Button visible when booking is paid/confirmed and not yet reported.
+- Click → calls the edge function → toast success + shows the timestamp.
+- Disabled / replaced with "Reported on <date>" once sent.
 
-```text
-if (!isAdminMode && !isUrgentBooking) {
-  → skip Stripe entirely
-  → call create-public-booking with paymentStatus: 'deferred'
-  → fire Meta Purchase event with value 0 (or omit) and existing meta_event_id
-  → navigate to /booking-confirmation
-}
-```
+### 4. Backfill this specific customer
+After the function is deployed, I'll trigger it once for Saiji@doctors.org.uk's booking from the admin UI (or via a one-off invoke) so Meta receives the Purchase event today.
 
-Existing ≤48h path (Stripe Checkout redirect for new cards, SetupIntent confirm for saved cards) is unchanged.
+## Out of scope
+- No design changes.
+- No change to the existing browser Pixel / `meta-capi-track` flow for online conversions.
+- No automatic firing on booking creation yet — this is a manual admin action first; once we trust it we can wire it to fire automatically when a WhatsApp/manual booking is marked paid.
 
-### 4. Backend tweaks (minimal)
-
-- `create-public-booking` edge function: accept `paymentStatus: 'deferred'` and persist it on the row. No new tables. No new columns required — `payment_status` already exists.
-- `stripe-webhook`: no changes (the deferred path doesn't touch Stripe).
-- Post-clean charging (taking the card later) is **out of scope** for this change — flagged as a follow-up.
-
-### 5. Memory updates
-
-Update `mem://payments/business-rules`: charge-immediately is no longer absolute. New rule: ">48h customer bookings defer payment until after the clean; ≤48h bookings authorize the card on confirmation."
-
-### Files to edit
-
-- `sn-cleaning-booking-forms-main/src/components/booking/steps/PaymentStep.tsx` (UI + submit branch)
-- `supabase/functions/create-public-booking/index.ts` (accept `deferred` status)
-- `mem://payments/business-rules` (and index)
-
-### Still needed from you
-
-- 2-3 real Google review quotes + reviewer first names to replace the placeholder cards.
+## Technical notes
+- Same hashing rules as `meta-capi-track` (lowercase trim → SHA-256; phone digits only).
+- Idempotency via deterministic `event_id` = `booking_<id>` (Meta dedups across sends).
+- New columns are nullable; no data migration required.
+- Standard GRANTs on the new columns are inherited from `quote_leads`; no new tables.
