@@ -13,6 +13,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
+import { trackMetaEvent, MetaEventName } from '@/lib/metaCapi';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { CarpetCleaningItem } from './CarpetCleaningForm';
 import { parseDatePreserveLocalDay } from '@/lib/bookingDate';
@@ -537,6 +538,26 @@ const EndOfTenancyBookingForm: React.FC = () => {
           bedrooms: parseBedroomsToNumber(bookingData.bedrooms),
           calculatedQuote: bookingData.totalCost || undefined,
         });
+        // Meta CAPI + Pixel funnel events
+        const metaEvent: MetaEventName | null =
+          nextStepKey === 'schedule' ? 'ViewContent' : nextStepKey === 'payment' ? 'Schedule' : null;
+        if (metaEvent) {
+          trackMetaEvent(metaEvent, {
+            user: {
+              email: bookingData.email,
+              phone: bookingData.phone,
+              first_name: bookingData.firstName,
+              last_name: bookingData.lastName,
+              city: bookingData.postcode,
+              external_id: sessionId || undefined,
+            },
+            customData: {
+              currency: 'GBP',
+              value: bookingData.totalCost || undefined,
+              content_name: 'End of Tenancy',
+            },
+          }).catch(() => {});
+        }
       }
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
