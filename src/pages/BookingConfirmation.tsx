@@ -232,7 +232,11 @@ const BookingConfirmation = () => {
 
   useEffect(() => {
     if (!bookingId) {
-      setLoading(false);
+      // If we're still waiting on the Stripe webhook to create the booking,
+      // keep the loading state so the user sees a spinner instead of "not found".
+      if (!stripeSessionId && !waitingForWebhook) {
+        setLoading(false);
+      }
       return;
     }
 
@@ -294,12 +298,15 @@ const BookingConfirmation = () => {
     fetchBooking();
   }, [bookingId, navigate]);
 
-  if (loading || processingPayment) {
+  if (loading || processingPayment || waitingForWebhook) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-[#185166] via-[#1a5f75] to-[#18A5A5]">
         <Loader2 className="h-12 w-12 animate-spin text-white" />
         {processingPayment && (
           <p className="mt-4 text-white/80 font-medium">Processing your payment...</p>
+        )}
+        {waitingForWebhook && (
+          <p className="mt-4 text-white/80 font-medium">Finalising your booking…</p>
         )}
       </div>
     );
