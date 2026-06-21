@@ -80,7 +80,7 @@ const StripeCheckoutNotice: React.FC<{ totalCost: number }> = ({ totalCost }) =>
           Secure payment with Stripe
         </p>
         <p className="text-sm text-gray-600">
-          Click <span className="font-medium">Authorize &amp; confirm</span> below to enter your
+          Click <span className="font-medium">Confirm booking</span> below to enter your
           card on Stripe's secure checkout page. Your card will be authorized for
           <strong> £{totalCost.toFixed(2)}</strong> now and charged only after your cleaning is
           completed.
@@ -2949,7 +2949,7 @@ useEffect(() => {
         <Button
           variant="default"
           size="lg"
-          className="px-12 ml-auto"
+          className="px-16 py-6 text-lg ml-auto"
           onClick={handleSubmit}
           disabled={
             processing ||
@@ -2967,10 +2967,8 @@ useEffect(() => {
             'Create Test Booking (No Payment)'
           ) : isAdminMode ? (
             'Complete Booking'
-          ) : !isUrgentBooking ? (
-            'Confirm booking'
           ) : (
-            `Authorize £${data.totalCost?.toFixed(2) || '0.00'} & confirm`
+            'Confirm booking'
           )}
         </Button>
       </div>
