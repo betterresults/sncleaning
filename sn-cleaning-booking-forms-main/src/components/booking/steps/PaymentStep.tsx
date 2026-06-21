@@ -1478,8 +1478,12 @@ useEffect(() => {
           throw new Error(`Booking creation failed: ${errorDetail}`);
         }
 
-        // For admin mode, use the configured charge timing; for customers, always charge immediately
-        const chargeTiming = isAdminMode ? (data.stripeChargeTiming || 'authorize') : 'immediate';
+        // For admin mode, use the configured charge timing.
+        // For customers: only authorize when the booking is within 24h. Otherwise
+        // just keep the card on file and charge AFTER the cleaning is completed.
+        const chargeTiming = isAdminMode
+          ? (data.stripeChargeTiming || 'authorize')
+          : (isUrgentBooking ? 'authorize' : 'none');
         
         if (chargeTiming === 'immediate') {
           // Charge immediately
