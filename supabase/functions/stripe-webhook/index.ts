@@ -104,6 +104,17 @@ async function createBookingFromQuoteLead(
 
     if (lead.converted_booking_id) {
       console.log('[stripe-webhook] quote_lead', quoteLeadId, 'already converted to booking', lead.converted_booking_id);
+      if (options.sessionId) {
+        const { error: linkErr } = await supabaseAdmin
+          .from('bookings')
+          .update({
+            stripe_checkout_session_id: options.sessionId,
+            invoice_id: options.sessionId,
+          })
+          .eq('id', lead.converted_booking_id)
+          .is('stripe_checkout_session_id', null);
+        if (linkErr) console.warn('[stripe-webhook] existing booking session link update failed', linkErr);
+      }
       return lead.converted_booking_id;
     }
 
