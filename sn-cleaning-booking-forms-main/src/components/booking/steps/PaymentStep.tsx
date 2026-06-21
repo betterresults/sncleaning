@@ -554,8 +554,8 @@ useEffect(() => {
     !defaultPaymentMethod &&
     !(guestPaymentMethods.length > 0 && useGuestSavedCard);
 
-  // Calculate if booking is urgent (within 24 hours) - only authorize for urgent bookings.
-  // For bookings >24h away we only SAVE the card (no charge, no auth) and capture
+  // Calculate if booking is urgent (within 48 hours) - only authorize for urgent bookings.
+  // For bookings >48h away we only SAVE the card (no charge, no auth) and capture
   // the cleaning fee after the job is completed.
   const isUrgentBooking = useMemo(() => {
     if (!data.selectedDate || !data.selectedTime) return false;
@@ -563,7 +563,7 @@ useEffect(() => {
     const bookingDateTime = combineLocalDateAndTime(data.selectedDate, data.selectedTime);
     if (!bookingDateTime) return false;
     const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
-    return hoursUntilBooking <= 24;
+    return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
   // Bank transfer is only available for admin mode
@@ -1659,7 +1659,7 @@ useEffect(() => {
           //  - Booking within 24h → authorize now (capture after the clean)
           //  - Booking >24h away → only save the card now; charge after the clean.
           if (isUrgentBooking) {
-            console.log('[PaymentStep] Urgent booking (≤24h) — authorizing payment...');
+            console.log('[PaymentStep] Urgent booking (≤48h) — authorizing payment...');
             const { data: authResult, error: authError } = await supabase.functions.invoke(
               'system-payment-action',
               {
@@ -1678,7 +1678,7 @@ useEffect(() => {
             }
             console.log('[PaymentStep] Payment authorized successfully');
           } else {
-            console.log('[PaymentStep] Non-urgent booking (>24h) — card saved, no charge today.');
+            console.log('[PaymentStep] Non-urgent booking (>48h) — card saved, no charge today.');
           }
 
           // Call success callback for quote lead tracking
