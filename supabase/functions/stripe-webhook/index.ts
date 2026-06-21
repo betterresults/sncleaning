@@ -193,16 +193,12 @@ const handler = async (req: Request): Promise<Response> => {
 
             const newBookingId = createJson.bookingId;
             const amountPaid = (session.amount_total || 0) / 100;
-            const paymentIntentId = typeof session.payment_intent === 'string'
-              ? session.payment_intent
-              : session.payment_intent?.id || null;
 
             await supabaseAdmin
               .from('bookings')
               .update({
                 payment_status: 'paid',
                 stripe_checkout_session_id: session.id,
-                stripe_payment_intent_id: paymentIntentId,
                 invoice_id: session.id,
               })
               .eq('id', newBookingId);
