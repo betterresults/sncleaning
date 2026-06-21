@@ -3034,17 +3034,29 @@ useEffect(() => {
         </div>
       )}
 
+      {/* Google reviews trust block (customer view only) */}
+      {!isAdminMode && <GoogleReviewsBlock />}
+
       {/* Navigation */}
-      <div className={`flex pt-6 ${hideBackButton ? 'justify-end' : 'justify-between'}`}>
-        {!hideBackButton && onBack && (
-          <Button variant="outline" size="lg" onClick={onBack} disabled={processing || submitting}>
-            Back
+      <div className="flex items-center pt-6 justify-between gap-3">
+        {!hideBackButton && onBack ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            disabled={processing || submitting}
+            aria-label="Back"
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <ChevronLeft className="h-5 w-5" />
           </Button>
+        ) : (
+          <span />
         )}
         <Button
           variant="default"
           size="lg"
-          className="px-12"
+          className="px-12 ml-auto"
           onClick={handleSubmit}
           disabled={
             processing ||
@@ -3062,8 +3074,10 @@ useEffect(() => {
             'Create Test Booking (No Payment)'
           ) : isAdminMode ? (
             'Complete Booking'
+          ) : !isUrgentBooking ? (
+            'Confirm booking'
           ) : (
-            `Pay £${data.totalCost?.toFixed(2) || '0.00'} & Confirm`
+            `Authorize £${data.totalCost?.toFixed(2) || '0.00'} & confirm`
           )}
         </Button>
       </div>
