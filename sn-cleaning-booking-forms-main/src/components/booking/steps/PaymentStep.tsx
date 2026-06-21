@@ -1655,28 +1655,31 @@ useEffect(() => {
             // Don't throw - booking is created, we can link later
           }
 
-          // Always charge immediately for customer bookings
-          console.log('[PaymentStep] Charging payment immediately...');
-          const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
-            'system-payment-action',
-            {
-              body: {
-                bookingId: bookingId,
-                action: 'charge'
+          // Charge policy:
+          //  - Booking within 24h → authorize now (capture after the clean)
+          //  - Booking >24h away → only save the card now; charge after the clean.
+          if (isUrgentBooking) {
+            console.log('[PaymentStep] Urgent booking (≤24h) — authorizing payment...');
+            const { data: authResult, error: authError } = await supabase.functions.invoke(
+              'system-payment-action',
+              {
+                body: {
+                  bookingId: bookingId,
+                  action: 'authorize'
+                }
               }
-            }
-          );
+            );
 
-          if (chargeError || !chargeResult?.success) {
-            console.error('[PaymentStep] Charge failed:', chargeError || chargeResult);
-            // Delete the booking since payment failed
-            console.log('[PaymentStep] Charge failed, deleting booking:', bookingId);
-            await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId } });
-            // Navigate to payment failed page
-            navigate(`/payment-failed?error=${encodeURIComponent(chargeResult?.error || chargeError?.message || 'Payment was declined. Please try a different card.')}`);
-            return;
+            if (authError || !authResult?.success) {
+              console.error('[PaymentStep] Authorization failed:', authError || authResult);
+              await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId } });
+              navigate(`/payment-failed?error=${encodeURIComponent(authResult?.error || authError?.message || 'Card authorization was declined. Please try a different card.')}`);
+              return;
+            }
+            console.log('[PaymentStep] Payment authorized successfully');
+          } else {
+            console.log('[PaymentStep] Non-urgent booking (>24h) — card saved, no charge today.');
           }
-          console.log('[PaymentStep] Payment charged successfully');
 
           // Call success callback for quote lead tracking
           onBookingSuccess?.(bookingId);
