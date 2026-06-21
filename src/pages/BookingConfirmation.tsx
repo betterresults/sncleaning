@@ -63,7 +63,7 @@ const BookingConfirmation = () => {
     let cancelled = false;
     let elapsed = 0;
     const intervalMs = 1500;
-    const maxMs = 30_000;
+    const maxMs = 60_000;
     setWaitingForWebhook(true);
 
     const poll = async () => {
@@ -83,7 +83,12 @@ const BookingConfirmation = () => {
       }
       elapsed += intervalMs;
       if (elapsed >= maxMs) {
+        // Stop spinning so the page can render a fallback / error message
+        // instead of getting stuck on "Finalising your booking…" forever.
         setWaitingForWebhook(false);
+        setLoading(false);
+        localStorage.removeItem('payment_redirect_in_progress');
+        console.warn('[BookingConfirmation] Timed out waiting for booking row from webhook for session', stripeSessionId);
         return;
       }
       setTimeout(poll, intervalMs);
