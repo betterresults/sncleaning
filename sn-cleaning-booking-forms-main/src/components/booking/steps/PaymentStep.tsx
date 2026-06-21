@@ -854,6 +854,124 @@ useEffect(() => {
       return;
     }
 
+    // ============================================================
+    // Deferred-payment flow (customer, booking >48h away)
+    // ------------------------------------------------------------
+    // Skip Stripe entirely. Create the booking with payment_status
+    // 'deferred' — the card will be requested and charged after the
+    // cleaning is completed (handled separately).
+    // ============================================================
+    if (!isAdminMode && !isUrgentBooking && paymentType === 'card') {
+      try {
+        setProcessing(true);
+
+        const finalTotalCost = data.totalCost;
+
+        const { data: bookingResult, error: bookingError } = await supabase.functions.invoke(
+          'create-public-booking',
+          {
+            body: {
+              metaEventId: metaEventIdRef.current,
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email,
+              phone: data.phone,
+              houseNumber: data.houseNumber,
+              street: data.street,
+              postcode: data.postcode,
+              city: data.city,
+              addressId: data.addressId,
+              propertyType: data.propertyType,
+              bedrooms: data.bedrooms,
+              bathrooms: data.bathrooms,
+              toilets: data.toilets,
+              numberOfFloors: data.numberOfFloors,
+              additionalRooms: data.additionalRooms,
+              propertyFeatures: data.propertyFeatures,
+              serviceType: (() => {
+                switch (subServiceType) {
+                  case 'domestic': return 'Domestic';
+                  case 'airbnb': return 'Air BnB';
+                  case 'carpet': return 'Carpet Cleaning';
+                  case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                  case 'commercial': return 'Commercial';
+                  default: return subServiceType;
+                }
+              })(),
+              cleaningType: subServiceType === 'end-of-tenancy'
+                ? 'End of Tenancy'
+                : subServiceType === 'carpet'
+                ? 'Carpet Cleaning'
+                : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime')
+                ? 'Deep Cleaning'
+                : 'Standard Cleaning',
+              serviceFrequency: data.serviceFrequency,
+              ovenType: data.ovenType,
+              selectedDate: formatDateForStorage(data.selectedDate),
+              selectedTime: data.selectedTime,
+              flexibility: data.flexibility,
+              shortNoticeCharge: data.shortNoticeCharge,
+              propertyAccess: data.propertyAccess,
+              accessNotes: data.accessNotes,
+              totalCost: finalTotalCost,
+              estimatedHours: data.estimatedHours,
+              totalHours: data.totalHours,
+              hourlyRate: domesticCalculations?.hourlyRate || data.hourlyRate || 25,
+              weeklyCost: data.weeklyCost,
+              notes: data.notes,
+              paymentMethod: 'Charge After Clean',
+              paymentStatus: 'deferred',
+              agentUserId: data.agentUserId,
+              wantsFirstDeepClean: data.wantsFirstDeepClean,
+              firstDeepCleanExtraHours: data.firstDeepCleanExtraHours || domesticCalculations.firstDeepCleanExtraHours,
+              firstDeepCleanHours: domesticCalculations.firstDeepCleanHours,
+            },
+          }
+        );
+
+        if (bookingError || !bookingResult?.success) {
+          console.error('[PaymentStep] Deferred booking creation error:', bookingError || bookingResult);
+          throw new Error(bookingResult?.error || bookingError?.message || 'Failed to create booking');
+        }
+
+        const bookingId = bookingResult.bookingId;
+        console.log('[PaymentStep] Deferred-payment booking created:', bookingId);
+
+        // Fire Meta Purchase (deduped via metaEventId). Value 0 — money is not
+        // captured today; the existing Purchase event after capture remains the
+        // revenue-bearing one.
+        try {
+          await trackMetaEvent('Purchase', {
+            eventId: metaEventIdRef.current || undefined,
+            user: buildMetaUser(),
+            customData: {
+              currency: 'GBP',
+              value: 0,
+              content_name: subServiceType,
+            },
+          });
+        } catch (e) {
+          console.warn('[PaymentStep] Meta Purchase (deferred) tracking failed', e);
+        }
+
+        onBookingSuccess?.(bookingId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        navigate('/booking-confirmation', {
+          state: { bookingId, paymentMethod: 'deferred' },
+        });
+        return;
+      } catch (error: any) {
+        console.error('Booking error (deferred):', error);
+        toast({
+          title: 'Booking Error',
+          description: error.message || 'Failed to create booking',
+          variant: 'destructive',
+        });
+        setProcessing(false);
+        return;
+      }
+    }
+
     // Admin test mode - skip payment completely
     if (adminTestMode) {
       try {
