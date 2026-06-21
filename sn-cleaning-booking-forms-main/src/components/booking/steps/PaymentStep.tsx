@@ -589,6 +589,12 @@ useEffect(() => {
       if (shouldSkipForAdmin || paymentType !== 'card' || hasPaymentMethods || loadingSetupIntent) {
         return;
       }
+
+      // Customer card-redirect mode does not need an inline SetupIntent —
+      // they'll be redirected to Stripe Checkout instead.
+      if (useStripeCheckoutRedirect) {
+        return;
+      }
       
       // Skip if guest has saved cards and wants to use them
       if (guestPaymentMethods.length > 0 && useGuestSavedCard) {
