@@ -778,15 +778,12 @@ const EndOfTenancyBookingForm: React.FC = () => {
           {!isFromQuoteLink && (
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-4">
-                <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-4 border-2 border-slate-200 shadow-lg lg:bg-transparent lg:p-0 lg:border-0 lg:shadow-none lg:rounded-none">
-                  <h3 className="text-lg font-bold text-slate-700 mb-3 lg:hidden">Booking Summary</h3>
-                  <EndOfTenancySummary 
+                <EndOfTenancySummary 
                     data={bookingData} 
                     isAdminMode={isAdminMode}
                     isFromQuoteLink={isFromQuoteLink}
                     onUpdate={updateBookingData}
                   />
-                </div>
               </div>
             </div>
           )}
