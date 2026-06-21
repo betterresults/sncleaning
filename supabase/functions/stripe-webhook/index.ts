@@ -140,8 +140,6 @@ async function createBookingFromQuoteLead(
       updates.stripe_checkout_session_id = options.sessionId;
       updates.invoice_id = options.sessionId;
     }
-    if (options.customerId) updates.stripe_customer_id = options.customerId;
-    if (options.paymentMethodId) updates.stripe_payment_method_id = options.paymentMethodId;
     if (Object.keys(updates).length > 0) {
       const { error: updErr } = await supabaseAdmin
         .from('bookings')
