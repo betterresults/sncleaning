@@ -1,63 +1,61 @@
+## Payment page rework (customer flow only)
 
-## Goal
+Admin flow stays untouched throughout.
 
-Send 7 funnel events to Meta Conversions API (CAPI) from the server, deduplicated against the browser‑side Meta Pixel.
+### 1. Charge-timing rules
 
-## Secrets
+- **More than 48 hours away** → no card collected, no Stripe charge today. Booking is created immediately on Confirm. Card will be requested/charged after the cleaning is completed (handled separately later — out of scope for this change).
+- **Within 48 hours** → card is authorized now (existing Stripe redirect / saved-card flow). Capture still happens after the clean (existing behavior unchanged).
 
-- **Access token**: reuse existing `META_ADS_ACCESS_TOKEN` (no new secret created).
-- `META_PIXEL_ID`: already saved (`1958256531561607`).
+The 48h cutoff matches the existing `isUrgentBooking` memo and your 48h free-cancellation policy.
 
-## What gets built
+### 2. UI changes on `PaymentStep.tsx`
 
-### 1. Edge function `supabase/functions/meta-capi-track/index.ts`
+- **Header**: replace the "Pay" framing with a single H2 "Confirm your booking".
+- **Back button**: replace the current full-width "Back" outline button with a small icon-only chevron-left button anchored to the left of the footer (still hidden in quote-link mode).
+- **Primary button copy**:
+  - >48h: `Confirm booking`
+  - ≤48h with new card: `Authorize £X & confirm` (card is held, not captured)
+  - ≤48h with saved card: `Authorize £X & confirm`
+  - Admin / test modes: unchanged
+- **>48h block** (new): replaces the Stripe Checkout notice / PaymentElement card entirely with a friendly panel:
+  - Title: "Nothing to pay today"
+  - Body: "Click Confirm to secure your booking — we'll assign a cleaner right away. You'll only be charged after your cleaning is completed. Free cancellation or rescheduling up to 48 hours before."
+  - Small total summary line: "Total for this clean: £X.XX"
+- **≤48h block**: keep current card-entry / saved-card UI but reword the helper text from "will be charged when you complete booking" to "will be authorized now and charged after your cleaning is completed".
+- **Google reviews block** (new, above the footer): a 3-card horizontal grid with star row + quote + reviewer name. Hardcoded placeholders until you send real ones — clearly marked `TODO` so they're easy to swap.
 
-- Public POST endpoint (CORS enabled, no JWT required — needed from landing pages).
-- Zod-validated body:
-  ```json
-  {
-    "event_name": "Lead|ViewContent|Schedule|InitiateCheckout|AddPaymentInfo|SubscribedButtonClick|Purchase",
-    "event_id": "uuid matching pixel eventID",
-    "event_source_url": "https://.../free-quote",
-    "user": { "email","phone","first_name","last_name","city","external_id","fbc","fbp","client_user_agent","client_ip" },
-    "custom_data": { "currency":"GBP", "value": 189.0, "content_name": "..." },
-    "test_event_code": "optional"
-  }
-  ```
-- Hashes `email/phone/first_name/last_name/city/external_id` with SHA-256 (lowercase + trim; phone digits-only) via Web Crypto. Leaves `fbc`, `fbp`, `client_user_agent`, `client_ip_address` raw.
-- Falls back to `x-forwarded-for` and `user-agent` headers when client doesn't supply them.
-- POSTs to `https://graph.facebook.com/v21.0/{PIXEL_ID}/events?access_token=…` with `action_source: "website"`.
-- Logs Meta's response; returns `{ ok, meta }` or `502` with Meta's error body.
+### 3. Submit logic on `PaymentStep.tsx`
 
-### 2. Client helper `src/lib/metaCapi.ts`
+Add a branch at the top of `handleSubmit`:
 
-- `trackMetaEvent(eventName, { user, customData, eventId?, isCustomEvent? })`
-  - Generates UUID `event_id` if not supplied.
-  - Reads `_fbc` / `_fbp` cookies + `navigator.userAgent` automatically; auto-builds `_fbc` from `fbclid` query param on first landing if missing.
-  - **Pixel call**:
-    - Standard events (`Lead`, `ViewContent`, `Schedule`, `InitiateCheckout`, `AddPaymentInfo`, `Purchase`) → `fbq('track', name, customData, { eventID })`.
-    - `SubscribedButtonClick` → `fbq('trackCustom', 'SubscribedButtonClick', customData, { eventID })` (custom event, per your instruction).
-  - Then POSTs the same `event_id` to the edge function so Meta dedupes browser + server.
-  - Returns the `event_id` so callers can persist or reuse it.
+```text
+if (!isAdminMode && !isUrgentBooking) {
+  → skip Stripe entirely
+  → call create-public-booking with paymentStatus: 'deferred'
+  → fire Meta Purchase event with value 0 (or omit) and existing meta_event_id
+  → navigate to /booking-confirmation
+}
+```
 
-### 3. Schema change
+Existing ≤48h path (Stripe Checkout redirect for new cards, SetupIntent confirm for saved cards) is unchanged.
 
-- Migration: add `meta_event_id text` column to `bookings` (nullable). Stores the browser-generated id for `SubscribedButtonClick`/`Purchase` so the server-side `Purchase` (fired from booking-confirmation flow) can reuse the same id for dedup.
+### 4. Backend tweaks (minimal)
 
-### 4. Wiring into the funnel (file-by-file, after foundation is in)
+- `create-public-booking` edge function: accept `paymentStatus: 'deferred'` and persist it on the row. No new tables. No new columns required — `payment_status` already exists.
+- `stripe-webhook`: no changes (the deferred path doesn't touch Stripe).
+- Post-clean charging (taking the card later) is **out of scope** for this change — flagged as a follow-up.
 
-| Event | Location |
-|---|---|
-| `Lead` | `/free-quote` form on successful `quote_leads` insert |
-| `ViewContent` | Price reveal step of booking flow |
-| `Schedule` | Date/time selection step |
-| `InitiateCheckout` | Payment page mount |
-| `AddPaymentInfo` | Stripe card element `complete: true` |
-| `SubscribedButtonClick` | Confirm Booking click (before charge), id persisted to `bookings.meta_event_id` |
-| `Purchase` | Server-side, from the existing booking-confirmation flow, reusing `meta_event_id` |
+### 5. Memory updates
 
-I'll identify exact components for each step as I wire them and report back if any are ambiguous.
+Update `mem://payments/business-rules`: charge-immediately is no longer absolute. New rule: ">48h customer bookings defer payment until after the clean; ≤48h bookings authorize the card on confirmation."
 
-## Out of scope
+### Files to edit
 
-- Offline/CRM events, backfill of historical bookings, customer-match audiences.
+- `sn-cleaning-booking-forms-main/src/components/booking/steps/PaymentStep.tsx` (UI + submit branch)
+- `supabase/functions/create-public-booking/index.ts` (accept `deferred` status)
+- `mem://payments/business-rules` (and index)
+
+### Still needed from you
+
+- 2-3 real Google review quotes + reviewer first names to replace the placeholder cards.

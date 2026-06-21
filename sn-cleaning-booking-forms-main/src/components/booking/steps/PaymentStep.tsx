@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { BookingData } from '../AirbnbBookingForm';
-import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock, ChevronDown, ChevronUp, Check, Pencil, MapPin, User as UserIcon, Calendar, Home } from 'lucide-react';
+import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock, ChevronDown, ChevronUp, Check, Pencil, MapPin, User as UserIcon, Calendar, Home, ChevronLeft, Star, CalendarCheck } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,15 +80,78 @@ const StripeCheckoutNotice: React.FC<{ totalCost: number }> = ({ totalCost }) =>
           Secure payment with Stripe
         </p>
         <p className="text-sm text-gray-600">
-          Click <span className="font-medium">Confirm &amp; Pay</span> below to enter your card on
-          Stripe's secure checkout page. You'll be brought right back here once
-          your payment of <strong>£{totalCost.toFixed(2)}</strong> is complete.
+          Click <span className="font-medium">Authorize &amp; confirm</span> below to enter your
+          card on Stripe's secure checkout page. Your card will be authorized for
+          <strong> £{totalCost.toFixed(2)}</strong> now and charged only after your cleaning is
+          completed.
         </p>
       </div>
     </div>
     <p className="text-xs text-gray-500 pl-8">
       ✅ Free cancellation or rescheduling up to 48 hours before your booking.
     </p>
+  </div>
+);
+
+// "Nothing to pay today" panel — shown to customers when the booking is more
+// than 48 hours away. No card is collected here; we charge after the clean.
+const NothingToPayPanel: React.FC<{ totalCost: number }> = ({ totalCost }) => (
+  <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6 space-y-4">
+    <div className="flex items-start gap-3">
+      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+        <CalendarCheck className="h-6 w-6 text-emerald-700" />
+      </div>
+      <div className="space-y-1">
+        <p className="text-lg font-bold text-emerald-900">Nothing to pay today</p>
+        <p className="text-sm text-emerald-800">
+          Click <span className="font-semibold">Confirm</span> to secure your booking — we'll
+          assign a cleaner to you right away. You'll only be charged after your cleaning is
+          completed.
+        </p>
+      </div>
+    </div>
+    <div className="bg-white/80 rounded-lg p-4 border border-emerald-200 flex items-center justify-between">
+      <span className="text-sm text-gray-700">Total for this clean</span>
+      <span className="text-lg font-bold text-gray-900">£{totalCost.toFixed(2)}</span>
+    </div>
+    <p className="text-xs text-emerald-800/80">
+      ✅ Free cancellation or rescheduling up to 48 hours before your booking.
+    </p>
+  </div>
+);
+
+// Lightweight Google reviews trust block. Quotes are placeholders until the
+// business sends the real ones — easy to swap in this single array.
+const GOOGLE_REVIEWS: { name: string; quote: string }[] = [
+  // TODO: replace with real Google reviews
+  { name: 'Sarah M.', quote: 'Brilliant end-of-tenancy clean — got my full deposit back. Highly recommend SN Cleaning.' },
+  { name: 'James P.', quote: 'Booked last minute and the team turned up on time, friendly and very thorough.' },
+  { name: 'Aisha R.', quote: 'Best cleaning service I have used in London. Professional from start to finish.' },
+];
+
+const GoogleReviewsBlock: React.FC = () => (
+  <div className="space-y-3 pt-2">
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+        ))}
+      </div>
+      <p className="text-sm font-medium text-gray-700">Rated 5★ on Google by our customers</p>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {GOOGLE_REVIEWS.map((r, idx) => (
+        <div key={idx} className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex items-center gap-0.5 mb-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+            ))}
+          </div>
+          <p className="text-sm text-gray-700 leading-snug">{r.quote}</p>
+          <p className="text-xs font-semibold text-gray-900 mt-2">{r.name}</p>
+        </div>
+      ))}
+    </div>
   </div>
 );
 
@@ -789,6 +852,124 @@ useEffect(() => {
         variant: "destructive"
       });
       return;
+    }
+
+    // ============================================================
+    // Deferred-payment flow (customer, booking >48h away)
+    // ------------------------------------------------------------
+    // Skip Stripe entirely. Create the booking with payment_status
+    // 'deferred' — the card will be requested and charged after the
+    // cleaning is completed (handled separately).
+    // ============================================================
+    if (!isAdminMode && !isUrgentBooking && paymentType === 'card') {
+      try {
+        setProcessing(true);
+
+        const finalTotalCost = data.totalCost;
+
+        const { data: bookingResult, error: bookingError } = await supabase.functions.invoke(
+          'create-public-booking',
+          {
+            body: {
+              metaEventId: metaEventIdRef.current,
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email,
+              phone: data.phone,
+              houseNumber: data.houseNumber,
+              street: data.street,
+              postcode: data.postcode,
+              city: data.city,
+              addressId: data.addressId,
+              propertyType: data.propertyType,
+              bedrooms: data.bedrooms,
+              bathrooms: data.bathrooms,
+              toilets: data.toilets,
+              numberOfFloors: data.numberOfFloors,
+              additionalRooms: data.additionalRooms,
+              propertyFeatures: data.propertyFeatures,
+              serviceType: (() => {
+                switch (subServiceType) {
+                  case 'domestic': return 'Domestic';
+                  case 'airbnb': return 'Air BnB';
+                  case 'carpet': return 'Carpet Cleaning';
+                  case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                  case 'commercial': return 'Commercial';
+                  default: return subServiceType;
+                }
+              })(),
+              cleaningType: subServiceType === 'end-of-tenancy'
+                ? 'End of Tenancy'
+                : subServiceType === 'carpet'
+                ? 'Carpet Cleaning'
+                : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime')
+                ? 'Deep Cleaning'
+                : 'Standard Cleaning',
+              serviceFrequency: data.serviceFrequency,
+              ovenType: data.ovenType,
+              selectedDate: formatDateForStorage(data.selectedDate),
+              selectedTime: data.selectedTime,
+              flexibility: data.flexibility,
+              shortNoticeCharge: data.shortNoticeCharge,
+              propertyAccess: data.propertyAccess,
+              accessNotes: data.accessNotes,
+              totalCost: finalTotalCost,
+              estimatedHours: data.estimatedHours,
+              totalHours: data.totalHours,
+              hourlyRate: domesticCalculations?.hourlyRate || data.hourlyRate || 25,
+              weeklyCost: data.weeklyCost,
+              notes: data.notes,
+              paymentMethod: 'Charge After Clean',
+              paymentStatus: 'deferred',
+              agentUserId: data.agentUserId,
+              wantsFirstDeepClean: data.wantsFirstDeepClean,
+              firstDeepCleanExtraHours: data.firstDeepCleanExtraHours || domesticCalculations.firstDeepCleanExtraHours,
+              firstDeepCleanHours: domesticCalculations.firstDeepCleanHours,
+            },
+          }
+        );
+
+        if (bookingError || !bookingResult?.success) {
+          console.error('[PaymentStep] Deferred booking creation error:', bookingError || bookingResult);
+          throw new Error(bookingResult?.error || bookingError?.message || 'Failed to create booking');
+        }
+
+        const bookingId = bookingResult.bookingId;
+        console.log('[PaymentStep] Deferred-payment booking created:', bookingId);
+
+        // Fire Meta Purchase (deduped via metaEventId). Value 0 — money is not
+        // captured today; the existing Purchase event after capture remains the
+        // revenue-bearing one.
+        try {
+          await trackMetaEvent('Purchase', {
+            eventId: metaEventIdRef.current || undefined,
+            user: buildMetaUser(),
+            customData: {
+              currency: 'GBP',
+              value: 0,
+              content_name: subServiceType,
+            },
+          });
+        } catch (e) {
+          console.warn('[PaymentStep] Meta Purchase (deferred) tracking failed', e);
+        }
+
+        onBookingSuccess?.(bookingId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        navigate('/booking-confirmation', {
+          state: { bookingId, paymentMethod: 'deferred' },
+        });
+        return;
+      } catch (error: any) {
+        console.error('Booking error (deferred):', error);
+        toast({
+          title: 'Booking Error',
+          description: error.message || 'Failed to create booking',
+          variant: 'destructive',
+        });
+        setProcessing(false);
+        return;
+      }
     }
 
     // Admin test mode - skip payment completely
@@ -2573,7 +2754,7 @@ useEffect(() => {
       {!adminTestMode && (!isAdminMode || isFromQuoteLink) && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
-            Payment Details
+            {isAdminMode ? 'Payment Details' : 'Confirm your booking'}
           </h3>
           
           {/* Payment Type Selection - Only show if bank transfer is available */}
@@ -2625,8 +2806,11 @@ useEffect(() => {
           )}
           
           <div className="space-y-4">
-            {/* Bank Transfer Selected */}
-            {paymentType === 'bank-transfer' && canUseBankTransfer ? (
+            {/* Customer + booking > 48h away → no card collected, deferred charge */}
+            {!isAdminMode && !isUrgentBooking && paymentType === 'card' ? (
+              <NothingToPayPanel totalCost={data.totalCost || 0} />
+            ) : /* Bank Transfer Selected */
+            paymentType === 'bank-transfer' && canUseBankTransfer ? (
               <div className={`rounded-2xl border-2 p-6 ${isUrgentBooking ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50'}`}>
                 <div className="flex items-start gap-3 mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isUrgentBooking ? 'bg-orange-100' : 'bg-amber-100'}`}>
@@ -2680,7 +2864,7 @@ useEffect(() => {
                   )}
                   <div className="bg-white/80 rounded-lg p-4 border border-primary/10">
                     <p className="text-sm text-gray-700">
-                      💳 £{data.totalCost.toFixed(2)} will be charged to your saved card when you complete booking.
+                      💳 £{data.totalCost.toFixed(2)} will be authorized on your saved card now and charged after your cleaning is completed.
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
                       ✅ Free cancellation or rescheduling up to 48 hours before your booking.
@@ -2715,7 +2899,7 @@ useEffect(() => {
                     )}
                     <div className="bg-white/80 rounded-lg p-4 border border-green-200">
                       <p className="text-sm text-gray-700">
-                        💳 £{data.totalCost?.toFixed(2) || '0.00'} will be charged to your saved card when you complete booking.
+                        💳 £{data.totalCost?.toFixed(2) || '0.00'} will be authorized on your saved card now and charged after your cleaning is completed.
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
                         ✅ Free cancellation or rescheduling up to 48 hours before your booking.
@@ -2739,7 +2923,7 @@ useEffect(() => {
                           <div>
                             <p className="text-base font-semibold text-gray-900">New Payment Method</p>
                             <p className="text-xs text-gray-500">
-                              £{data.totalCost?.toFixed(2) || '0.00'} will be charged when you complete booking
+                              £{data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed
                             </p>
                           </div>
                         </div>
@@ -2793,7 +2977,7 @@ useEffect(() => {
                     <div>
                       <p className="text-base font-semibold text-gray-900">Payment Method</p>
                       <p className="text-xs text-gray-500">
-                        £{data.totalCost?.toFixed(2) || '0.00'} will be charged when you complete booking
+                        £{data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed
                       </p>
                     </div>
                   </div>
@@ -2850,17 +3034,29 @@ useEffect(() => {
         </div>
       )}
 
+      {/* Google reviews trust block (customer view only) */}
+      {!isAdminMode && <GoogleReviewsBlock />}
+
       {/* Navigation */}
-      <div className={`flex pt-6 ${hideBackButton ? 'justify-end' : 'justify-between'}`}>
-        {!hideBackButton && onBack && (
-          <Button variant="outline" size="lg" onClick={onBack} disabled={processing || submitting}>
-            Back
+      <div className="flex items-center pt-6 justify-between gap-3">
+        {!hideBackButton && onBack ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBack}
+            disabled={processing || submitting}
+            aria-label="Back"
+            className="text-gray-600 hover:text-gray-900"
+          >
+            <ChevronLeft className="h-5 w-5" />
           </Button>
+        ) : (
+          <span />
         )}
         <Button
           variant="default"
           size="lg"
-          className="px-12"
+          className="px-12 ml-auto"
           onClick={handleSubmit}
           disabled={
             processing ||
@@ -2878,8 +3074,10 @@ useEffect(() => {
             'Create Test Booking (No Payment)'
           ) : isAdminMode ? (
             'Complete Booking'
+          ) : !isUrgentBooking ? (
+            'Confirm booking'
           ) : (
-            `Pay £${data.totalCost?.toFixed(2) || '0.00'} & Confirm`
+            `Authorize £${data.totalCost?.toFixed(2) || '0.00'} & confirm`
           )}
         </Button>
       </div>
