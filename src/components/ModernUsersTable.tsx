@@ -1047,6 +1047,33 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             <Button variant="outline" size="sm" onClick={() => { setSelectedIds(new Set()); setSelectedBusinessIds([]); }}>
               Clear
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const selected = filteredUsers.filter(u => selectedIds.has(u.id));
+                const escape = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`;
+                const header = ['Name', 'Email', 'Phone', 'Postcode'];
+                const rows = selected.map(u => [
+                  `${u.first_name || ''} ${u.last_name || ''}`.trim(),
+                  u.email || '',
+                  u.phone || '',
+                  u.postcode || '',
+                ].map(escape).join(','));
+                const csv = [header.join(','), ...rows].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `customers-${new Date().toISOString().slice(0,10)}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+            >
+              Export CSV
+            </Button>
           </div>
         )}
       </CardHeader>
