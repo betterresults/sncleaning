@@ -152,10 +152,18 @@ const FreeQuote = () => {
         console.warn('[FreeQuote] Lead tracking failed', e);
       }
 
-      // Navigate directly to the booking form
+      // Navigate directly to the booking form — forward firstName/lastName/phone
+      // so the payment page can pre-fill all customer details (not just email).
       const service = services.find(s => s.id === selectedService);
       const route = service?.route || '/services';
-      navigate(`${route}?postcode=${encodeURIComponent(trimmedPostcode)}&email=${encodeURIComponent(trimmedEmail)}`);
+      const qs = new URLSearchParams({
+        postcode: trimmedPostcode,
+        email: trimmedEmail,
+      });
+      if (firstName) qs.set('firstName', firstName);
+      if (lastName) qs.set('lastName', lastName);
+      if (phone) qs.set('phone', phone);
+      navigate(`${route}?${qs.toString()}`);
     } catch (err) {
       console.error('Error saving lead:', err);
       navigate(`/services?email=${encodeURIComponent(email.trim())}`);
