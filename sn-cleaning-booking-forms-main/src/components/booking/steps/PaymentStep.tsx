@@ -845,6 +845,7 @@ useEffect(() => {
         // Use edge function to create booking (bypasses RLS for guest users)
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
+            metaEventId: metaEventIdRef.current,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
@@ -1332,6 +1333,7 @@ useEffect(() => {
         // This ensures we have a bookingId for redirect-based payment methods (Revolut Pay, Amazon Pay, etc.)
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
+            metaEventId: metaEventIdRef.current,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
@@ -1480,6 +1482,7 @@ useEffect(() => {
         // Create booking first
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
+            metaEventId: metaEventIdRef.current,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
