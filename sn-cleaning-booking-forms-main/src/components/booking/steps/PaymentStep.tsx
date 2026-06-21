@@ -2864,7 +2864,7 @@ useEffect(() => {
                   )}
                   <div className="bg-white/80 rounded-lg p-4 border border-primary/10">
                     <p className="text-sm text-gray-700">
-                      💳 £{data.totalCost.toFixed(2)} will be charged to your saved card when you complete booking.
+                      💳 £{data.totalCost.toFixed(2)} will be authorized on your saved card now and charged after your cleaning is completed.
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
                       ✅ Free cancellation or rescheduling up to 48 hours before your booking.
@@ -2899,7 +2899,7 @@ useEffect(() => {
                     )}
                     <div className="bg-white/80 rounded-lg p-4 border border-green-200">
                       <p className="text-sm text-gray-700">
-                        💳 £{data.totalCost?.toFixed(2) || '0.00'} will be charged to your saved card when you complete booking.
+                        💳 £{data.totalCost?.toFixed(2) || '0.00'} will be authorized on your saved card now and charged after your cleaning is completed.
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
                         ✅ Free cancellation or rescheduling up to 48 hours before your booking.
@@ -2923,7 +2923,7 @@ useEffect(() => {
                           <div>
                             <p className="text-base font-semibold text-gray-900">New Payment Method</p>
                             <p className="text-xs text-gray-500">
-                              £{data.totalCost?.toFixed(2) || '0.00'} will be charged when you complete booking
+                              £{data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed
                             </p>
                           </div>
                         </div>
@@ -2977,7 +2977,7 @@ useEffect(() => {
                     <div>
                       <p className="text-base font-semibold text-gray-900">Payment Method</p>
                       <p className="text-xs text-gray-500">
-                        £{data.totalCost?.toFixed(2) || '0.00'} will be charged when you complete booking
+                        £{data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed
                       </p>
                     </div>
                   </div>
