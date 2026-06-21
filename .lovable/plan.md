@@ -1,59 +1,63 @@
-## What's happening
 
-Looking at booking **111136** (£46, customer `management@thestgroup.co.uk`, scheduled May 26 09:00):
+## Goal
 
-- `payment_status = 'failed'`, `invoice_id = NULL`
-- Every Stripe row in your screenshot ("Authorization for booking 111136") is from our system retrying the same card every hour.
-- After the first decline, Stripe **Radar** starts auto-blocking every subsequent attempt on that card → that's why you see "Blocked Blocked Blocked…".
+Send 7 funnel events to Meta Conversions API (CAPI) from the server, deduplicated against the browser‑side Meta Pixel.
 
-## Root cause (in `stripe-process-payments` + `system-payment-action`)
+## Secrets
 
-1. The hourly cron `process-stripe-payments-hourly` queries:
-   ```ts
-   .in('payment_status', ['Unpaid', 'pending', 'failed'])
-   .is('invoice_id', null)
-   ```
-   So any `failed` booking with no invoice_id is retried **every hour, forever**.
+- **Access token**: reuse existing `META_ADS_ACCESS_TOKEN` (no new secret created).
+- `META_PIXEL_ID`: already saved (`1958256531561607`).
 
-2. In `system-payment-action` (authorize branch), when Stripe returns an error or a non-`requires_capture` status, the code sets `payment_status = 'failed'` but **never stores the failed PaymentIntent id**. So the booking re-enters the retry pool on the next cron tick.
+## What gets built
 
-3. Each retry creates a brand-new PaymentIntent on the same card. Stripe Radar's "block if prior PI was blocked/declined" rule then blocks all follow-ups → snowball of "Blocked" entries.
+### 1. Edge function `supabase/functions/meta-capi-track/index.ts`
 
-This started "yesterday" because the card had one legitimate decline and the loop took over from there.
+- Public POST endpoint (CORS enabled, no JWT required — needed from landing pages).
+- Zod-validated body:
+  ```json
+  {
+    "event_name": "Lead|ViewContent|Schedule|InitiateCheckout|AddPaymentInfo|SubscribedButtonClick|Purchase",
+    "event_id": "uuid matching pixel eventID",
+    "event_source_url": "https://.../free-quote",
+    "user": { "email","phone","first_name","last_name","city","external_id","fbc","fbp","client_user_agent","client_ip" },
+    "custom_data": { "currency":"GBP", "value": 189.0, "content_name": "..." },
+    "test_event_code": "optional"
+  }
+  ```
+- Hashes `email/phone/first_name/last_name/city/external_id` with SHA-256 (lowercase + trim; phone digits-only) via Web Crypto. Leaves `fbc`, `fbp`, `client_user_agent`, `client_ip_address` raw.
+- Falls back to `x-forwarded-for` and `user-agent` headers when client doesn't supply them.
+- POSTs to `https://graph.facebook.com/v21.0/{PIXEL_ID}/events?access_token=…` with `action_source: "website"`.
+- Logs Meta's response; returns `{ ok, meta }` or `502` with Meta's error body.
 
-## Fix
+### 2. Client helper `src/lib/metaCapi.ts`
 
-### 1. Stop the infinite retry in `stripe-process-payments`
-Remove `'failed'` from the authorization payment_status filter. Only retry truly untouched bookings: `['Unpaid', 'pending']`.
+- `trackMetaEvent(eventName, { user, customData, eventId?, isCustomEvent? })`
+  - Generates UUID `event_id` if not supplied.
+  - Reads `_fbc` / `_fbp` cookies + `navigator.userAgent` automatically; auto-builds `_fbc` from `fbclid` query param on first landing if missing.
+  - **Pixel call**:
+    - Standard events (`Lead`, `ViewContent`, `Schedule`, `InitiateCheckout`, `AddPaymentInfo`, `Purchase`) → `fbq('track', name, customData, { eventID })`.
+    - `SubscribedButtonClick` → `fbq('trackCustom', 'SubscribedButtonClick', customData, { eventID })` (custom event, per your instruction).
+  - Then POSTs the same `event_id` to the edge function so Meta dedupes browser + server.
+  - Returns the `event_id` so callers can persist or reuse it.
 
-### 2. Add an attempt cap + record last attempt
-Add `payment_attempt_count` and `last_payment_attempt_at` columns to `bookings`. In `system-payment-action`:
-- Increment counter on every authorize attempt.
-- Refuse to retry if `payment_attempt_count >= 3` (mark `payment_status = 'failed_permanent'` / `requires_manual`).
-- Store the failed PaymentIntent id in `invoice_id` (or a new `last_failed_invoice_id` column) so the cron's `invoice_id is null` filter naturally excludes it.
+### 3. Schema change
 
-### 3. Add a minimum back-off
-In the cron query, also exclude bookings whose `last_payment_attempt_at` is within the last 6 hours, so even retries that do happen don't hammer the card.
+- Migration: add `meta_event_id text` column to `bookings` (nullable). Stores the browser-generated id for `SubscribedButtonClick`/`Purchase` so the server-side `Purchase` (fired from booking-confirmation flow) can reuse the same id for dedup.
 
-### 4. Clean up booking 111136 manually
-- Set `payment_status = 'requires_manual'` (or similar) so the cron leaves it alone.
-- Reach out to the customer to update the card — Stripe Radar will keep blocking the existing one for a while.
+### 4. Wiring into the funnel (file-by-file, after foundation is in)
 
-### 5. (Optional) Surface in admin UI
-Add a small badge / filter "Payment failed – manual action needed" so these don't disappear silently.
+| Event | Location |
+|---|---|
+| `Lead` | `/free-quote` form on successful `quote_leads` insert |
+| `ViewContent` | Price reveal step of booking flow |
+| `Schedule` | Date/time selection step |
+| `InitiateCheckout` | Payment page mount |
+| `AddPaymentInfo` | Stripe card element `complete: true` |
+| `SubscribedButtonClick` | Confirm Booking click (before charge), id persisted to `bookings.meta_event_id` |
+| `Purchase` | Server-side, from the existing booking-confirmation flow, reusing `meta_event_id` |
 
-## Files to change
+I'll identify exact components for each step as I wire them and report back if any are ambiguous.
 
-- `supabase/functions/stripe-process-payments/index.ts` — narrow filter, add back-off check.
-- `supabase/functions/system-payment-action/index.ts` — attempt counter, persist failed PI id, stop retrying past cap.
-- New migration: add `payment_attempt_count int default 0`, `last_payment_attempt_at timestamptz`, and a `failed_permanent` status convention on `bookings` (and same on `past_bookings`).
-- Admin bookings list: optional badge for the new status.
+## Out of scope
 
-## Why this is safe
-
-- No change to successful authorize/capture paths.
-- Existing 'authorized' / 'paid' bookings untouched.
-- Cron still picks up genuinely new unpaid bookings within the 24h window.
-- Stops creating new PaymentIntents on cards Stripe has already flagged.
-
-Want me to proceed with all 4 code changes + the migration, or just the urgent fix (#1 + cleanup of 111136) first?
+- Offline/CRM events, backfill of historical bookings, customer-match audiences.
