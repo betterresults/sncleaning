@@ -66,6 +66,10 @@ interface CreatePublicBookingRequest {
   
   // Payment
   paymentMethod?: string;
+  // Optional payment status override (defaults to 'Unpaid').
+  // Customer flow uses 'deferred' for >48h bookings where no card was collected
+  // and the actual charge will happen after the cleaning is completed.
+  paymentStatus?: string;
 
   // Meta Pixel/CAPI dedup id (matches browser-side Pixel eventID)
   metaEventId?: string;
