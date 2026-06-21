@@ -361,6 +361,7 @@ export type Database = {
           send_notification_email: boolean | null
           service_type: string | null
           steam_cleaning_cost: string | null
+          stripe_checkout_session_id: string | null
           time_only: string | null
           total_cost: number | null
           total_hours: number | null
@@ -442,6 +443,7 @@ export type Database = {
           send_notification_email?: boolean | null
           service_type?: string | null
           steam_cleaning_cost?: string | null
+          stripe_checkout_session_id?: string | null
           time_only?: string | null
           total_cost?: number | null
           total_hours?: number | null
@@ -523,6 +525,7 @@ export type Database = {
           send_notification_email?: boolean | null
           service_type?: string | null
           steam_cleaning_cost?: string | null
+          stripe_checkout_session_id?: string | null
           time_only?: string | null
           total_cost?: number | null
           total_hours?: number | null
@@ -2310,6 +2313,7 @@ export type Database = {
           agent_user_id: string | null
           bathrooms: number | null
           bedrooms: number | null
+          booking_payload: Json | null
           calculated_quote: number | null
           carpet_items: Json | null
           cleaning_products: string[] | null
@@ -2336,6 +2340,7 @@ export type Database = {
           last_heartbeat: string | null
           last_name: string | null
           mattress_items: Json | null
+          meta_event_id: string | null
           oven_cleaning: boolean | null
           oven_size: string | null
           page_url: string | null
@@ -2356,6 +2361,7 @@ export type Database = {
           short_notice_charge: number | null
           source: string | null
           status: string | null
+          stripe_checkout_session_id: string | null
           toilets: number | null
           updated_at: string | null
           upholstery_items: Json | null
@@ -2376,6 +2382,7 @@ export type Database = {
           agent_user_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          booking_payload?: Json | null
           calculated_quote?: number | null
           carpet_items?: Json | null
           cleaning_products?: string[] | null
@@ -2402,6 +2409,7 @@ export type Database = {
           last_heartbeat?: string | null
           last_name?: string | null
           mattress_items?: Json | null
+          meta_event_id?: string | null
           oven_cleaning?: boolean | null
           oven_size?: string | null
           page_url?: string | null
@@ -2422,6 +2430,7 @@ export type Database = {
           short_notice_charge?: number | null
           source?: string | null
           status?: string | null
+          stripe_checkout_session_id?: string | null
           toilets?: number | null
           updated_at?: string | null
           upholstery_items?: Json | null
@@ -2442,6 +2451,7 @@ export type Database = {
           agent_user_id?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
+          booking_payload?: Json | null
           calculated_quote?: number | null
           carpet_items?: Json | null
           cleaning_products?: string[] | null
@@ -2468,6 +2478,7 @@ export type Database = {
           last_heartbeat?: string | null
           last_name?: string | null
           mattress_items?: Json | null
+          meta_event_id?: string | null
           oven_cleaning?: boolean | null
           oven_size?: string | null
           page_url?: string | null
@@ -2488,6 +2499,7 @@ export type Database = {
           short_notice_charge?: number | null
           source?: string | null
           status?: string | null
+          stripe_checkout_session_id?: string | null
           toilets?: number | null
           updated_at?: string | null
           upholstery_items?: Json | null
