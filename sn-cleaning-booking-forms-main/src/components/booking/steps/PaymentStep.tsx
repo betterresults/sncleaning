@@ -2734,6 +2734,8 @@ useEffect(() => {
                           <Loader2 className="h-6 w-6 animate-spin text-primary" />
                           <span className="ml-2 text-sm text-gray-600">Loading payment options...</span>
                         </div>
+                      ) : useStripeCheckoutRedirect ? (
+                        <StripeCheckoutNotice totalCost={data.totalCost || 0} />
                       ) : setupIntentClientSecret && stripePromise ? (
                         <PaymentElementWrapper
                           clientSecret={setupIntentClientSecret}
@@ -2779,6 +2781,8 @@ useEffect(() => {
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       <span className="ml-2 text-sm text-gray-600">Loading payment options...</span>
                     </div>
+                  ) : useStripeCheckoutRedirect ? (
+                    <StripeCheckoutNotice totalCost={data.totalCost || 0} />
                   ) : setupIntentClientSecret && stripePromise ? (
                     <PaymentElementWrapper
                       clientSecret={setupIntentClientSecret}
