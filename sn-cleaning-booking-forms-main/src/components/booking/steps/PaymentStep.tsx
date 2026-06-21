@@ -379,6 +379,27 @@ useEffect(() => {
     fetchCustomerData();
   }
 }, [effectiveCustomerId, isAdminMode]);
+
+// URL pre-fill: pull firstName / lastName / phone / email from the query string
+// when the booking form doesn't already have them. The /free-quote form
+// forwards these so the customer doesn't have to retype anything on the
+// payment page (only email used to be pre-filled before).
+useEffect(() => {
+  if (isAdminMode) return;
+  const updates: Record<string, string> = {};
+  const qpFirstName = searchParams.get('firstName');
+  const qpLastName = searchParams.get('lastName');
+  const qpPhone = searchParams.get('phone');
+  const qpEmail = searchParams.get('email');
+  if (qpFirstName && !data.firstName) updates.firstName = qpFirstName;
+  if (qpLastName && !data.lastName) updates.lastName = qpLastName;
+  if (qpPhone && !data.phone) updates.phone = qpPhone;
+  if (qpEmail && !data.email) updates.email = qpEmail;
+  if (Object.keys(updates).length > 0) {
+    onUpdate(updates as any);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [isAdminMode]);
   
   // Fetch company payment methods from settings (for admin mode)
   useEffect(() => {
