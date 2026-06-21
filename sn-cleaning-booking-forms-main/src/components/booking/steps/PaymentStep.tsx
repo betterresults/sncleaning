@@ -2799,7 +2799,9 @@ useEffect(() => {
                           <div>
                             <p className="text-base font-semibold text-gray-900">New Payment Method</p>
                             <p className="text-xs text-gray-500">
-                              £{data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed
+                              {isUrgentBooking
+                                ? `£${data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed`
+                                : `Nothing to pay today — your card will be saved securely and only charged after your cleaning is completed (£${data.totalCost?.toFixed(2) || '0.00'}).`}
                             </p>
                           </div>
                         </div>
@@ -2853,7 +2855,9 @@ useEffect(() => {
                     <div>
                       <p className="text-base font-semibold text-gray-900">Payment Method</p>
                       <p className="text-xs text-gray-500">
-                        £{data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed
+                        {isUrgentBooking
+                          ? `£${data.totalCost?.toFixed(2) || '0.00'} will be authorized now and charged after your cleaning is completed`
+                          : `Nothing to pay today — your card will be saved securely and only charged after your cleaning is completed (£${data.totalCost?.toFixed(2) || '0.00'}).`}
                       </p>
                     </div>
                   </div>
