@@ -361,7 +361,7 @@ const BookingConfirmation = () => {
           <p className="text-gray-600 mb-4">Your booking #{bookingId} has been successfully created.</p>
           {paymentSuccess && (
             <p className="text-green-600 font-medium mb-4">
-              {isUrgentBooking || isUrgent ? 'Payment received successfully!' : 'Card details saved successfully!'}
+              Card saved securely — you'll only be charged after your cleaning is completed.
             </p>
           )}
           <p className="text-sm text-gray-500 mb-6">You'll receive a confirmation email shortly with all the details.</p>
@@ -394,7 +394,7 @@ const BookingConfirmation = () => {
         {paymentSuccess && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-center">
             <p className="text-green-700 font-medium">
-              {isUrgentBooking || isUrgent ? '✓ Payment received successfully!' : '✓ Card details saved successfully!'}
+              ✓ Card saved securely — you'll only be charged after your cleaning is completed.
             </p>
           </div>
         )}
