@@ -416,6 +416,22 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
       const source = isAdminMode ? 'admin' : (localStorage.getItem('quote_source') || 'direct');
       
       console.log('📊 saveQuoteLead - Using source:', source, 'UTM:', utmParams);
+
+      // Capture Meta click-tracking signals so we can later attribute
+      // offline conversions (e.g. WhatsApp bookings) back to the ad.
+      const readCookie = (name: string): string | undefined => {
+        if (typeof document === 'undefined') return undefined;
+        const m = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+        return m ? decodeURIComponent(m[3]) : undefined;
+      };
+      const urlParams = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search)
+        : new URLSearchParams();
+      const fbclid = urlParams.get('fbclid') || undefined;
+      const fbc = readCookie('_fbc');
+      const fbp = readCookie('_fbp');
+      const landingUrl = localStorage.getItem('quote_original_landing_url')
+        || (typeof window !== 'undefined' ? window.location.href : undefined);
       
       const leadData: Record<string, unknown> = {
         user_id: userId.current,
@@ -460,6 +476,10 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
         referrer: localStorage.getItem('quote_original_landing_url') || document.referrer || null,
         user_agent: navigator.userAgent,
         last_heartbeat: new Date().toISOString(),
+        fbclid,
+        fbc,
+        fbp,
+        landing_url: landingUrl,
         ...utmParams,
         updated_at: new Date().toISOString(),
         ...(data.convertedBookingId && { converted_booking_id: data.convertedBookingId }),

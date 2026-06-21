@@ -341,6 +341,7 @@ export type Database = {
           linen_used: Json | null
           linens: string | null
           mattress_items: string | null
+          meta_capi_sent_at: string | null
           meta_event_id: string | null
           occupied: string | null
           oven_size: string | null
@@ -423,6 +424,7 @@ export type Database = {
           linen_used?: Json | null
           linens?: string | null
           mattress_items?: string | null
+          meta_capi_sent_at?: string | null
           meta_event_id?: string | null
           occupied?: string | null
           oven_size?: string | null
@@ -505,6 +507,7 @@ export type Database = {
           linen_used?: Json | null
           linens?: string | null
           mattress_items?: string | null
+          meta_capi_sent_at?: string | null
           meta_event_id?: string | null
           occupied?: string | null
           oven_size?: string | null
@@ -2328,6 +2331,9 @@ export type Database = {
           email: string | null
           equipment_arrangement: string | null
           expires_at: string | null
+          fbc: string | null
+          fbclid: string | null
+          fbp: string | null
           first_deep_clean: boolean | null
           first_name: string | null
           frequency: string | null
@@ -2337,6 +2343,7 @@ export type Database = {
           is_first_time_customer: boolean | null
           is_flexible: boolean | null
           kitchen: string | null
+          landing_url: string | null
           last_heartbeat: string | null
           last_name: string | null
           mattress_items: Json | null
@@ -2397,6 +2404,9 @@ export type Database = {
           email?: string | null
           equipment_arrangement?: string | null
           expires_at?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
           first_deep_clean?: boolean | null
           first_name?: string | null
           frequency?: string | null
@@ -2406,6 +2416,7 @@ export type Database = {
           is_first_time_customer?: boolean | null
           is_flexible?: boolean | null
           kitchen?: string | null
+          landing_url?: string | null
           last_heartbeat?: string | null
           last_name?: string | null
           mattress_items?: Json | null
@@ -2466,6 +2477,9 @@ export type Database = {
           email?: string | null
           equipment_arrangement?: string | null
           expires_at?: string | null
+          fbc?: string | null
+          fbclid?: string | null
+          fbp?: string | null
           first_deep_clean?: boolean | null
           first_name?: string | null
           frequency?: string | null
@@ -2475,6 +2489,7 @@ export type Database = {
           is_first_time_customer?: boolean | null
           is_flexible?: boolean | null
           kitchen?: string | null
+          landing_url?: string | null
           last_heartbeat?: string | null
           last_name?: string | null
           mattress_items?: Json | null
