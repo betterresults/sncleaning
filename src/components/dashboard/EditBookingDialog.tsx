@@ -1115,6 +1115,14 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
             </Accordion>
 
             <div className="flex justify-end space-x-3 pt-6 border-t bg-gray-50 -mx-6 px-6 py-4">
+              <div className="mr-auto">
+                {booking?.id && (
+                  <MetaCapiReportButton
+                    bookingId={booking.id}
+                    alreadySentAt={booking?.meta_capi_sent_at}
+                  />
+                )}
+              </div>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
