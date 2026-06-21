@@ -2806,8 +2806,11 @@ useEffect(() => {
           )}
           
           <div className="space-y-4">
-            {/* Bank Transfer Selected */}
-            {paymentType === 'bank-transfer' && canUseBankTransfer ? (
+            {/* Customer + booking > 48h away → no card collected, deferred charge */}
+            {!isAdminMode && !isUrgentBooking && paymentType === 'card' ? (
+              <NothingToPayPanel totalCost={data.totalCost || 0} />
+            ) : /* Bank Transfer Selected */
+            paymentType === 'bank-transfer' && canUseBankTransfer ? (
               <div className={`rounded-2xl border-2 p-6 ${isUrgentBooking ? 'border-orange-300 bg-orange-50' : 'border-amber-200 bg-amber-50'}`}>
                 <div className="flex items-start gap-3 mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isUrgentBooking ? 'bg-orange-100' : 'bg-amber-100'}`}>
