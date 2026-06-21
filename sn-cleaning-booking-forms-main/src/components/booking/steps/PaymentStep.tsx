@@ -554,14 +554,16 @@ useEffect(() => {
     !defaultPaymentMethod &&
     !(guestPaymentMethods.length > 0 && useGuestSavedCard);
 
-  // Calculate if booking is urgent (within 48 hours) - only authorize for urgent bookings
+  // Calculate if booking is urgent (within 24 hours) - only authorize for urgent bookings.
+  // For bookings >24h away we only SAVE the card (no charge, no auth) and capture
+  // the cleaning fee after the job is completed.
   const isUrgentBooking = useMemo(() => {
     if (!data.selectedDate || !data.selectedTime) return false;
     
     const bookingDateTime = combineLocalDateAndTime(data.selectedDate, data.selectedTime);
     if (!bookingDateTime) return false;
     const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
-    return hoursUntilBooking <= 48;
+    return hoursUntilBooking <= 24;
   }, [data.selectedDate, data.selectedTime]);
 
   // Bank transfer is only available for admin mode
@@ -1476,8 +1478,12 @@ useEffect(() => {
           throw new Error(`Booking creation failed: ${errorDetail}`);
         }
 
-        // For admin mode, use the configured charge timing; for customers, always charge immediately
-        const chargeTiming = isAdminMode ? (data.stripeChargeTiming || 'authorize') : 'immediate';
+        // For admin mode, use the configured charge timing.
+        // For customers: only authorize when the booking is within 24h. Otherwise
+        // just keep the card on file and charge AFTER the cleaning is completed.
+        const chargeTiming = isAdminMode
+          ? (data.stripeChargeTiming || 'authorize')
+          : (isUrgentBooking ? 'authorize' : 'none');
         
         if (chargeTiming === 'immediate') {
           // Charge immediately
@@ -1649,28 +1655,31 @@ useEffect(() => {
             // Don't throw - booking is created, we can link later
           }
 
-          // Always charge immediately for customer bookings
-          console.log('[PaymentStep] Charging payment immediately...');
-          const { data: chargeResult, error: chargeError } = await supabase.functions.invoke(
-            'system-payment-action',
-            {
-              body: {
-                bookingId: bookingId,
-                action: 'charge'
+          // Charge policy:
+          //  - Booking within 24h → authorize now (capture after the clean)
+          //  - Booking >24h away → only save the card now; charge after the clean.
+          if (isUrgentBooking) {
+            console.log('[PaymentStep] Urgent booking (≤24h) — authorizing payment...');
+            const { data: authResult, error: authError } = await supabase.functions.invoke(
+              'system-payment-action',
+              {
+                body: {
+                  bookingId: bookingId,
+                  action: 'authorize'
+                }
               }
-            }
-          );
+            );
 
-          if (chargeError || !chargeResult?.success) {
-            console.error('[PaymentStep] Charge failed:', chargeError || chargeResult);
-            // Delete the booking since payment failed
-            console.log('[PaymentStep] Charge failed, deleting booking:', bookingId);
-            await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId } });
-            // Navigate to payment failed page
-            navigate(`/payment-failed?error=${encodeURIComponent(chargeResult?.error || chargeError?.message || 'Payment was declined. Please try a different card.')}`);
-            return;
+            if (authError || !authResult?.success) {
+              console.error('[PaymentStep] Authorization failed:', authError || authResult);
+              await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId } });
+              navigate(`/payment-failed?error=${encodeURIComponent(authResult?.error || authError?.message || 'Card authorization was declined. Please try a different card.')}`);
+              return;
+            }
+            console.log('[PaymentStep] Payment authorized successfully');
+          } else {
+            console.log('[PaymentStep] Non-urgent booking (>24h) — card saved, no charge today.');
           }
-          console.log('[PaymentStep] Payment charged successfully');
 
           // Call success callback for quote lead tracking
           onBookingSuccess?.(bookingId);
@@ -2740,7 +2749,9 @@ useEffect(() => {
                   )}
                   <div className="bg-white/80 rounded-lg p-4 border border-primary/10">
                     <p className="text-sm text-gray-700">
-                      💳 £{data.totalCost.toFixed(2)} will be authorized on your saved card now and charged after your cleaning is completed.
+                      {isUrgentBooking
+                        ? <>💳 £{data.totalCost.toFixed(2)} will be authorized on your saved card now and charged after your cleaning is completed.</>
+                        : <>💳 Nothing to pay today — your saved card will only be charged after your cleaning is completed (£{data.totalCost.toFixed(2)}).</>}
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
                       ✅ Free cancellation or rescheduling up to 48 hours before your booking.
@@ -2775,7 +2786,9 @@ useEffect(() => {
                     )}
                     <div className="bg-white/80 rounded-lg p-4 border border-green-200">
                       <p className="text-sm text-gray-700">
-                        💳 £{data.totalCost?.toFixed(2) || '0.00'} will be authorized on your saved card now and charged after your cleaning is completed.
+                        {isUrgentBooking
+                          ? <>💳 £{data.totalCost?.toFixed(2) || '0.00'} will be authorized on your saved card now and charged after your cleaning is completed.</>
+                          : <>💳 Nothing to pay today — your saved card will only be charged after your cleaning is completed (£{data.totalCost?.toFixed(2) || '0.00'}).</>}
                       </p>
                       <p className="text-xs text-gray-500 mt-2">
                         ✅ Free cancellation or rescheduling up to 48 hours before your booking.
