@@ -130,6 +130,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <FbclidCapture />
         <AuthProvider>
           <AdminCustomerProvider>
             <AdminCleanerProvider>
