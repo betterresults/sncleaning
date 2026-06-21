@@ -69,6 +69,29 @@ const useSimpleAuth = () => {
 const emailSchema = z.string().email('Please enter a valid email address');
 const ukPhoneSchema = z.string().regex(/^\+44\d{10}$/, 'UK phone must be +44 followed by 10 digits');
 
+// Customer-facing notice shown in place of the inline card form when the
+// booking will be completed via Stripe-hosted Checkout (redirect flow).
+const StripeCheckoutNotice: React.FC<{ totalCost: number }> = ({ totalCost }) => (
+  <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 space-y-3">
+    <div className="flex items-start gap-3">
+      <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-gray-900">
+          Secure payment with Stripe
+        </p>
+        <p className="text-sm text-gray-600">
+          Click <span className="font-medium">Confirm &amp; Pay</span> below to enter your card on
+          Stripe's secure checkout page. You'll be brought right back here once
+          your payment of <strong>£{totalCost.toFixed(2)}</strong> is complete.
+        </p>
+      </div>
+    </div>
+    <p className="text-xs text-gray-500 pl-8">
+      ✅ Free cancellation or rescheduling up to 48 hours before your booking.
+    </p>
+  </div>
+);
+
 // PaymentElement wrapper component with its own Elements context
 interface PaymentElementWrapperProps {
   clientSecret: string;
