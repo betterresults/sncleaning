@@ -14,6 +14,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
+import { trackMetaEvent, MetaEventName } from '@/lib/metaCapi';
 import { parseDatePreserveLocalDay } from '@/lib/bookingDate';
 
 export interface CarpetCleaningItem {
@@ -423,6 +424,28 @@ const CarpetCleaningForm: React.FC = () => {
 
   const nextStep = () => {
     if (currentStep < steps.length) {
+      const nextStepKey = steps[currentStep]?.key;
+      if (!isAdminMode) {
+        const metaEvent: MetaEventName | null =
+          nextStepKey === 'schedule' ? 'ViewContent' : nextStepKey === 'payment' ? 'Schedule' : null;
+        if (metaEvent) {
+          trackMetaEvent(metaEvent, {
+            user: {
+              email: bookingData.email,
+              phone: bookingData.phone,
+              first_name: bookingData.firstName,
+              last_name: bookingData.lastName,
+              city: bookingData.postcode,
+              external_id: sessionId || undefined,
+            },
+            customData: {
+              currency: 'GBP',
+              value: bookingData.totalCost || undefined,
+              content_name: 'Carpet Cleaning',
+            },
+          }).catch(() => {});
+        }
+      }
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }

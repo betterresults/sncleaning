@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { User } from 'lucide-react';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 import { combineLocalDateAndTime, formatDateForStorage } from '@/lib/bookingDate';
+import { trackMetaEvent } from '@/lib/metaCapi';
 
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
@@ -217,6 +218,10 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const stripe = useStripe();
   const elements = useElements();
   const [cardComplete, setCardComplete] = useState(false);
+  // Meta CAPI: dedup event id reused for SubscribedButtonClick + server-side Purchase
+  const metaEventIdRef = useRef<string | null>(null);
+  const addPaymentInfoFiredRef = useRef(false);
+  const initiateCheckoutFiredRef = useRef(false);
   const [companyPaymentMethods, setCompanyPaymentMethods] = useState<string[]>([]);
   const [selectedAdminPaymentMethod, setSelectedAdminPaymentMethod] = useState<string>('');
   const [adminCustomerPaymentMethods, setAdminCustomerPaymentMethods] = useState<any[]>([]);
@@ -229,6 +234,45 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
   const [setupIntentClientSecret, setSetupIntentClientSecret] = useState<string | null>(null);
   const [loadingSetupIntent, setLoadingSetupIntent] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
+
+  // Build a Meta user_data payload from current form data
+  const buildMetaUser = useCallback(() => ({
+    email: data.email,
+    phone: data.phone,
+    first_name: data.firstName,
+    last_name: data.lastName,
+    city: data.postcode,
+  }), [data.email, data.phone, data.firstName, data.lastName, data.postcode]);
+
+  // InitiateCheckout — fired once when PaymentStep mounts (user landed on payment page)
+  useEffect(() => {
+    if (isAdminMode || initiateCheckoutFiredRef.current) return;
+    initiateCheckoutFiredRef.current = true;
+    trackMetaEvent('InitiateCheckout', {
+      user: buildMetaUser(),
+      customData: {
+        currency: 'GBP',
+        value: data.totalCost || undefined,
+        content_name: subServiceType,
+      },
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdminMode]);
+
+  // AddPaymentInfo — fired once when card details become complete
+  useEffect(() => {
+    if (isAdminMode || !cardComplete || addPaymentInfoFiredRef.current) return;
+    addPaymentInfoFiredRef.current = true;
+    trackMetaEvent('AddPaymentInfo', {
+      user: buildMetaUser(),
+      customData: {
+        currency: 'GBP',
+        value: data.totalCost || undefined,
+        content_name: subServiceType,
+      },
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardComplete, isAdminMode]);
   
   // Ref to store confirmSetup function from PaymentElementWrapper (using ref to avoid React function-in-state issues)
   // Now accepts a dynamic returnUrl parameter
@@ -657,6 +701,23 @@ useEffect(() => {
       onBookingAttempt();
     }
 
+    // Meta CAPI + Pixel: SubscribedButtonClick (custom event, fired even if validation/payment fails)
+    if (!isAdminMode) {
+      try {
+        const eid = await trackMetaEvent('SubscribedButtonClick', {
+          user: buildMetaUser(),
+          customData: {
+            currency: 'GBP',
+            value: data.totalCost || undefined,
+            content_name: subServiceType,
+          },
+        });
+        metaEventIdRef.current = eid;
+      } catch (e) {
+        console.warn('[PaymentStep] SubscribedButtonClick tracking failed', e);
+      }
+    }
+
     // Validate before submission
     const isEmailValid = validateEmail(data.email);
     const isPhoneValid = validatePhone(data.phone);
@@ -784,6 +845,7 @@ useEffect(() => {
         // Use edge function to create booking (bypasses RLS for guest users)
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
+            metaEventId: metaEventIdRef.current,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
@@ -1271,6 +1333,7 @@ useEffect(() => {
         // This ensures we have a bookingId for redirect-based payment methods (Revolut Pay, Amazon Pay, etc.)
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
+            metaEventId: metaEventIdRef.current,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
@@ -1419,6 +1482,7 @@ useEffect(() => {
         // Create booking first
         const { data: bookingResult, error: bookingError } = await supabase.functions.invoke('create-public-booking', {
           body: {
+            metaEventId: metaEventIdRef.current,
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,

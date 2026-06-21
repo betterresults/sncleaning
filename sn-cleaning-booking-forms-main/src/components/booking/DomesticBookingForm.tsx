@@ -11,6 +11,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
+import { trackMetaEvent, MetaEventName } from '@/lib/metaCapi';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
@@ -836,6 +837,27 @@ const DomesticBookingForm: React.FC = () => {
         adminId: isAdminMode && adminUserId ? adminUserId : undefined,
         isAdminCreated: isAdminMode,
       });
+      if (!isAdminMode) {
+        const metaEvent: MetaEventName | null =
+          nextStepKey === 'schedule' ? 'ViewContent' : nextStepKey === 'payment' ? 'Schedule' : null;
+        if (metaEvent) {
+          trackMetaEvent(metaEvent, {
+            user: {
+              email: bookingData.email,
+              phone: bookingData.phone,
+              first_name: bookingData.firstName,
+              last_name: bookingData.lastName,
+              city: bookingData.postcode,
+              external_id: sessionId || undefined,
+            },
+            customData: {
+              currency: 'GBP',
+              value: bookingData.totalCost || undefined,
+              content_name: 'Domestic Cleaning',
+            },
+          }).catch(() => {});
+        }
+      }
       setCurrentStep(currentStep + 1);
       // Scroll to top on step change
       window.scrollTo({ top: 0, behavior: 'smooth' });
