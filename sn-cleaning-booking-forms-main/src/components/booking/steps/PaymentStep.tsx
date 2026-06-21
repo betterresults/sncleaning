@@ -461,6 +461,16 @@ useEffect(() => {
     ? (paymentMethods.find((pm: any) => pm.is_default) || paymentMethods[0])
     : null;
 
+  // Customer card-redirect mode: any customer paying by card who does NOT have a
+  // saved card on file goes to Stripe-hosted Checkout instead of entering card
+  // details inline. Admins, saved-card customers, and returning guests who
+  // chose their saved card all keep the existing in-page flows.
+  const useStripeCheckoutRedirect =
+    !isAdminMode &&
+    paymentType === 'card' &&
+    !defaultPaymentMethod &&
+    !(guestPaymentMethods.length > 0 && useGuestSavedCard);
+
   // Calculate if booking is urgent (within 48 hours) - only authorize for urgent bookings
   const isUrgentBooking = useMemo(() => {
     if (!data.selectedDate || !data.selectedTime) return false;
