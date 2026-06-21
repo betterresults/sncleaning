@@ -13,6 +13,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
+import { trackMetaEvent, MetaEventName } from '@/lib/metaCapi';
 import { parseDatePreserveLocalDay } from '@/lib/bookingDate';
 import { ExitQuotePopup } from '@/components/booking/ExitQuotePopup';
 import { AdminQuoteDialog } from '@/components/booking/AdminQuoteDialog';
@@ -405,6 +406,28 @@ const AirbnbBookingForm: React.FC = () => {
         adminId: isAdminMode && adminUserId ? adminUserId : undefined,
         isAdminCreated: isAdminMode,
       });
+      if (!isAdminMode) {
+        const nextStepKey = steps[currentStep]?.key;
+        const metaEvent: MetaEventName | null =
+          nextStepKey === 'schedule' ? 'ViewContent' : nextStepKey === 'payment' ? 'Schedule' : null;
+        if (metaEvent) {
+          trackMetaEvent(metaEvent, {
+            user: {
+              email: bookingData.email,
+              phone: bookingData.phone,
+              first_name: bookingData.firstName,
+              last_name: bookingData.lastName,
+              city: bookingData.postcode,
+              external_id: sessionId || undefined,
+            },
+            customData: {
+              currency: 'GBP',
+              value: bookingData.totalCost || undefined,
+              content_name: 'Airbnb Cleaning',
+            },
+          }).catch(() => {});
+        }
+      }
       setCurrentStep(currentStep + 1);
     }
   };
