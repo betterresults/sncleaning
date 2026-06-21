@@ -66,6 +66,9 @@ interface CreatePublicBookingRequest {
   
   // Payment
   paymentMethod?: string;
+
+  // Meta Pixel/CAPI dedup id (matches browser-side Pixel eventID)
+  metaEventId?: string;
   
   // Agent attribution
   agentUserId?: string;
@@ -337,6 +340,10 @@ const handler = async (req: Request): Promise<Response> => {
       created_by_source: createdBySource,
       send_notification_email: true
     };
+
+    if (data.metaEventId) {
+      bookingInsert.meta_event_id = data.metaEventId;
+    }
 
     if (recurringGroupId) {
       bookingInsert.recurring_group_id = recurringGroupId;
