@@ -2754,7 +2754,7 @@ useEffect(() => {
       {!adminTestMode && (!isAdminMode || isFromQuoteLink) && (
         <div className="space-y-6">
           <h3 className="text-2xl font-bold text-[#185166] mb-4">
-            Payment Details
+            {isAdminMode ? 'Payment Details' : 'Confirm your booking'}
           </h3>
           
           {/* Payment Type Selection - Only show if bank transfer is available */}
