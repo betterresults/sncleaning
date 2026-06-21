@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { ArrowRight, Loader2, Sparkles, Home, Building, Users, Layers, CheckCircle2 } from 'lucide-react';
 import LandingTestimonials from '@/components/landing/LandingTestimonials';
+import { trackMetaEvent } from '@/lib/metaCapi';
 
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
@@ -134,6 +135,22 @@ const FreeQuote = () => {
       sessionStorage.setItem('selectedService', selectedService);
       sessionStorage.setItem('bookingPostcode', trimmedPostcode);
       sessionStorage.setItem('bookingEmail', trimmedEmail);
+
+      // Meta CAPI + Pixel: Lead
+      try {
+        await trackMetaEvent('Lead', {
+          user: {
+            email: trimmedEmail,
+            phone: phone,
+            first_name: firstName,
+            last_name: lastName,
+            external_id: sessionId,
+          },
+          customData: { content_name: selectedService },
+        });
+      } catch (e) {
+        console.warn('[FreeQuote] Lead tracking failed', e);
+      }
 
       // Navigate directly to the booking form
       const service = services.find(s => s.id === selectedService);
