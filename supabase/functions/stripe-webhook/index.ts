@@ -8,6 +8,55 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
 };
 
+// Fire a Purchase event to Meta CAPI (server-side) using the booking's stored meta_event_id
+// so it deduplicates with the browser-side Pixel event from SubscribedButtonClick/Purchase.
+async function fireMetaPurchase(
+  supabaseAdmin: any,
+  bookingId: number | string,
+  table: 'bookings' | 'past_bookings',
+) {
+  try {
+    const { data: row } = await supabaseAdmin
+      .from(table)
+      .select('meta_event_id, total_cost, email, phone_number, first_name, last_name, postcode')
+      .eq('id', bookingId)
+      .single();
+    if (!row) return;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const eventId = row.meta_event_id || `booking-${bookingId}-purchase`;
+    const res = await fetch(`${supabaseUrl}/functions/v1/meta-capi-track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anonKey}`,
+        'apikey': anonKey,
+      },
+      body: JSON.stringify({
+        event_name: 'Purchase',
+        event_id: eventId,
+        event_source_url: `${Deno.env.get('SITE_URL') ?? 'https://sncleaning.lovable.app'}/booking-confirmation`,
+        user: {
+          email: row.email,
+          phone: row.phone_number,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          city: row.postcode,
+          external_id: String(bookingId),
+        },
+        custom_data: {
+          currency: 'GBP',
+          value: Number(row.total_cost ?? 0),
+        },
+      }),
+    });
+    const txt = await res.text();
+    console.log('[stripe-webhook] meta-capi Purchase response', res.status, txt);
+  } catch (err) {
+    console.error('[stripe-webhook] fireMetaPurchase failed', err);
+  }
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
