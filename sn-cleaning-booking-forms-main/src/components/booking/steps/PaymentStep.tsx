@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { BookingData } from '../AirbnbBookingForm';
-import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock, ChevronDown, ChevronUp, Check, Pencil, MapPin, User as UserIcon, Calendar, Home } from 'lucide-react';
+import { CreditCard, Shield, Loader2, AlertTriangle, Building2, Clock, ChevronDown, ChevronUp, Check, Pencil, MapPin, User as UserIcon, Calendar, Home, ChevronLeft, Star, CalendarCheck } from 'lucide-react';
 import { useAirbnbBookingSubmit } from '@/hooks/useAirbnbBookingSubmit';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,15 +80,78 @@ const StripeCheckoutNotice: React.FC<{ totalCost: number }> = ({ totalCost }) =>
           Secure payment with Stripe
         </p>
         <p className="text-sm text-gray-600">
-          Click <span className="font-medium">Confirm &amp; Pay</span> below to enter your card on
-          Stripe's secure checkout page. You'll be brought right back here once
-          your payment of <strong>£{totalCost.toFixed(2)}</strong> is complete.
+          Click <span className="font-medium">Authorize &amp; confirm</span> below to enter your
+          card on Stripe's secure checkout page. Your card will be authorized for
+          <strong> £{totalCost.toFixed(2)}</strong> now and charged only after your cleaning is
+          completed.
         </p>
       </div>
     </div>
     <p className="text-xs text-gray-500 pl-8">
       ✅ Free cancellation or rescheduling up to 48 hours before your booking.
     </p>
+  </div>
+);
+
+// "Nothing to pay today" panel — shown to customers when the booking is more
+// than 48 hours away. No card is collected here; we charge after the clean.
+const NothingToPayPanel: React.FC<{ totalCost: number }> = ({ totalCost }) => (
+  <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-6 space-y-4">
+    <div className="flex items-start gap-3">
+      <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+        <CalendarCheck className="h-6 w-6 text-emerald-700" />
+      </div>
+      <div className="space-y-1">
+        <p className="text-lg font-bold text-emerald-900">Nothing to pay today</p>
+        <p className="text-sm text-emerald-800">
+          Click <span className="font-semibold">Confirm</span> to secure your booking — we'll
+          assign a cleaner to you right away. You'll only be charged after your cleaning is
+          completed.
+        </p>
+      </div>
+    </div>
+    <div className="bg-white/80 rounded-lg p-4 border border-emerald-200 flex items-center justify-between">
+      <span className="text-sm text-gray-700">Total for this clean</span>
+      <span className="text-lg font-bold text-gray-900">£{totalCost.toFixed(2)}</span>
+    </div>
+    <p className="text-xs text-emerald-800/80">
+      ✅ Free cancellation or rescheduling up to 48 hours before your booking.
+    </p>
+  </div>
+);
+
+// Lightweight Google reviews trust block. Quotes are placeholders until the
+// business sends the real ones — easy to swap in this single array.
+const GOOGLE_REVIEWS: { name: string; quote: string }[] = [
+  // TODO: replace with real Google reviews
+  { name: 'Sarah M.', quote: 'Brilliant end-of-tenancy clean — got my full deposit back. Highly recommend SN Cleaning.' },
+  { name: 'James P.', quote: 'Booked last minute and the team turned up on time, friendly and very thorough.' },
+  { name: 'Aisha R.', quote: 'Best cleaning service I have used in London. Professional from start to finish.' },
+];
+
+const GoogleReviewsBlock: React.FC = () => (
+  <div className="space-y-3 pt-2">
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0.5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+        ))}
+      </div>
+      <p className="text-sm font-medium text-gray-700">Rated 5★ on Google by our customers</p>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {GOOGLE_REVIEWS.map((r, idx) => (
+        <div key={idx} className="rounded-xl border border-gray-200 bg-white p-4">
+          <div className="flex items-center gap-0.5 mb-2">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+            ))}
+          </div>
+          <p className="text-sm text-gray-700 leading-snug">{r.quote}</p>
+          <p className="text-xs font-semibold text-gray-900 mt-2">{r.name}</p>
+        </div>
+      ))}
+    </div>
   </div>
 );
 
