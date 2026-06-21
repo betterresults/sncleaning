@@ -11,10 +11,11 @@ const corsHeaders = {
  * create-checkout-session
  *
  * Stashes the booking payload on a quote_leads row, creates a Stripe Checkout
- * Session (mode=payment), and returns the Stripe URL. The actual `bookings`
- * row is NOT created here — it is created by `stripe-webhook` on
- * `checkout.session.completed` so unfinished payments never produce ghost
- * bookings.
+ * Session in **setup mode** (no money is taken — the card is just saved), and
+ * returns the Stripe URL. The actual `bookings` row is created by
+ * `stripe-webhook` on `checkout.session.completed` / `setup_intent.succeeded`
+ * so unfinished card collections never produce ghost bookings. Capture of the
+ * actual cleaning charge happens later (after the clean is completed).
  *
  * Customer-facing only. Admin and saved-card paths continue to use
  * `create-public-booking` directly.
@@ -103,51 +104,38 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Build a one-line product description for the Stripe Checkout page.
-    const serviceLabel = String(
-      bookingPayload.serviceType || bookingPayload.subServiceType || 'Cleaning Service'
-    );
-    const dateStr = bookingPayload.selectedDate
-      ? new Date(bookingPayload.selectedDate).toLocaleDateString('en-GB', {
-          day: 'numeric', month: 'short', year: 'numeric'
-        })
-      : '';
-    const productName = `SN Cleaning — ${serviceLabel}`;
-    const productDescription = [
-      dateStr ? `Booking date: ${dateStr}` : null,
-      bookingPayload.postcode ? `Postcode: ${bookingPayload.postcode}` : null,
-    ].filter(Boolean).join(' · ') || 'Cleaning service booking';
-
-    const amountPence = Math.round(totalCost * 100);
+    // Find/create a Stripe customer so the SetupIntent can attach the card.
+    let customerId: string;
+    const existing = await stripe.customers.list({ email, limit: 1 });
+    if (existing.data[0]) {
+      customerId = existing.data[0].id;
+    } else {
+      const customer = await stripe.customers.create({
+        email,
+        name: [bookingPayload.firstName, bookingPayload.lastName].filter(Boolean).join(' ') || undefined,
+        phone: bookingPayload.phone || undefined,
+        metadata: { quote_lead_id: String(lead.id) },
+      });
+      customerId = customer.id;
+    }
 
     const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
+      mode: 'setup',
       payment_method_types: ['card'],
-      customer_email: email,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'gbp',
-            unit_amount: amountPence,
-            product_data: {
-              name: productName,
-              description: productDescription,
-            },
-          },
-        },
-      ],
+      customer: customerId,
       // Stripe replaces {CHECKOUT_SESSION_ID} server-side.
       success_url: `${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: cancelUrl,
       metadata: {
         quote_lead_id: String(lead.id),
         meta_event_id: metaEventId || '',
+        total_cost_pence: String(Math.round(totalCost * 100)),
       },
-      payment_intent_data: {
+      setup_intent_data: {
         metadata: {
           quote_lead_id: String(lead.id),
           meta_event_id: metaEventId || '',
+          total_cost_pence: String(Math.round(totalCost * 100)),
         },
       },
     });
