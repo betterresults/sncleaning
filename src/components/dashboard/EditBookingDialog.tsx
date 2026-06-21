@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingFormatters';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 
 interface EditBookingDialogProps {
   booking: any;
