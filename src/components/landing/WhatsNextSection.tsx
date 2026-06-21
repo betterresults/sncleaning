@@ -2,7 +2,7 @@ import { CheckCircle, MessageCircle, Mail, Phone } from 'lucide-react';
 
 const WhatsNextSection = () => (
   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6">
-    <h3 className="font-bold text-white mb-1 text-xl">Payment received. You're booked in.</h3>
+    <h3 className="font-bold text-white mb-1 text-xl">You're booked in.</h3>
     <p className="text-white/70 mb-5">Thanks for signing up with SN Cleaning Services. Here's what happens next:</p>
     <div className="space-y-4">
       <div className="flex items-start gap-3">

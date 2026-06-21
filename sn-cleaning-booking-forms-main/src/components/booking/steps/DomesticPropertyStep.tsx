@@ -679,7 +679,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
             Cleaning supplies
           </h2>
           <p className="text-sm text-slate-600 mb-4">
-            Professional cleaning products are always included in the price — our cleaners bring everything needed for a high-quality clean.
+            Professional cleaning products are always included in the price. Using the right professional-grade products helps us deliver a deeper, longer-lasting clean and the best possible results in your home.
           </p>
           
           <div className="grid grid-cols-3 gap-4">
