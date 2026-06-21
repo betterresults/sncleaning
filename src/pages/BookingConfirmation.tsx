@@ -260,10 +260,33 @@ const BookingConfirmation = () => {
         // Fire Meta Purchase event (browser Pixel + server CAPI) with a shared
         // event_id so Meta can deduplicate against the server-side Purchase
         // fired by the stripe-webhook edge function.
-        if (data?.id && data?.total_cost) {
+        // Strict guards to prevent fake/duplicate Purchase events:
+        //  1. Must have arrived via a real post-payment signal (Stripe redirect,
+        //     session_id, setup_intent succeeded, or paymentSuccess flag).
+        //  2. Booking must have a committed payment state (paid / authorized /
+        //     saved-card flow) — never on 'failed', 'unpaid', or 'pending'.
+        //  3. Persistent localStorage dedupe per booking id so reloads, new
+        //     tabs, and incognito sessions don't re-fire.
+        //  4. Never fire for Bank Transfer (admin-only, not a Meta conversion).
+        const cameFromStripe =
+          Boolean(stripeSessionId) ||
+          (setupIntentParam && redirectStatus === 'succeeded') ||
+          paymentSetupSuccess ||
+          paymentSuccess;
+        const committedStatuses = ['paid', 'authorized', 'saved', 'captured', 'completed'];
+        const statusOk =
+          !!data?.payment_status &&
+          committedStatuses.includes(String(data.payment_status).toLowerCase());
+        const methodOk =
+          !data?.payment_method ||
+          String(data.payment_method).toLowerCase() !== 'bank transfer';
+
+        if (data?.id && data?.total_cost && cameFromStripe && statusOk && methodOk) {
           try {
             const firedKey = `fbq_purchase_fired_${data.id}`;
-            if (!sessionStorage.getItem(firedKey)) {
+            const alreadyFired =
+              localStorage.getItem(firedKey) || sessionStorage.getItem(firedKey);
+            if (!alreadyFired) {
               const sharedEventId =
                 (data as any).meta_event_id || `booking-${data.id}-purchase`;
               await trackMetaEvent('Purchase', {
@@ -274,12 +297,23 @@ const BookingConfirmation = () => {
                   content_name: data.service_type,
                 },
               });
+              localStorage.setItem(firedKey, '1');
               sessionStorage.setItem(firedKey, '1');
-              console.log('📈 Meta Purchase event fired (dedup id):', sharedEventId);
+              console.log('📈 Meta Purchase fired (dedup id):', sharedEventId);
+            } else {
+              console.log('📈 Meta Purchase already fired for booking', data.id, '— skipping');
             }
           } catch (e) {
             console.error('Meta Purchase fire error:', e);
           }
+        } else {
+          console.log('📈 Meta Purchase NOT fired — guard check failed', {
+            id: data?.id,
+            cameFromStripe,
+            statusOk,
+            payment_status: data?.payment_status,
+            payment_method: data?.payment_method,
+          });
         }
 
         // Fetch service type label from company_settings
