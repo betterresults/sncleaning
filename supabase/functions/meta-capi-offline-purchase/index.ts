@@ -129,7 +129,6 @@ Deno.serve(async (req) => {
       event_name: 'Purchase',
       event_time: Math.floor(Date.now() / 1000),
       event_id: eventId,
-      event_source_url: landingUrl || SITE_URL,
       action_source: 'business_messaging',
       messaging_channel: 'whatsapp',
       user_data,
