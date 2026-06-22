@@ -267,6 +267,33 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Meta CAPI Report */}
+            {lead.converted_booking_id ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <MetaCapiReportButton bookingId={lead.converted_booking_id} />
+              </div>
+            ) : (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="h-8 px-3 gap-1.5 text-xs"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      Send to Meta
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Convert this lead to a booking first</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
             {/* Edit Button */}
             <Button
               variant="outline"
