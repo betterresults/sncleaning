@@ -53,9 +53,16 @@ export const MetaCapiReportButton: React.FC<MetaCapiReportButtonProps> = ({
   if (sentAt) {
     return (
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={handleSend} disabled={loading}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleSend}
+          disabled={loading}
+          className="border-primary text-primary hover:bg-primary/10"
+        >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />}
-          Reported to Meta · resend
+          Sent to Meta · resend
         </Button>
         <span className="text-xs text-muted-foreground">
           {new Date(sentAt).toLocaleString()}
@@ -65,9 +72,16 @@ export const MetaCapiReportButton: React.FC<MetaCapiReportButtonProps> = ({
   }
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={handleSend} disabled={loading}>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={handleSend}
+      disabled={loading}
+      className="border-primary text-primary hover:bg-primary/10"
+    >
       {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-      Report Purchase to Meta Ads
+      Send to Meta
     </Button>
   );
 };
