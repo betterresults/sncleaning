@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 
 interface QuoteLead {
   id: string;
@@ -578,10 +579,15 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
 
         {/* Converted Booking */}
         {lead.converted_booking_id && (
-          <div className="flex items-center gap-2 bg-green-100 text-green-700 rounded-lg px-3 py-2 text-sm font-medium">
-            <CheckCircle2 className="h-4 w-4" />
-            Converted to Booking #{lead.converted_booking_id}
-            <ArrowRight className="h-4 w-4 ml-auto" />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 bg-green-100 text-green-700 rounded-lg px-3 py-2 text-sm font-medium">
+              <CheckCircle2 className="h-4 w-4" />
+              Converted to Booking #{lead.converted_booking_id}
+              <ArrowRight className="h-4 w-4 ml-auto" />
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <MetaCapiReportButton bookingId={lead.converted_booking_id} />
+            </div>
           </div>
         )}
       </div>
