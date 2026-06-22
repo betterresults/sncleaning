@@ -2,13 +2,19 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   User, Mail, Phone, MapPin, Home, Bath, BedDouble, 
   Calendar, Clock, Sparkles, Building2, 
   CheckCircle2, XCircle, AlertCircle, CookingPot, Shirt, 
   Sofa, DoorOpen, Globe, Zap, ArrowRight,
   Timer, Percent, PoundSterling, SprayCan, Wrench, UtensilsCrossed,
-  HelpCircle, Tag, Pencil
+  HelpCircle, Tag, Pencil, Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -261,6 +267,33 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Meta CAPI Report */}
+            {lead.converted_booking_id ? (
+              <div onClick={(e) => e.stopPropagation()}>
+                <MetaCapiReportButton bookingId={lead.converted_booking_id} />
+              </div>
+            ) : (
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="h-8 px-3 gap-1.5 text-xs"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      Send to Meta
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Convert this lead to a booking first</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
             {/* Edit Button */}
             <Button
               variant="outline"
@@ -579,15 +612,10 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
 
         {/* Converted Booking */}
         {lead.converted_booking_id && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 bg-green-100 text-green-700 rounded-lg px-3 py-2 text-sm font-medium">
-              <CheckCircle2 className="h-4 w-4" />
-              Converted to Booking #{lead.converted_booking_id}
-              <ArrowRight className="h-4 w-4 ml-auto" />
-            </div>
-            <div onClick={(e) => e.stopPropagation()}>
-              <MetaCapiReportButton bookingId={lead.converted_booking_id} />
-            </div>
+          <div className="flex items-center gap-2 bg-green-100 text-green-700 rounded-lg px-3 py-2 text-sm font-medium">
+            <CheckCircle2 className="h-4 w-4" />
+            Converted to Booking #{lead.converted_booking_id}
+            <ArrowRight className="h-4 w-4 ml-auto" />
           </div>
         )}
       </div>
