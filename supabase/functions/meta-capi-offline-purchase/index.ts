@@ -4,7 +4,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const PIXEL_ID = Deno.env.get('META_PIXEL_ID');
 const ACCESS_TOKEN = Deno.env.get('META_ADS_ACCESS_TOKEN');
 const GRAPH_VERSION = 'v21.0';
-const SITE_URL = 'https://sncleaning.lovable.app';
 
 async function sha256(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
@@ -129,8 +128,10 @@ Deno.serve(async (req) => {
       event_name: 'Purchase',
       event_time: Math.floor(Date.now() / 1000),
       event_id: eventId,
-      action_source: 'business_messaging',
-      messaging_channel: 'whatsapp',
+      // Manual/offline conversions may come from WhatsApp or phone.
+      // Meta requires page_id for business_messaging/whatsapp events, so use
+      // the generic chat action source for manually reported CRM bookings.
+      action_source: 'chat',
       user_data,
       custom_data: {
         currency: 'GBP',
