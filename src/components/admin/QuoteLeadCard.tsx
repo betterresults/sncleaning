@@ -2,13 +2,19 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   User, Mail, Phone, MapPin, Home, Bath, BedDouble, 
   Calendar, Clock, Sparkles, Building2, 
   CheckCircle2, XCircle, AlertCircle, CookingPot, Shirt, 
   Sofa, DoorOpen, Globe, Zap, ArrowRight,
   Timer, Percent, PoundSterling, SprayCan, Wrench, UtensilsCrossed,
-  HelpCircle, Tag, Pencil
+  HelpCircle, Tag, Pencil, Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
