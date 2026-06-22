@@ -1,13 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { 
   User, Mail, Phone, MapPin, Home, Bath, BedDouble, 
   Calendar, Clock, Sparkles, Building2, 
@@ -19,6 +13,7 @@ import {
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
+import MetaCapiBookingSelector from '@/components/admin/MetaCapiBookingSelector';
 
 interface QuoteLead {
   id: string;
@@ -118,6 +113,8 @@ const getStepNumber = (step: string | null): number => {
 
 const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelected, onSelect }) => {
   const navigate = useNavigate();
+  const [metaDialogOpen, setMetaDialogOpen] = useState(false);
+  const [convertedBookingId, setConvertedBookingId] = useState<number | null>(lead.converted_booking_id ?? null);
   
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return null;
@@ -268,30 +265,28 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
 
           <div className="flex items-center gap-2">
             {/* Meta CAPI Report */}
-            {lead.converted_booking_id ? (
+            {convertedBookingId ? (
               <div onClick={(e) => e.stopPropagation()}>
-                <MetaCapiReportButton bookingId={lead.converted_booking_id} />
+                <MetaCapiReportButton
+                  bookingId={convertedBookingId}
+                  onSent={() => {
+                    // Keep the linked booking visible as sent.
+                  }}
+                />
               </div>
             ) : (
-              <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled
-                      className="h-8 px-3 gap-1.5 text-xs"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Share2 className="h-3.5 w-3.5" />
-                      Send to Meta
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>Convert this lead to a booking first</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 gap-1.5 text-xs border-primary text-primary hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMetaDialogOpen(true);
+                }}
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                Send to Meta
+              </Button>
             )}
 
             {/* Edit Button */}
@@ -611,13 +606,27 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
         </div>
 
         {/* Converted Booking */}
-        {lead.converted_booking_id && (
+        {convertedBookingId && (
           <div className="flex items-center gap-2 bg-green-100 text-green-700 rounded-lg px-3 py-2 text-sm font-medium">
             <CheckCircle2 className="h-4 w-4" />
-            Converted to Booking #{lead.converted_booking_id}
+            Converted to Booking #{convertedBookingId}
             <ArrowRight className="h-4 w-4 ml-auto" />
           </div>
         )}
+
+        {/* Meta booking selector for leads without a linked booking */}
+        <MetaCapiBookingSelector
+          lead={{
+            id: lead.id,
+            email: lead.email,
+            phone: lead.phone,
+            first_name: lead.first_name,
+            last_name: lead.last_name,
+          }}
+          open={metaDialogOpen}
+          onOpenChange={setMetaDialogOpen}
+          onLinked={(bookingId) => setConvertedBookingId(bookingId)}
+        />
       </div>
     </Card>
   );
