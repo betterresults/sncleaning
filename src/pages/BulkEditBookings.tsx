@@ -734,14 +734,6 @@ const BulkEditBookings = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (userRole === 'user' && cleanerId) {
-    return <Navigate to="/cleaner-dashboard" replace />;
-  }
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-gray-50">

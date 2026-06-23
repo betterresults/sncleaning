@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -125,10 +124,6 @@ const AdminAgentTasks = () => {
         <div className="text-base">Loading...</div>
       </div>
     );
-  }
-
-  if (!user || userRole !== 'admin') {
-    return <Navigate to="/auth" replace />;
   }
 
   return (

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -36,7 +35,7 @@ type QuoteRequest = {
 const STATUSES = ['new', 'contacted', 'quoted', 'won', 'lost'];
 
 const AdminQuoteRequests: React.FC = () => {
-  const { user, userRole, signOut, loading } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const [items, setItems] = useState<QuoteRequest[]>([]);
   const [busy, setBusy] = useState(true);
   const [quoteDrafts, setQuoteDrafts] = useState<Record<string, { price: string; message: string }>>({});
@@ -54,10 +53,6 @@ const AdminQuoteRequests: React.FC = () => {
   };
 
   useEffect(() => { load(); }, []);
-
-  if (loading) return null;
-  if (!user) return <Navigate to="/auth" />;
-  if (userRole !== 'admin' && userRole !== 'sales_agent') return <Navigate to="/" />;
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('quote_requests').update({ status }).eq('id', id);

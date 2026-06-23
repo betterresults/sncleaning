@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -37,9 +36,6 @@ const CleanerEarningsPage = () => {
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
-  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    return <Navigate to="/auth" replace />;
-  }
 
   // Mobile view for native app and mobile browsers
   if (isMobileView) {

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -23,9 +22,6 @@ const CleanerTodayBookings = () => {
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
-  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    return <Navigate to="/auth" replace />;
-  }
 
   // Get first name for greeting
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';

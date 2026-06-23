@@ -55,9 +55,6 @@ const AdminAddBooking = () => {
   };
 
   // Allow admin and sales_agent
-  if (!user || (userRole !== 'admin' && userRole !== 'sales_agent')) {
-    return <Navigate to="/auth" replace />;
-  }
 
   const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
 

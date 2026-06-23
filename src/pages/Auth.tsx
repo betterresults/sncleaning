@@ -11,7 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import InstallPrompt from '@/components/InstallPrompt';
 import PWAInstallButton from '@/components/PWAInstallButton';
-import { isCapacitor } from '@/utils/capacitor';
+import { getRoleHomePath } from '@/lib/authRedirects';
+import { devLog } from '@/lib/devLog';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,7 +26,7 @@ const Auth = () => {
   const { user, userRole, cleanerId, customerId, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
 
-  console.log('Auth - Current auth state:', { user: !!user, userRole, cleanerId, customerId, authLoading });
+  devLog('Auth - Current auth state:', { user: !!user, userRole, cleanerId, customerId, authLoading });
 
   // Check for payment-related success messages
   useEffect(() => {
@@ -67,13 +68,13 @@ const Auth = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
-      console.log('Auth - User authenticated, checking redirect...');
+      devLog('Auth - User authenticated, checking redirect...');
       // Don't redirect immediately, let the user role determination complete
     }
   }, [user, userRole, cleanerId, authLoading]);
 
   if (!authLoading && user) {
-    console.log('Auth - Redirecting authenticated user:', { userRole, cleanerId, customerId });
+    devLog('Auth - Redirecting authenticated user:', { userRole, cleanerId, customerId });
     
     // Check if there's a specific redirect requested
     const redirectParam = searchParams.get('redirect');
@@ -92,32 +93,12 @@ const Auth = () => {
       return <Navigate to="/customer-dashboard" replace />;
     }
     
-  // Redirect cleaners to mobile or desktop view
-  // Check cleanerId (not role) because cleaner users have role='user' with cleanerId set
-  if (cleanerId) {
-    const isMobileWeb = typeof window !== 'undefined' && window.innerWidth < 768;
-    const redirectPath = (isCapacitor() || isMobileWeb) ? '/cleaner-today' : '/cleaner-dashboard';
-    return <Navigate to={redirectPath} replace />;
-  }
-    
-    // Redirect customers to customer dashboard  
-    if (userRole === 'guest' && customerId) {
-      return <Navigate to="/customer-dashboard" replace />;
-    }
-    
-    // Redirect admins and sales agents to dashboard
-    if (userRole === 'admin' || userRole === 'sales_agent') {
-      console.log('AUTH DEBUG - Redirecting staff user to dashboard:', { userRole });
-      return <Navigate to="/dashboard" replace />;
-    }
-    
-    // Default redirect for guests without customer ID
-    if (userRole === 'guest') {
-      return <Navigate to="/customer-dashboard" replace />;
-    }
-    
-    // Fallback to auth page
-    return <Navigate to="/auth" replace />;
+    return (
+      <Navigate
+        to={getRoleHomePath({ userRole, cleanerId, customerId })}
+        replace
+      />
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

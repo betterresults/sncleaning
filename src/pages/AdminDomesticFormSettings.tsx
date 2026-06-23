@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -20,10 +19,6 @@ const AdminDomesticFormSettings = () => {
 
   if (loading) {
     return null;
-  }
-
-  if (!user || userRole !== 'admin') {
-    return <Navigate to="/auth" replace />;
   }
 
   return (

@@ -164,10 +164,6 @@ const CustomerDashboard = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-gray-50">

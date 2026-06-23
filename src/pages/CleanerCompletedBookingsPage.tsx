@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import CleanerPastBookings from '@/components/cleaner/CleanerPastBookings';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
@@ -14,10 +13,6 @@ const CleanerCompletedBookingsPage = () => {
         <div className="text-base">Loading bookings...</div>
       </div>
     );
-  }
-
-  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    return <Navigate to="/auth" replace />;
   }
 
   return (

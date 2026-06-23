@@ -11,7 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import InstallPrompt from '@/components/InstallPrompt';
 import PWAInstallButton from '@/components/PWAInstallButton';
-import { isCapacitor } from '@/utils/capacitor';
+import { getRoleHomePath } from '@/lib/authRedirects';
+import { devLog } from '@/lib/devLog';
 
 const Index = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,46 +25,21 @@ const Index = () => {
   const { toast } = useToast();
   const { user, userRole, cleanerId, customerId, loading: authLoading } = useAuth();
 
-  console.log('Index - Current auth state:', { user: !!user, userRole, cleanerId, customerId, authLoading });
+  devLog('Index - Current auth state:', { user: !!user, userRole, cleanerId, customerId, authLoading });
 
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
-      console.log('Index - User authenticated, checking redirect...');
+      devLog('Index - User authenticated, checking redirect...');
     }
   }, [user, userRole, cleanerId, customerId, authLoading]);
 
   if (!authLoading && user) {
-    console.log('Index - Redirecting authenticated user:', { userRole, cleanerId, customerId });
+    devLog('Index - Redirecting authenticated user:', { userRole, cleanerId, customerId });
     
-    // Redirect cleaners to mobile or desktop view
-    if (userRole === 'user' && cleanerId) {
-      const isMobileWeb = typeof window !== 'undefined' && window.innerWidth < 768;
-      const redirectPath = (isCapacitor() || isMobileWeb) ? '/cleaner-today' : '/cleaner-dashboard';
-      console.log(`Index - Redirecting cleaner to ${redirectPath}`);
-      return <Navigate to={redirectPath} replace />;
-    }
-    
-    // Redirect customers to customer dashboard
-    if (userRole === 'guest' && customerId) {
-      console.log('Index - Redirecting customer to /customer-dashboard');
-      return <Navigate to="/customer-dashboard" replace />;
-    }
-    
-    // Redirect admins to dashboard
-    if (userRole === 'admin') {
-      console.log('Index - Redirecting admin to /dashboard');
-      return <Navigate to="/dashboard" replace />;
-    }
-    
-    // Default redirect for guests without customer ID
-    if (userRole === 'guest') {
-      console.log('Index - Redirecting guest to /customer-dashboard');
-      return <Navigate to="/customer-dashboard" replace />;
-    }
-    
-    // Fallback redirect to auth page for unrecognized users
-    return <Navigate to="/auth" replace />;
+    const homePath = getRoleHomePath({ userRole, cleanerId, customerId });
+    devLog('Index - Redirecting authenticated user to:', homePath);
+    return <Navigate to={homePath} replace />;
   }
 
   if (authLoading) {
