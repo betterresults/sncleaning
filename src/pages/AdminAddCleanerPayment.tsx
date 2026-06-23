@@ -209,10 +209,6 @@ const AdminAddCleanerPayment = () => {
     );
   }
 
-  if (!user || userRole !== 'admin') {
-    return <Navigate to="/auth" replace />;
-  }
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex flex-col w-full bg-background">

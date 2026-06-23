@@ -34,9 +34,6 @@ const CleanerTodayPage = () => {
   }
 
   // Allow 'user' role with cleanerId or admin
-  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    return <Navigate to="/auth" replace />;
-  }
 
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Cleaner';
 

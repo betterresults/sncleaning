@@ -1,5 +1,4 @@
 import React from "react";
-import AdminGuard from "@/components/AdminGuard";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { UnifiedSidebar } from "@/components/UnifiedSidebar";
 import { UnifiedHeader } from "@/components/UnifiedHeader";
@@ -13,8 +12,7 @@ const AdminNotificationManagement = () => {
   const { user, userRole, signOut } = useAuth();
 
   return (
-    <AdminGuard>
-      <SidebarProvider>
+    <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gray-50">
           <UnifiedHeader 
             title=""
@@ -37,7 +35,6 @@ const AdminNotificationManagement = () => {
           </div>
         </div>
       </SidebarProvider>
-    </AdminGuard>
   );
 };
 

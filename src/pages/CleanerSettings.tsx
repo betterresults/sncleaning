@@ -397,9 +397,6 @@ const CleanerSettings = () => {
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
-  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    return <Navigate to="/auth" replace />;
-  }
 
   // Mobile view for native app and mobile browsers
   if (isMobileView) {

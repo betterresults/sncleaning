@@ -5,7 +5,6 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import ModernUsersTable from '@/components/ModernUsersTable';
-import AdminGuard from '@/components/AdminGuard';
 
 const UsersAdmins = () => {
   const { user, userRole, signOut } = useAuth();
@@ -19,8 +18,7 @@ const UsersAdmins = () => {
   };
 
   return (
-    <AdminGuard>
-      <SidebarProvider>
+    <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gray-50">
           <UnifiedHeader 
             title=""
@@ -44,7 +42,6 @@ const UsersAdmins = () => {
           </div>
         </div>
       </SidebarProvider>
-    </AdminGuard>
   );
 };
 

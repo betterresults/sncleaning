@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -26,19 +25,9 @@ const UpcomingBookingsPage = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
   // Redirect cleaners to their dashboard
-  if (userRole === 'user' && cleanerId) {
-    return <Navigate to="/cleaner-dashboard" replace />;
-  }
 
   // Allow admin and sales_agent
-  if (userRole !== 'admin' && userRole !== 'sales_agent') {
-    return <Navigate to="/auth" replace />;
-  }
 
   const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
 

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -175,10 +174,6 @@ const AgentTasks = () => {
         <div className="text-base">Loading...</div>
       </div>
     );
-  }
-
-  if (!user || userRole !== 'sales_agent') {
-    return <Navigate to="/auth" replace />;
   }
 
   const pendingCount = tasks.filter(t => t.status === 'pending').length;

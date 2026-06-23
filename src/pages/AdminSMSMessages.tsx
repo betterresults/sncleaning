@@ -574,10 +574,6 @@ const AdminSMSMessages = () => {
     return phone.slice(-2);
   };
 
-  if (!user || (userRole !== 'admin' && userRole !== 'sales_agent')) {
-    return <Navigate to="/auth" replace />;
-  }
-
   const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
 
   return (

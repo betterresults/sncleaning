@@ -3,124 +3,37 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { FbclidCapture } from "./components/FbclidCapture";
 import { AuthProvider } from "@/contexts/AuthContext";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-
-import Users from "./pages/Users";
-import PastBookings from "./pages/PastBookings";
-import CancelledBookings from "./pages/CancelledBookings";
-import CleanerDashboard from "./pages/CleanerDashboard";
-import CleanerTodayBookings from "./pages/CleanerTodayBookings";
-import CleanerTodayPage from "./pages/CleanerTodayPage";
-import CleanerBookingsPage from "./pages/CleanerBookingsPage";
-import CleanerUpcomingBookingsPage from "./pages/CleanerUpcomingBookingsPage";
-import CleanerCompletedBookingsPage from "./pages/CleanerCompletedBookingsPage";
-import CustomerMessages from "./pages/CustomerMessages";
-import CleanerMessages from "./pages/CleanerMessages";
-import AdminChatManagement from "./pages/AdminChatManagement";
-import AdminSMSMessages from "./pages/AdminSMSMessages";
-
-import AdminCompanySettings from "./pages/AdminCompanySettings";
-import CleanerPastBookings from "./pages/CleanerPastBookings";
-import CleanerEarnings from "./pages/CleanerEarnings";
-import CleanerAvailableBookings from "./pages/CleanerAvailableBookings";
-import CustomerDashboard from "./pages/CustomerDashboard";
-import CustomerCompletedBookings from "./pages/CustomerCompletedBookings";
-import CustomerSettings from "./pages/CustomerSettings";
-import CustomerAddBooking from "./pages/CustomerAddBooking";
-import PublicServiceSelection from "./pages/PublicServiceSelection";
-import ChooseService from "./pages/ChooseService";
-import CustomerPhotos from "./pages/CustomerPhotos";
-import CustomerLinenManagement from './pages/CustomerLinenManagement';
-import CreateCustomerAccounts from "./pages/CreateCustomerAccounts";
-import AirbnbBooking from "./pages/AirbnbBooking";
-import DomesticBooking from "./pages/DomesticBooking";
-import CarpetBooking from "./pages/CarpetBooking";
-import EndOfTenancyBooking from "./pages/EndOfTenancyBooking";
-import AdminDomesticFormSettings from "./pages/AdminDomesticFormSettings";
-import LinenOrder from "./pages/LinenOrder";
-import BookingConfirmation from "./pages/BookingConfirmation";
-import PaymentFailed from "./pages/PaymentFailed";
-import AdminAddBooking from "./pages/AdminAddBooking";
-import CleanerSettings from './pages/CleanerSettings';
-import CleanerChecklists from './pages/CleanerChecklists';
-import CleanerChecklist from './pages/CleanerChecklist';
-import AdminSettings from "./pages/AdminSettings";
-import StaffSettings from "./pages/StaffSettings";
-import RecurringBookings from "./pages/RecurringBookings";
-import AddRecurringBooking from "./pages/AddRecurringBooking";
-import EditRecurringBooking from "./pages/EditRecurringBooking";
-import AdminCleanerPayments from "./pages/AdminCleanerPayments";
-import AdminAddCleanerPayment from "./pages/AdminAddCleanerPayment";
-import AdminCustomerPayments from "./pages/AdminCustomerPayments";
-import AdminPaymentManagement from "./pages/AdminPaymentManagement";
-import UpcomingBookings from "./pages/UpcomingBookings";
-import BulkEditBookings from "./pages/BulkEditBookings";
-import UsersAdmins from "./pages/UsersAdmins";
-import UsersCleaners from "./pages/UsersCleaners";
-import UsersCustomers from "./pages/UsersCustomers";
-import AdminLinenManagement from "./pages/AdminLinenManagement";
-import AdminProfitTracking from "./pages/AdminProfitTracking";
-import AdminActivityLogs from "./pages/AdminActivityLogs";
-import AdminNotificationManagement from "./pages/AdminNotificationManagement";
-import ApplyToWork from "./pages/ApplyToWork";
-import QuoteRequest from "./pages/QuoteRequest";
-import AdminQuoteRequests from "./pages/AdminQuoteRequests";
-import LandingPage from "./pages/LandingPage";
-import FreeQuote from "./pages/FreeQuote";
-
-import AdminAirbnbFormSettings from "./pages/AdminAirbnbFormSettings";
-import AdminEndOfTenancyFormSettings from "./pages/AdminEndOfTenancyFormSettings";
-import AdminCarpetCleaningFormSettings from "./pages/AdminCarpetCleaningFormSettings";
-import AdminCustomerPricing from "./pages/AdminCustomerPricing";
-import CustomerWelcome from "./pages/CustomerWelcome";
-import AdminQuoteLeads from "./pages/AdminQuoteLeads";
-import AdminCoverageManagement from "./pages/AdminCoverageManagement";
-import CheckCoverage from "./pages/CheckCoverage";
-import ShortLinkResolver from "./pages/ShortLinkResolver";
-import NotFound from "./pages/NotFound";
-import AdminAgentTasks from "./pages/AdminAgentTasks";
-import AgentTasks from "./pages/AgentTasks";
-import PhotoManagement from "./pages/PhotoManagement";
+import { devLog } from "@/lib/devLog";
 import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
 import InstallPrompt from "./components/InstallPrompt";
-import { isCapacitor } from "@/utils/capacitor";
+import { AppRoutes } from "@/routes/AppRoutes";
 
 const queryClient = new QueryClient();
 
-// Capture original landing URL on first page load (before any navigation)
-// This runs once when the app initializes
 const captureOriginalLandingUrl = () => {
   const SESSION_KEY = 'quote_session_id';
   const LANDING_URL_KEY = 'quote_original_landing_url';
   const SESSION_TIMESTAMP_KEY = 'quote_session_timestamp';
-  const SESSION_REUSE_WINDOW = 30 * 60 * 1000; // 30 minutes
-  
+  const SESSION_REUSE_WINDOW = 30 * 60 * 1000;
+
   const existingSession = localStorage.getItem(SESSION_KEY);
   const sessionTimestamp = localStorage.getItem(SESSION_TIMESTAMP_KEY);
   const existingLandingUrl = localStorage.getItem(LANDING_URL_KEY);
-  
-  // Check if this is a new session or if the session is too old
-  const isNewSession = !existingSession || !sessionTimestamp || 
+
+  const isNewSession = !existingSession || !sessionTimestamp ||
     (Date.now() - parseInt(sessionTimestamp, 10)) > SESSION_REUSE_WINDOW;
-  
-  // Capture landing URL if:
-  // 1. It's a new session, OR
-  // 2. We don't have a landing URL stored yet
+
   if (isNewSession || !existingLandingUrl) {
-    // Store the current full URL (including all query params like UTM)
     localStorage.setItem(LANDING_URL_KEY, window.location.href);
-    console.log('📊 Captured original landing URL:', window.location.href);
+    devLog('📊 Captured original landing URL:', window.location.href);
   }
 };
 
-// Run immediately on app load
 captureOriginalLandingUrl();
 
 const App = () => (
@@ -134,105 +47,11 @@ const App = () => (
         <AuthProvider>
           <AdminCustomerProvider>
             <AdminCleanerProvider>
-            <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/welcome" element={<CustomerWelcome />} />
-            <Route path="/choose-service" element={<PublicServiceSelection />} />
-            <Route path="/services" element={<ChooseService />} />
-            <Route path="/airbnb" element={<AirbnbBooking />} />
-            <Route path="/domestic" element={<DomesticBooking />} />
-            <Route path="/domestic-cleaning" element={<DomesticBooking />} />
-            <Route path="/domestic-booking" element={<DomesticBooking />} />
-            <Route path="/airbnb-cleaning" element={<AirbnbBooking />} />
-            <Route path="/b/:shortCode" element={<ShortLinkResolver />} />
-            <Route path="/linen-order" element={<LinenOrder />} />
-            <Route path="/booking-confirmation" element={<BookingConfirmation />} />
-            <Route path="/payment-failed" element={<PaymentFailed />} />
-            <Route path="/apply" element={<ApplyToWork />} />
-            <Route path="/quote-request" element={<QuoteRequest />} />
-            <Route path="/customer/quote-request" element={<QuoteRequest />} />
-            <Route path="/admin-quote-requests" element={<AdminQuoteRequests />} />
-            <Route path="/lp" element={<LandingPage />} />
-            <Route path="/get-quote" element={<LandingPage />} />
-            <Route path="/free-quote" element={<FreeQuote />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/upcoming-bookings" element={<UpcomingBookings />} />
-            <Route path="/bulk-edit-bookings" element={<BulkEditBookings />} />
-            <Route path="/admin" element={<Dashboard />} />
-            <Route path="/admin-settings" element={<AdminSettings />} />
-            <Route path="/staff-settings" element={<StaffSettings />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/past-bookings" element={<PastBookings />} />
-            <Route path="/cancelled-bookings" element={<CancelledBookings />} />
-            <Route path="/cleaner-dashboard" element={<CleanerDashboard />} />
-           <Route path="/cleaner-today-bookings" element={<CleanerTodayBookings />} />
-           <Route path="/cleaner-today" element={<CleanerTodayPage />} />
-           <Route path="/cleaner-bookings" element={<CleanerBookingsPage />} />
-           <Route path="/cleaner-upcoming-bookings" element={<CleanerUpcomingBookingsPage />} />
-           <Route path="/cleaner-completed-bookings" element={<CleanerCompletedBookingsPage />} />
-           <Route path="/cleaner-settings" element={<CleanerSettings />} />
-           <Route path="/customer-messages" element={<CustomerMessages />} />
-           <Route path="/cleaner-messages" element={<CleanerMessages />} />
-           <Route path="/admin-chat-management" element={<AdminChatManagement />} />
-           <Route path="/admin-sms-messages" element={<AdminSMSMessages />} />
-           
-              <Route path="/cleaner-available-bookings" element={<CleanerAvailableBookings />} />
-            <Route path="/cleaner-past-bookings" element={<CleanerPastBookings />} />
-          <Route path="/cleaner-checklist/:bookingId" element={<CleanerChecklist />} />
-            <Route path="/cleaner-earnings" element={<CleanerEarnings />} />
-              <Route path="/customer-dashboard" element={<CustomerDashboard />} />
-              <Route path="/customer-completed-bookings" element={<CustomerCompletedBookings />} />
-                <Route path="/customer-settings" element={<CustomerSettings />} />
-                 <Route path="/customer-add-booking" element={<CustomerAddBooking />} />
-          <Route path="/customer-linen-management" element={<CustomerLinenManagement />} />
-                 <Route path="/customer/airbnb-form" element={<AirbnbBooking />} />
-                 <Route path="/customer/linen-form" element={<LinenOrder />} />
-               <Route path="/admin-add-booking" element={<AdminAddBooking />} />
-               <Route path="/admin/airbnb" element={<AirbnbBooking />} />
-                <Route path="/admin/domestic" element={<DomesticBooking />} />
-                <Route path="/admin/carpet" element={<CarpetBooking />} />
-                <Route path="/carpet-cleaning" element={<CarpetBooking />} />
-                <Route path="/end-of-tenancy" element={<EndOfTenancyBooking />} />
-                <Route path="/end-of-tenancy-cleaning" element={<EndOfTenancyBooking />} />
-                <Route path="/admin/end-of-tenancy" element={<EndOfTenancyBooking />} />
-                <Route path="/admin/linen" element={<LinenOrder />} />
-               <Route path="/admin-domestic-form-settings" element={<AdminDomesticFormSettings />} />
-               <Route path="/photos/:folderName" element={<CustomerPhotos />} />
-               <Route path="/create-customer-accounts" element={<CreateCustomerAccounts />} />
-                <Route path="/recurring-bookings" element={<RecurringBookings />} />
-                <Route path="/recurring-bookings/add" element={<AddRecurringBooking />} />
-                <Route path="/recurring-bookings/edit/:id" element={<EditRecurringBooking />} />
-                 <Route path="/admin-cleaner-payments" element={<AdminCleanerPayments />} />
-                 <Route path="/admin-cleaner-payments/add" element={<AdminAddCleanerPayment />} />
-                 <Route path="/admin-customer-payments" element={<AdminCustomerPayments />} />
-                 <Route path="/admin-payment-management" element={<AdminPaymentManagement />} />
-                  <Route path="/users/admins" element={<UsersAdmins />} />
-                  <Route path="/users/cleaners" element={<UsersCleaners />} />
-                  <Route path="/users/customers" element={<UsersCustomers />} />
-                   <Route path="/admin-linen-management" element={<AdminLinenManagement />} />
-                   <Route path="/admin-profit-tracking" element={<AdminProfitTracking />} />
-                   <Route path="/admin-activity-logs" element={<AdminActivityLogs />} />
-                   <Route path="/admin-quote-leads" element={<AdminQuoteLeads />} />
-                    <Route path="/admin-notification-management" element={<AdminNotificationManagement />} />
-                     
-                     <Route path="/admin-airbnb-form-settings" element={<AdminAirbnbFormSettings />} />
-                     <Route path="/admin-end-of-tenancy-form-settings" element={<AdminEndOfTenancyFormSettings />} />
-                     <Route path="/admin-carpet-cleaning-form-settings" element={<AdminCarpetCleaningFormSettings />} />
-                     <Route path="/admin-customer-pricing" element={<AdminCustomerPricing />} />
-                     <Route path="/admin-company-settings" element={<AdminCompanySettings />} />
-                     <Route path="/admin-coverage-management" element={<AdminCoverageManagement />} />
-                     <Route path="/coverage" element={<CheckCoverage />} />
-                     <Route path="/admin-agent-tasks" element={<AdminAgentTasks />} />
-                     <Route path="/agent-tasks" element={<AgentTasks />} />
-                     <Route path="/admin-photo-management" element={<PhotoManagement />} />
-                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-              </AdminCleanerProvider>
-            </AdminCustomerProvider>
-          </AuthProvider>
-          <InstallPrompt />
+              <AppRoutes />
+            </AdminCleanerProvider>
+          </AdminCustomerProvider>
+        </AuthProvider>
+        <InstallPrompt />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

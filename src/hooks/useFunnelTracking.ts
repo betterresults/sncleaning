@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
-
-const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
+import { devLog } from '@/lib/devLog';
 
 // Generate or retrieve persistent user ID (stored in localStorage to persist across sessions)
 const getUserId = (): string => {
@@ -64,14 +63,14 @@ export const useFunnelTracking = () => {
         ...utmParams,
       };
 
-      console.log('📊 Tracking funnel event:', eventType, eventRecord);
+      devLog('📊 Tracking funnel event:', eventType, eventRecord);
 
       // Call edge function to bypass RLS
       const response = await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           table: 'funnel_events',
@@ -83,7 +82,7 @@ export const useFunnelTracking = () => {
         const error = await response.json();
         console.error('❌ Error tracking funnel event:', error);
       } else {
-        console.log('✅ Funnel event tracked successfully');
+        devLog('✅ Funnel event tracked successfully');
       }
     } catch (err) {
       console.error('❌ Error in trackEvent:', err);

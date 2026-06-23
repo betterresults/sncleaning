@@ -11,11 +11,10 @@ import BookingsListView from '@/components/bookings/BookingsListView';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import { Calendar, Plus } from 'lucide-react';
-import StaffGuard from '@/components/StaffGuard';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
-  const { user, userRole, cleanerId, loading, signOut } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -25,8 +24,6 @@ const Dashboard = () => {
       console.error('Error signing out:', error);
     }
   };
-
-  console.log('Dashboard - Auth state:', { user: !!user, userRole, cleanerId, loading });
 
   // Calculate date range for today's bookings
   const getTodayRange = () => {
@@ -55,10 +52,8 @@ const Dashboard = () => {
   // Determine which navigation to use based on role
   const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
 
-  // This dashboard is accessible by admin and sales_agent - wrap in StaffGuard
   return (
-    <StaffGuard>
-      <SidebarProvider>
+    <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gray-50">
           <UnifiedHeader 
             title=""
@@ -142,7 +137,6 @@ const Dashboard = () => {
           </div>
         </div>
       </SidebarProvider>
-    </StaffGuard>
   );
 };
 

@@ -60,6 +60,13 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Project documentation
+
+- [Architecture & roles](docs/ARCHITECTURE.md)
+- [Smoke test checklist](docs/SMOKE_TEST.md)
+
+Local setup: copy `.env.example` to `.env` and fill in Supabase values, then `npm i` and `npm run dev`.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/ffa08752-d853-4e87-8f4f-92b4f1e65779) and click on Share -> Publish.

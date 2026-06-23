@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -49,10 +48,6 @@ const CustomerMessages = () => {
         <div className="text-base">Loading messages...</div>
       </div>
     );
-  }
-
-  if (!user || (userRole !== 'guest' && userRole !== 'admin') || (userRole === 'guest' && !customerId)) {
-    return <Navigate to="/auth" replace />;
   }
 
   const handleSelectContact = async (contact: any, booking?: any) => {

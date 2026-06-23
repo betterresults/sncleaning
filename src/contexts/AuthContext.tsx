@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { devLog } from '@/lib/devLog';
 
 interface AuthContextType {
   user: User | null;
@@ -35,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRole = async (userId: string) => {
     try {
-      console.log('Fetching role and relationships for user:', userId);
+      devLog('Fetching role and relationships for user:', userId);
       
       // Get user profile with cleaner/customer relationships and assigned_sources
       const { data: profileData, error: profileError } = await supabase
@@ -49,11 +50,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', userId)
         .single();
       
-      console.log('Profile query result:', { profileData, profileError });
+      devLog('Profile query result:', { profileData, profileError });
       
       if (profileError && profileError.code !== 'PGRST116') {
         console.error('Error fetching profile:', profileError);
-        console.log('Setting role to guest due to profile error');
+        devLog('Setting role to guest due to profile error');
         setUserRole('guest');
         return;
       }
@@ -65,12 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', userId)
         .maybeSingle();
       
-      console.log('User role query result:', { userRoleData, roleError });
+      devLog('User role query result:', { userRoleData, roleError });
       
       // Determine the final role
       const finalRole = userRoleData?.role || profileData?.role || 'guest';
       
-      console.log('Setting user role and relationships:', {
+      devLog('Setting user role and relationships:', {
         role: finalRole,
         cleanerId: profileData?.cleaner_id,
         customerId: profileData?.customer_id,
@@ -86,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
-      console.log('Setting role to guest due to catch error');
+      devLog('Setting role to guest due to catch error');
       setUserRole('guest');
       setCleanerId(null);
       setCustomerId(null);
@@ -100,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, 'User ID:', session?.user?.id);
+        devLog('Auth state changed:', event, 'User ID:', session?.user?.id);
         
         if (!mounted) return;
         
@@ -129,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('Initial session check:', { session: !!session, error });
+        devLog('Initial session check:', { session: !!session, error });
         
         if (!mounted) return;
         
@@ -159,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('AuthContext: Starting sign out process...');
+      devLog('AuthContext: Starting sign out process...');
       
       // Sign out from Supabase first
       const { error } = await supabase.auth.signOut({
@@ -171,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      console.log('AuthContext: Supabase sign out successful, clearing local state...');
+      devLog('AuthContext: Supabase sign out successful, clearing local state...');
       
       // Clear local state after successful sign out
       setUser(null);
@@ -181,7 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCustomerId(null);
       setAssignedSources([]);
       
-      console.log('AuthContext: Local state cleared');
+      devLog('AuthContext: Local state cleared');
       
     } catch (error) {
       console.error('Error during sign out:', error);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -101,10 +101,6 @@ const CustomerSettings = () => {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
 
   // Only redirect guests who aren't admin
   if (userRole === 'guest' && !customerId) {

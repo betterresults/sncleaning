@@ -25,10 +25,6 @@ const CleanerBookingsPage = () => {
     );
   }
 
-  if (!user || (userRole !== 'user' && userRole !== 'admin') || (userRole === 'user' && !cleanerId)) {
-    return <Navigate to="/auth" replace />;
-  }
-
   const showAvailableBookings = availableCount && availableCount > 0;
   const isMobile = useIsMobile();
   const isMobileView = isCapacitor() || isMobile;

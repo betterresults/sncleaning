@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
@@ -33,15 +32,9 @@ const CustomerCompletedBookings = () => {
   }
 
   // Only redirect if not authenticated at all
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
 
   // For customers, we don't need to check customerId here since the component will handle it
   // For non-admins who aren't customers, redirect to appropriate dashboard
-  if (userRole === 'user') {
-    return <Navigate to="/cleaner-dashboard" replace />;
-  }
 
   return (
     <SidebarProvider>

@@ -10,7 +10,6 @@ import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import { supabase } from '@/integrations/supabase/client';
 import { Folder, Image, Search, Calendar, MapPin, User, ChevronRight, ArrowLeft, Download, Eye, Share2, Copy, Check } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import StaffGuard from '@/components/StaffGuard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -321,8 +320,7 @@ const PhotoManagement = () => {
   const selectedFolderLabel = folders.find(f => f.key === selectedFolder)?.label || selectedFolder;
 
   return (
-    <StaffGuard>
-      <SidebarProvider>
+    <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gray-50">
           <UnifiedHeader 
             title=""
@@ -542,7 +540,6 @@ const PhotoManagement = () => {
           </DialogContent>
         </Dialog>
       </SidebarProvider>
-    </StaffGuard>
   );
 };
 

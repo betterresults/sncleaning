@@ -5,7 +5,6 @@ import { UnifiedSidebar } from '@/components/UnifiedSidebar';
 import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { adminNavigation } from '@/lib/navigationItems';
 import ModernUsersTable from '@/components/ModernUsersTable';
-import AdminGuard from '@/components/AdminGuard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, UserCheck, UserPlus } from 'lucide-react';
 
@@ -22,8 +21,7 @@ const Users = () => {
   };
 
   return (
-    <AdminGuard>
-      <SidebarProvider>
+    <SidebarProvider>
         <div className="min-h-screen flex flex-col w-full bg-gray-50">
           <UnifiedHeader 
             title=""
@@ -74,7 +72,6 @@ const Users = () => {
           </div>
         </div>
       </SidebarProvider>
-    </AdminGuard>
   );
 };
 
