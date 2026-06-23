@@ -1,4 +1,4 @@
-import CarpetCleaningForm from '../../sn-cleaning-booking-forms-main/src/components/booking/CarpetCleaningForm';
+import { CarpetCleaningForm } from '@/features/booking';
 
 const CarpetBooking = () => {
   return <CarpetCleaningForm />;

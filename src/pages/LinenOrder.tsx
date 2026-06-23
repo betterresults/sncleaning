@@ -1,5 +1,4 @@
-import React from 'react';
-import LinenOrderForm from '@/../sn-cleaning-booking-forms-main/src/components/booking/LinenOrderForm';
+import { LinenOrderForm } from '@/features/booking';
 
 const LinenOrder = () => {
   return <LinenOrderForm />;
