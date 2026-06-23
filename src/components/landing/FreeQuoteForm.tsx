@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -15,6 +15,93 @@ const FreeQuoteForm = () => {
   const [postcode, setPostcode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Ensure we reuse the same session_id across partial + final saves
+  const sessionIdRef = useRef<string>('');
+  if (!sessionIdRef.current) {
+    const existing = typeof window !== 'undefined' ? localStorage.getItem('quote_session_id') : null;
+    sessionIdRef.current = existing || (typeof crypto !== 'undefined' ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('quote_session_id', sessionIdRef.current);
+      if (!localStorage.getItem('quote_session_timestamp')) {
+        localStorage.setItem('quote_session_timestamp', Date.now().toString());
+      }
+    }
+  }
+
+  // Build the partial-lead payload from current field state
+  const buildLeadPayload = (overrides: Partial<{ fullName: string; email: string; phone: string; postcode: string; furthestStep: string }> = {}) => {
+    const n = (overrides.fullName ?? fullName).trim();
+    const e = (overrides.email ?? email).trim();
+    const p = overrides.phone ?? phone;
+    const pc = (overrides.postcode ?? postcode).trim();
+    const nameParts = n.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const utmParams = JSON.parse(localStorage.getItem('quote_utm_params') || '{}');
+    const source = localStorage.getItem('quote_source') || 'landing_page';
+
+    return {
+      session_id: sessionIdRef.current,
+      first_name: firstName || null,
+      last_name: lastName || null,
+      email: e || null,
+      phone: p || null,
+      postcode: pc || null,
+      status: 'new',
+      furthest_step: overrides.furthestStep || 'lead_partial',
+      source,
+      utm_source: utmParams.utm_source || null,
+      utm_medium: utmParams.utm_medium || null,
+      utm_campaign: utmParams.utm_campaign || null,
+      utm_term: utmParams.utm_term || null,
+      utm_content: utmParams.utm_content || null,
+    };
+  };
+
+  // Save partial lead (on blur). Requires at least one of email/phone to avoid empty rows.
+  const savePartial = async (overrides?: Partial<{ fullName: string; email: string; phone: string; postcode: string }>) => {
+    const payload = buildLeadPayload(overrides);
+    if (!payload.email && !payload.phone) return; // nothing useful yet
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ table: 'quote_leads', data: payload }),
+        keepalive: true,
+      });
+    } catch (err) {
+      console.warn('Partial lead save failed:', err);
+    }
+  };
+
+  // Final fallback: capture lead on page unload via sendBeacon
+  useEffect(() => {
+    const handler = () => {
+      const payload = buildLeadPayload({ furthestStep: 'lead_abandoned' });
+      if (!payload.email && !payload.phone) return;
+      try {
+        const body = JSON.stringify({ table: 'quote_leads', data: payload });
+        const blob = new Blob([body], { type: 'application/json' });
+        // sendBeacon doesn't allow custom headers, so use fetch with keepalive
+        fetch(`${SUPABASE_URL}/functions/v1/track-funnel-event`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      } catch {}
+    };
+    window.addEventListener('pagehide', handler);
+    return () => window.removeEventListener('pagehide', handler);
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,8 +139,8 @@ const FreeQuoteForm = () => {
     setSubmitting(true);
 
     try {
-      // Generate a session ID for tracking
-      const sessionId = crypto.randomUUID();
+      // Reuse the same session ID created for partial saves so we update the same row
+      const sessionId = sessionIdRef.current;
       localStorage.setItem('quote_session_id', sessionId);
       localStorage.setItem('quote_session_timestamp', Date.now().toString());
 
@@ -115,6 +202,7 @@ const FreeQuoteForm = () => {
           placeholder="Full Name"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
+          onBlur={() => savePartial()}
           className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
           maxLength={100}
           required
@@ -126,6 +214,7 @@ const FreeQuoteForm = () => {
           placeholder="Email Address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => savePartial()}
           className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
           maxLength={255}
           required
@@ -135,6 +224,7 @@ const FreeQuoteForm = () => {
         <PhoneInput
           value={phone}
           onChange={(val) => setPhone(val)}
+          onBlur={() => savePartial()}
           placeholder="7123 456 789"
           className="rounded-xl"
         />
@@ -145,6 +235,7 @@ const FreeQuoteForm = () => {
           placeholder="Postcode"
           value={postcode}
           onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+          onBlur={() => savePartial()}
           className="h-12 text-base rounded-xl border-gray-200 focus:border-[#18A5A5]"
           maxLength={10}
           required
