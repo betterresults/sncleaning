@@ -220,11 +220,10 @@ const FreeQuoteForm = () => {
           required
         />
       </div>
-      <div>
+      <div onBlur={() => savePartial()}>
         <PhoneInput
           value={phone}
           onChange={(val) => setPhone(val)}
-          onBlur={() => savePartial()}
           placeholder="7123 456 789"
           className="rounded-xl"
         />
