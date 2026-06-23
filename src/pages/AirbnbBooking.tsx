@@ -1,4 +1,4 @@
-import AirbnbBookingForm from '../../sn-cleaning-booking-forms-main/src/components/booking/AirbnbBookingForm';
+import { AirbnbBookingForm } from '@/features/booking';
 
 const AirbnbBooking = () => {
   return <AirbnbBookingForm />;

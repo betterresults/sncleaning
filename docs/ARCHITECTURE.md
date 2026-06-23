@@ -9,7 +9,8 @@ Frontend operations platform for a UK cleaning business: public booking funnels,
 | Path | Purpose |
 |------|---------|
 | `src/` | Main React app (Vite) — **primary codebase** |
-| `sn-cleaning-booking-forms-main/` | Booking funnel forms (imported into `src/pages/*`; merge planned in Phase 2) |
+| `src/features/booking/` | Public booking funnel forms (domestic, airbnb, carpet, end-of-tenancy, linen) |
+| `src/components/booking/` | Admin / internal booking UI (dialogs, selectors, `NewBookingForm`) |
 | `supabase/` | Migrations and edge functions |
 | `android/` | Capacitor native shell for cleaner app |
 | `wp-sn-cleaning-page-plugin/` | WordPress marketing site (separate deploy) |
@@ -123,16 +124,16 @@ Generated types: `Database['public']['Tables']` in `src/integrations/supabase/ty
 
 ---
 
-## Booking forms (temporary split)
+## Booking forms
 
-Public and admin booking pages are thin wrappers that import from `sn-cleaning-booking-forms-main/`:
+Public booking pages are thin wrappers around `src/features/booking/`:
 
 ```tsx
 // src/pages/DomesticBooking.tsx
-import DomesticBookingForm from '../../sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingForm';
+import { DomesticBookingForm } from '@/features/booking';
 ```
 
-Forms use the `@/` alias (resolves to `src/`), so they depend on the main app. Phase 2 will move these into `src/features/booking/`.
+Admin booking flows live in `src/components/booking/` (e.g. `NewBookingForm`, `AdminQuoteDialog`).
 
 ---
 
@@ -171,7 +172,7 @@ The Supabase client (`src/integrations/supabase/client.ts`) reads these at build
 |-------|--------|
 | 0 | Baseline docs, env, CI, debug log cleanup ✅ |
 | 1 | `ProtectedRoute`, consistent auth ✅ |
-| 2 | Merge booking forms into `src/` |
+| 2 | Merge booking forms into `src/features/booking/` ✅ |
 | 3 | React Query data layer |
 | 4 | Split large components |
 | 5 | Tests on critical paths |

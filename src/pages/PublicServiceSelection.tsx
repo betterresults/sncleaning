@@ -7,8 +7,8 @@ import { useFunnelTracking } from '@/hooks/useFunnelTracking';
 
 // Prefetch form components for instant loading
 const prefetchForms = () => {
-  import('../../sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingForm');
-  import('../../sn-cleaning-booking-forms-main/src/components/booking/AirbnbBookingForm');
+  import('@/features/booking/DomesticBookingForm');
+  import('@/features/booking/AirbnbBookingForm');
 };
 
 const PublicServiceSelection = () => {

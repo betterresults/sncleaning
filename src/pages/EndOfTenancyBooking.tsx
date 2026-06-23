@@ -1,4 +1,4 @@
-import EndOfTenancyBookingForm from '../../sn-cleaning-booking-forms-main/src/components/booking/EndOfTenancyBookingForm';
+import { EndOfTenancyBookingForm } from '@/features/booking';
 
 const EndOfTenancyBooking = () => {
   return <EndOfTenancyBookingForm />;

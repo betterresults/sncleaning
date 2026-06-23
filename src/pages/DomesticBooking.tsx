@@ -1,4 +1,4 @@
-import DomesticBookingForm from '../../sn-cleaning-booking-forms-main/src/components/booking/DomesticBookingForm';
+import { DomesticBookingForm } from '@/features/booking';
 
 const DomesticBooking = () => {
   return <DomesticBookingForm />;

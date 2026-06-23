@@ -9,7 +9,6 @@ export default tseslint.config(
     ignores: [
       "dist",
       "wp-sn-cleaning-page-plugin/**",
-      "sn-cleaning-booking-forms-main/**",
       "android/**",
     ],
   },
