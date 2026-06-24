@@ -1,88 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Users, TrendingUp, Clock } from 'lucide-react';
-
-interface QuickStatsData {
-  upcomingBookings: number;
-  activeCleaners: number;
-  avgBookingValue: number;
-  completionRate: number;
-}
+import { useQuickStats } from '@/hooks/queries/useDashboardStats';
 
 const QuickStats = () => {
-  const [stats, setStats] = useState<QuickStatsData>({
-    upcomingBookings: 0,
-    activeCleaners: 0,
-    avgBookingValue: 0,
-    completionRate: 0
-  });
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading } = useQuickStats();
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-
-      // Upcoming bookings (next 30 days)
-      const next30Days = new Date();
-      next30Days.setDate(next30Days.getDate() + 30);
-
-      const { count: upcomingCount } = await supabase
-        .from('bookings')
-        .select('id', { count: 'exact', head: true })
-        .gte('date_time', new Date().toISOString())
-        .lte('date_time', next30Days.toISOString());
-
-      // Active cleaners (cleaners with bookings in last 30 days)
-      const last30Days = new Date();
-      last30Days.setDate(last30Days.getDate() - 30);
-
-      const { data: activeCleanersData } = await supabase
-        .from('past_bookings')
-        .select('cleaner')
-        .gte('date_time', last30Days.toISOString())
-        .not('cleaner', 'is', null);
-
-      const uniqueCleaners = new Set(activeCleanersData?.map(b => b.cleaner));
-
-      // Average booking value (last 30 days)
-      const { data: recentBookings } = await supabase
-        .from('past_bookings')
-        .select('total_cost')
-        .gte('date_time', last30Days.toISOString());
-
-      const avgValue = recentBookings && recentBookings.length > 0
-        ? recentBookings.reduce((sum, b) => sum + (Number(b.total_cost) || 0), 0) / recentBookings.length
-        : 0;
-
-      // Completion rate (percentage of completed vs cancelled in last 30 days)
-      const { data: allRecentBookings } = await supabase
-        .from('past_bookings')
-        .select('booking_status')
-        .gte('date_time', last30Days.toISOString());
-
-      const completedCount = allRecentBookings?.filter(b => b.booking_status === 'completed').length || 0;
-      const totalCount = allRecentBookings?.length || 0;
-      const completionRate = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-
-      setStats({
-        upcomingBookings: upcomingCount || 0,
-        activeCleaners: uniqueCleaners.size,
-        avgBookingValue: avgValue,
-        completionRate: Math.round(completionRate)
-      });
-    } catch (error) {
-      console.error('Error fetching quick stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading || !stats) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map((i) => (

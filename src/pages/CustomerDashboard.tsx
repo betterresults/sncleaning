@@ -13,107 +13,38 @@ import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBookings';
 import { BulkPaymentDialog } from '@/components/customer/BulkPaymentDialog';
 import { useCustomerUnpaidBookings } from '@/hooks/useCustomerUnpaidBookings';
+import {
+  useCustomerIsBusinessClient,
+  useCustomerOverdueInvoices,
+  useCustomerPaymentMethodsList,
+} from '@/hooks/queries/useCustomerPortal';
 import { AlertTriangle } from 'lucide-react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const CustomerDashboard = () => {
   const { user, userRole, customerId, cleanerId, signOut, loading } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
   const { hasLinenAccess, loading: linenLoading } = useCustomerLinenAccess();
-  const { unpaidBookings, loading: paymentsLoading, refetch: refetchPayments } = useCustomerUnpaidBookings();
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [paymentMethodsLoading, setPaymentMethodsLoading] = useState(true);
-  const [showBulkPayment, setShowBulkPayment] = useState(false);
-  const [isBusinessClient, setIsBusinessClient] = useState(false);
-  const [overdueInvoices, setOverdueInvoices] = useState([]);
-  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const isAdminViewing = userRole === 'admin';
-  
-  // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID  
+
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
 
-  // Fetch payment methods for the active customer
-  const fetchPaymentMethods = async () => {
-    if (!activeCustomerId) {
-      setPaymentMethodsLoading(false);
-      return;
-    }
-    
-    try {
-      setPaymentMethodsLoading(true);
-      const { data, error } = await supabase
-        .from('customer_payment_methods')
-        .select('*')
-        .eq('customer_id', activeCustomerId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPaymentMethods(data || []);
-    } catch (error) {
-      console.error('Error fetching payment methods:', error);
-      setPaymentMethods([]);
-    } finally {
-      setPaymentMethodsLoading(false);
-    }
-  };
-
-  // Check if customer is business client
-  const checkIfBusinessClient = async () => {
-    if (!activeCustomerId) {
-      setIsBusinessClient(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('customers')
-        .select('clent_type')
-        .eq('id', activeCustomerId)
-        .single();
-
-      if (error) throw error;
-      setIsBusinessClient(data?.clent_type === 'business');
-    } catch (error) {
-      console.error('Error checking customer type:', error);
-      setIsBusinessClient(false);
-    }
-  };
-
-  // Check for overdue invoices
-  const checkOverdueInvoices = async () => {
-    if (!activeCustomerId || !isBusinessClient) {
-      setOverdueInvoices([]);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('past_bookings')
-        .select('*')
-        .eq('customer', activeCustomerId)
-        .not('invoice_link', 'is', null)
-        .not('payment_status', 'ilike', '%paid%');
-
-      if (error) throw error;
-
-      const now = new Date();
-      const overdue = (data || []).filter(booking => {
-        const bookingDate = new Date(booking.date_time);
-        const dueDate = new Date(bookingDate);
-        dueDate.setDate(dueDate.getDate() + 8);
-        return now > dueDate;
-      });
-
-      setOverdueInvoices(overdue);
-    } catch (error) {
-      console.error('Error checking overdue invoices:', error);
-      setOverdueInvoices([]);
-    }
-  };
+  const { unpaidBookings, loading: paymentsLoading, refetch: refetchPayments } = useCustomerUnpaidBookings();
+  const {
+    data: paymentMethods = [],
+    isLoading: paymentMethodsLoading,
+    refetch: refetchPaymentMethods,
+  } = useCustomerPaymentMethodsList(activeCustomerId);
+  const { data: isBusinessClient = false } = useCustomerIsBusinessClient(activeCustomerId);
+  const { data: overdueInvoices = [] } = useCustomerOverdueInvoices(
+    activeCustomerId,
+    isBusinessClient,
+  );
+  const [showBulkPayment, setShowBulkPayment] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Handle payment_setup success parameter
   useEffect(() => {
@@ -122,24 +53,11 @@ const CustomerDashboard = () => {
         title: "Payment method added",
         description: "Your payment method has been successfully saved.",
       });
-      // Clean up the URL
       searchParams.delete('payment_setup');
       setSearchParams(searchParams, { replace: true });
-      // Refresh payment methods
-      fetchPaymentMethods();
+      refetchPaymentMethods();
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    fetchPaymentMethods();
-    checkIfBusinessClient();
-  }, [activeCustomerId]);
-
-  useEffect(() => {
-    if (isBusinessClient) {
-      checkOverdueInvoices();
-    }
-  }, [activeCustomerId, isBusinessClient]);
 
   console.log('CustomerDashboard render - hasLinenAccess:', hasLinenAccess, 'loading:', linenLoading);
 

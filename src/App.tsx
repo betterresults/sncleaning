@@ -2,7 +2,8 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { FbclidCapture } from "./components/FbclidCapture";
@@ -12,8 +13,6 @@ import { AdminCustomerProvider } from "./contexts/AdminCustomerContext";
 import { AdminCleanerProvider } from "./contexts/AdminCleanerContext";
 import InstallPrompt from "./components/InstallPrompt";
 import { AppRoutes } from "@/routes/AppRoutes";
-
-const queryClient = new QueryClient();
 
 const captureOriginalLandingUrl = () => {
   const SESSION_KEY = 'quote_session_id';

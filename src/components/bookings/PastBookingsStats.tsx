@@ -1,84 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-interface Stats {
-  totalBookings: number;
-  monthlyRevenue: number;
-  unpaidInvoices: number;
-}
+import { usePastBookingsMonthlyStats } from '@/hooks/queries/useDashboardStats';
 
 const PastBookingsStats = () => {
-  const [stats, setStats] = useState<Stats>({
-    totalBookings: 0,
-    monthlyRevenue: 0,
-    unpaidInvoices: 0,
-  });
-  const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      
-      // Parse selected month to get date range
-      const [year, month] = selectedMonth.split('-').map(Number);
-      const firstDay = new Date(year, month - 1, 1);
-      const lastDay = new Date(year, month, 0);
-      
-      const dateFrom = firstDay.toISOString().split('T')[0];
-      const dateTo = lastDay.toISOString().split('T')[0];
-      
-      // Build query for past bookings in selected month
-      const { data: bookingsData, error: bookingsError } = await supabase
-        .from('past_bookings')
-        .select('total_cost, payment_status, date_only, booking_status')
-        .gte('date_only', dateFrom)
-        .lte('date_only', dateTo);
+  const { data: stats, isLoading } = usePastBookingsMonthlyStats(selectedMonth);
 
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        return;
-      }
-
-      // Filter out cancelled bookings for revenue calculations
-      const activeBookings = bookingsData?.filter(booking => {
-        const status = booking.booking_status?.toLowerCase();
-        return status !== 'cancelled' && status !== 'canceled';
-      }) || [];
-
-      // Calculate stats - exclude cancelled from revenue and counts
-      const totalBookings = activeBookings.length;
-      const monthlyRevenue = activeBookings.reduce((sum, booking) => {
-        return sum + (parseFloat(String(booking.total_cost)) || 0);
-      }, 0);
-      const unpaidInvoices = activeBookings.filter(booking => 
-        booking.payment_status === 'Unpaid' || booking.payment_status === 'Not Paid'
-      ).length;
-
-      setStats({
-        totalBookings,
-        monthlyRevenue,
-        unpaidInvoices,
-      });
-
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-  }, [selectedMonth]);
-
-  // Generate list of months (current month + 11 previous months)
   const generateMonthOptions = () => {
     const options = [];
     const now = new Date();
@@ -93,7 +26,7 @@ const PastBookingsStats = () => {
 
   const monthOptions = generateMonthOptions();
 
-  if (loading) {
+  if (isLoading || !stats) {
     return (
       <div className="space-y-3 sm:space-y-4">
         <div className="flex justify-between items-center mb-4">

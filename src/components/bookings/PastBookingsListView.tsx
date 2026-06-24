@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import type { PastBookingListItem, CleanerOption } from '@/api/bookings';
+import {
+  useDeletePastBooking,
+  usePastBookingsListData,
+  usePastBookingsListParams,
+} from '@/hooks/queries/usePastBookingsListData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,50 +28,8 @@ import ManualEmailDialog from '../dashboard/ManualEmailDialog';
 import PhotoManagementDialog from '../dashboard/PhotoManagementDialog';
 import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
-interface Booking {
-  id: number;
-  date_time: string;
-  time_only?: string | null;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  address: string;
-  postcode: string;
-  cleaning_type: string;
-  service_type: string;
-  total_cost: string;
-  payment_status: string;
-  payment_method?: string;
-  invoice_id?: string | null;
-  invoice_link?: string | null;
-  cleaner: number | null;
-  customer: number;
-  cleaner_pay: number | null;
-  total_hours: number | null;
-  linen_management?: boolean;
-  additional_details?: string;
-  frequently?: string;
-  booking_status?: string;
-  property_details?: string;
-  has_photos?: boolean;
-  cleaners?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  } | null;
-  customers?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  } | null;
-}
-
-interface Cleaner {
-  id: number;
-  first_name: string;
-  last_name: string;
-}
+type Booking = PastBookingListItem;
+type Cleaner = CleanerOption;
 
 interface Filters {
   searchTerm: string;
@@ -92,14 +55,30 @@ interface PastBookingsListViewProps {
 
 const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, showStatsForAdmin = false }: PastBookingsListViewProps) => {
   const { user, userRole, assignedSources } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const listParams = usePastBookingsListParams(
+    dashboardDateFilter,
+    userRole,
+    user?.id,
+    assignedSources,
+  );
+  const {
+    data: listData,
+    isLoading,
+    isFetching,
+    error: listError,
+    refetch,
+  } = usePastBookingsListData(listParams);
+  const deletePastBookingMutation = useDeletePastBooking();
+
+  const bookings = listData?.bookings ?? [];
+  const cleaners = listData?.cleaners ?? [];
+  const customerSourceMap = listData?.customerSourceMap ?? {};
+  const availableSources = listData?.availableSources ?? [];
+  const loading = isLoading;
+  const isRefreshing = isFetching && !isLoading;
+  const error = listError?.message ?? null;
+
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
-  const [availableSources, setAvailableSources] = useState<string[]>([]);
-  const [customerSourceMap, setCustomerSourceMap] = useState<Record<number, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   // When showing only cancelled, default to 'cancelled' status; otherwise default to 'not_cancelled' to hide them
   const [filters, setFilters] = useState<Filters>({
@@ -214,116 +193,12 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
     return found?.label ?? humanize(key);
   };
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      let bookingsQuery = supabase
-        .from('past_bookings')
-        .select('*');
-
-      if (dashboardDateFilter) {
-        bookingsQuery = bookingsQuery
-          .gte('date_time', dashboardDateFilter.dateFrom)
-          .lte('date_time', dashboardDateFilter.dateTo);
-      } else {
-        const nowIso = new Date().toISOString();
-        bookingsQuery = bookingsQuery.or(`date_time.lte.${nowIso},booking_status.eq.Completed,booking_status.eq.completed`);
-      }
-
-      const { data: bookingsData, error: bookingsError } = await bookingsQuery
-        .order('date_time', { ascending: false });
-
-      if (bookingsError) {
-        console.error('Error fetching past bookings:', bookingsError);
-        setError('Failed to load past bookings: ' + bookingsError.message);
-        return;
-      }
-
-      // Fetch cleaners for filter dropdown (only when showing all bookings)
-      if (!dashboardDateFilter) {
-        const { data: cleanersData, error: cleanersError } = await supabase
-          .from('cleaners')
-          .select('id, first_name, last_name')
-          .order('first_name');
-
-        if (cleanersError) {
-          console.error('Error fetching cleaners:', cleanersError);
-        } else {
-          setCleaners(cleanersData || []);
-        }
-      }
-
-      // Fetch all cleaners and customers to populate the booking data
-      const { data: allCleaners } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name');
-
-      const { data: allCustomers } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, source');
-
-      // Build customer source map and extract unique sources that have bookings
-      const sourceMap: Record<number, string> = {};
-      const sourcesWithBookings = new Set<string>();
-      const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
-      
-      allCustomers?.forEach(c => {
-        if (c.source) {
-          sourceMap[c.id] = c.source;
-          // Only include sources for customers that have bookings
-          if (customerIdsInBookings.has(c.id)) {
-            sourcesWithBookings.add(c.source);
-          }
-        }
-      });
-      
-      setCustomerSourceMap(sourceMap);
-      setAvailableSources(Array.from(sourcesWithBookings).sort());
-
-      // Map cleaner and customer data to bookings
-      let bookingsWithRelations = (bookingsData || []).map((booking: any) => ({
-        ...booking,
-        cleaners: booking.cleaner 
-          ? allCleaners?.find((c) => c.id === booking.cleaner) || null
-          : null,
-        customers: booking.customer
-          ? allCustomers?.find((c) => c.id === booking.customer) || null
-          : null
-      }));
-
-      // For sales agents: filter to only their own bookings OR bookings from their assigned sources
-      if (userRole === 'sales_agent' && user?.id) {
-        bookingsWithRelations = bookingsWithRelations.filter(booking => {
-          // They can see bookings they created
-          if (booking.created_by_user_id === user.id) return true;
-          
-          // They can see bookings from customers whose source is in their assigned_sources
-          if (assignedSources.length > 0 && booking.customer) {
-            const customerSource = sourceMap[booking.customer];
-            if (customerSource && assignedSources.includes(customerSource)) {
-              return true;
-            }
-          }
-          
-          return false;
-        });
-      }
-
-      setBookings(bookingsWithRelations);
-    } catch (error) {
-      console.error('Error in fetchData:', error);
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
+  const handleRefresh = () => {
+    refetch();
   };
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchData();
+  const refreshBookings = () => {
+    refetch();
   };
 
   const applyFilters = () => {
@@ -422,35 +297,12 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
   };
 
   useEffect(() => {
-    fetchData();
-    setCurrentPage(1); // Reset to page 1 when filter changes
+    setCurrentPage(1);
   }, [dashboardDateFilter, userRole, assignedSources]);
 
   useEffect(() => {
     applyFilters();
   }, [bookings, filters]);
-
-  // Refresh data when page becomes visible again (e.g., after navigating back)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchData();
-      }
-    };
-
-    const handleFocus = () => {
-      fetchData();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
-
 
   const handleEdit = (bookingId: number) => {
     const booking = bookings.find(b => b.id === bookingId);
@@ -505,44 +357,11 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
     if (!bookingToDelete) return;
 
     try {
-      // Get booking details before deletion for activity log
-      const { data: bookingData } = await supabase
-        .from('past_bookings')
-        .select('*')
-        .eq('id', bookingToDelete)
-        .single();
-
-      const { error } = await supabase
-        .from('past_bookings')
-        .delete()
-        .eq('id', bookingToDelete);
-
-      if (error) throw error;
-
-      // Log deletion to activity_logs for admin notifications
-      if (bookingData) {
-        await supabase.from('activity_logs').insert({
-          action_type: 'booking_deleted',
-          entity_type: 'past_booking',
-          entity_id: bookingToDelete.toString(),
-          user_role: 'admin',
-          details: {
-            booking_id: bookingToDelete,
-            customer_name: `${bookingData.first_name} ${bookingData.last_name}`,
-            customer_email: bookingData.email,
-            booking_date: bookingData.date_time,
-            service_type: bookingData.service_type,
-            address: bookingData.address
-          }
-        });
-      }
-
+      await deletePastBookingMutation.mutateAsync(bookingToDelete);
       toast({
         title: "Success",
         description: "Booking deleted successfully",
       });
-      
-      fetchData();
     } catch (error) {
       console.error('Error deleting booking:', error);
       toast({
@@ -1133,21 +952,21 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         booking={selectedBookingForEdit as any}
-        onBookingUpdated={fetchData}
+        onBookingUpdated={refreshBookings}
       />
 
       <AssignCleanerToPastBookingDialog
         bookingId={selectedBookingId}
         open={assignCleanerOpen}
         onOpenChange={setAssignCleanerOpen}
-        onSuccess={fetchData}
+        onSuccess={refreshBookings}
       />
 
       <DuplicateBookingDialog
         booking={selectedBookingForDuplicate as any}
         open={duplicateDialogOpen}
         onOpenChange={setDuplicateDialogOpen}
-        onSuccess={fetchData}
+        onSuccess={refreshBookings}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -1173,7 +992,7 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
         open={convertToRecurringOpen}
         onOpenChange={setConvertToRecurringOpen}
         booking={selectedBookingForRecurring as any}
-        onSuccess={fetchData}
+        onSuccess={refreshBookings}
       />
 
       <ManualPaymentDialog
@@ -1184,7 +1003,7 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
           setSelectedBookingForPayment(null);
         }}
         onSuccess={() => {
-          fetchData();
+          refreshBookings();
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
         }}
@@ -1200,7 +1019,7 @@ const PastBookingsListView = ({ dashboardDateFilter, showOnlyCancelled = false, 
             setSelectedBookingForInvoiless(null);
           }}
           onSuccess={() => {
-            fetchData();
+            refreshBookings();
             setInvoilessDialogOpen(false);
             setSelectedBookingForInvoiless(null);
           }}
