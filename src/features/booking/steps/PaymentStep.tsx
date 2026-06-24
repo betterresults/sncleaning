@@ -81,9 +81,10 @@ const StripeCheckoutNotice: React.FC<{ totalCost: number }> = ({ totalCost }) =>
         </p>
         <p className="text-sm text-gray-600">
           Click <span className="font-medium">Confirm booking</span> below to enter your
-          card on Stripe's secure checkout page. Your card will be authorized for
-          <strong> £{totalCost.toFixed(2)}</strong> now and charged only after your cleaning is
-          completed.
+          card on Stripe's secure checkout page. Nothing is taken today — your
+          card will be securely saved and only authorized 48 hours before your
+          cleaning, then charged after the clean is completed
+          (<strong>£{totalCost.toFixed(2)}</strong>).
         </p>
       </div>
     </div>
@@ -2949,7 +2950,7 @@ useEffect(() => {
         <Button
           variant="default"
           size="lg"
-          className="px-16 py-6 text-lg ml-auto"
+          className="flex-1 py-6 text-lg"
           onClick={handleSubmit}
           disabled={
             processing ||

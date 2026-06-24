@@ -657,27 +657,6 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </div>
               )}
 
-              {/* Warning if property data is missing - customer won't skip to payment (not shown for Carpet Cleaning or End of Tenancy) */}
-              {serviceType !== 'Carpet Cleaning' && serviceType !== 'End of Tenancy' && (!quoteData.propertyType || !quoteData.bedrooms || !quoteData.bathrooms || !quoteData.serviceFrequency) && (
-                <div className="rounded-xl p-4 border bg-red-50 border-red-200">
-                  <div className="flex items-start gap-3">
-                    <Home className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-red-800">
-                        Property details incomplete
-                      </p>
-                      <p className="text-xs text-red-600 mt-0.5">
-                        Missing: {[
-                          !quoteData.propertyType && 'property type',
-                          !quoteData.bedrooms && 'bedrooms',
-                          !quoteData.bathrooms && 'bathrooms',
-                          !quoteData.serviceFrequency && 'frequency'
-                        ].filter(Boolean).join(', ')}. Customer will start from step 1.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Warning if date/time not set (unless flexible time selected or override enabled) - customer won't skip to payment */}
               {(serviceType === 'Carpet Cleaning' || serviceType === 'End of Tenancy' || (quoteData.propertyType && quoteData.bedrooms && quoteData.bathrooms && quoteData.serviceFrequency)) && 
