@@ -33,15 +33,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   const charge24h = getChargeFromConfig('under_24h', 30);
   const charge12h = getChargeFromConfig('under_12h', 50);
   
-  // Smart calendar month display - show next month if we're near end of current month
-  const getDefaultMonth = () => {
-    const today = new Date();
-    const daysLeftInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate();
-    // If less than 7 days left in current month, show next month
-    return daysLeftInMonth < 7 
-      ? new Date(today.getFullYear(), today.getMonth() + 1, 1)
-      : today;
-  };
+  // Calendar always opens on the current month so customers see today's date first.
+  const getDefaultMonth = () => new Date();
 
   // Generate time slots based on current time for same-day booking
   // Format: Simple arrival times like "9:00 AM" instead of confusing windows
