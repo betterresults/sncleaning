@@ -244,6 +244,27 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
     fetchData();
   }, [statusFilter, serviceFilter]);
 
+  // Real-time subscription — auto-refresh when leads or events change
+  useEffect(() => {
+    const channel = supabase
+      .channel('quote-leads-view-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'quote_leads' },
+        () => { fetchData(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'funnel_events' },
+        () => { fetchData(); }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const getServiceIcon = (serviceId: string) => {
     if (serviceId.includes('airbnb') || serviceId.includes('air-bnb')) {
       return <Building className="h-4 w-4" />;
