@@ -285,6 +285,30 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_settings: {
+        Row: {
+          config: Json
+          created_at: string
+          enabled: boolean
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           access: string | null
@@ -2310,6 +2334,7 @@ export type Database = {
       }
       quote_leads: {
         Row: {
+          abandoned_sms_sent_at: string | null
           access_notes: string | null
           additional_rooms: Json | null
           address: string | null
@@ -2344,6 +2369,7 @@ export type Database = {
           is_flexible: boolean | null
           kitchen: string | null
           landing_url: string | null
+          last_activity_at: string | null
           last_heartbeat: string | null
           last_name: string | null
           mattress_items: Json | null
@@ -2383,6 +2409,7 @@ export type Database = {
           weekly_hours: number | null
         }
         Insert: {
+          abandoned_sms_sent_at?: string | null
           access_notes?: string | null
           additional_rooms?: Json | null
           address?: string | null
@@ -2417,6 +2444,7 @@ export type Database = {
           is_flexible?: boolean | null
           kitchen?: string | null
           landing_url?: string | null
+          last_activity_at?: string | null
           last_heartbeat?: string | null
           last_name?: string | null
           mattress_items?: Json | null
@@ -2456,6 +2484,7 @@ export type Database = {
           weekly_hours?: number | null
         }
         Update: {
+          abandoned_sms_sent_at?: string | null
           access_notes?: string | null
           additional_rooms?: Json | null
           address?: string | null
@@ -2490,6 +2519,7 @@ export type Database = {
           is_flexible?: boolean | null
           kitchen?: string | null
           landing_url?: string | null
+          last_activity_at?: string | null
           last_heartbeat?: string | null
           last_name?: string | null
           mattress_items?: Json | null
