@@ -125,3 +125,36 @@ export interface PastBookingsListData {
   customerSourceMap: Record<number, string>;
   availableSources: string[];
 }
+
+export interface UpcomingCalendarParams {
+  dashboardDateFilter?: {
+    dateFrom: string;
+    dateTo: string;
+  };
+  sortOrder: 'asc' | 'desc';
+  userRole?: string | null;
+  userId?: string | null;
+  assignedSources?: string[];
+}
+
+export interface UpcomingCalendarBooking extends BookingListItem {
+  primary_cleaner?: {
+    id: number;
+    full_name: string;
+  } | null;
+  created_by_user_id?: string | null;
+}
+
+export interface UpcomingCalendarCustomer {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
+export interface UpcomingCalendarData {
+  bookings: UpcomingCalendarBooking[];
+  cleaners: Array<CleanerOption & { full_name?: string }>;
+  customers: UpcomingCalendarCustomer[];
+  customerSourceMap: Record<number, string>;
+  availableSources: string[];
+}

@@ -1,59 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, User, Edit, Grid, CheckCircle, ChevronLeft, ChevronRight, CreditCard } from 'lucide-react';
+import { Calendar, User, Edit, Grid, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import {
+  useCancelCustomerBooking,
+  useCustomerUpcomingBookings,
+  useInvalidateCustomerPortal,
+} from '@/hooks/queries/useCustomerPortal';
+import type { CustomerUpcomingBooking } from '@/api/customers';
 import EditBookingDialog from './EditBookingDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import BookingCard from '@/components/booking/BookingCard';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 
-interface Booking {
-  id: number;
-  date_time: string;
-  address: string;
-  postcode: string;
-  cleaning_type: string;
-  service_type: string; // Required for BookingCard compatibility
-  total_hours: number;
-  total_cost: number;
-  cleaning_cost_per_hour: number | null;
-  booking_status: string;
-  payment_status: string;
-  additional_details: string | null;
-  property_details: string | null;
-  parking_details: string | null;
-  key_collection: string | null;
-  access: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  phone_number: string | null;
-  email: string | null;
-  same_day: boolean;
-  linen_management: boolean;
-  linen_used: any;
-  created_by_user_id?: string | null;
-  created_by_source?: string | null;
-  cleaner?: {
-    first_name: string;
-    last_name: string;
-  };
-}
+type Booking = CustomerUpcomingBooking;
 
 const CustomerUpcomingBookings = () => {
   const { customerId, userRole } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [completedBookingsCount, setCompletedBookingsCount] = useState(0);
-  const [unpaidCompletedBookingsCount, setUnpaidCompletedBookingsCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
@@ -65,26 +35,32 @@ const CustomerUpcomingBookings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 10;
 
-  // Use selected customer ID if admin is viewing, otherwise use the logged-in user's customer ID
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
 
-  console.log('CustomerUpcomingBookings - Debug info:', {
-    userRole,
-    customerId,
-    selectedCustomerId,
-    activeCustomerId
-  });
+  const {
+    data,
+    isLoading: loading,
+    error: bookingsError,
+  } = useCustomerUpcomingBookings(activeCustomerId);
+  const cancelBookingMutation = useCancelCustomerBooking(activeCustomerId);
+  const invalidateCustomerPortal = useInvalidateCustomerPortal();
+
+  const bookings = data?.bookings ?? [];
+  const completedBookingsCount = data?.completedBookingsCount ?? 0;
 
   useEffect(() => {
-    if (activeCustomerId) {
-      fetchUpcomingBookings();
-    } else {
-      setBookings([]);
-      setCompletedBookingsCount(0);
-      setUnpaidCompletedBookingsCount(0);
-      setLoading(false);
+    if (bookingsError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load upcoming bookings',
+        variant: 'destructive',
+      });
     }
-  }, [activeCustomerId]);
+  }, [bookingsError, toast]);
+
+  const refreshBookings = () => {
+    invalidateCustomerPortal(activeCustomerId);
+  };
 
   const handleEditBooking = (booking: Booking) => {
     setEditingBooking(booking);
@@ -93,48 +69,19 @@ const CustomerUpcomingBookings = () => {
 
   const handleCancelBooking = async (booking: Booking) => {
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ booking_status: 'cancelled' })
-        .eq('id', booking.id);
-
-      if (error) throw error;
-
-      // Refresh the bookings list first
-      await fetchUpcomingBookings();
-      
-      // Check if the booking actually disappeared from the list
-      const updatedBookings = await supabase
-        .from('bookings')
-        .select('id')
-        .eq('customer', activeCustomerId)
-        .eq('id', booking.id)
-        .gte('date_time', new Date().toISOString())
-        .or('booking_status.is.null,booking_status.neq.cancelled');
-
-      if (updatedBookings.data && updatedBookings.data.length === 0) {
-        // Booking successfully cancelled and moved/hidden
-        toast({
-          title: "✅ Booking Cancelled",
-          description: "Your booking has been cancelled successfully",
-          className: "bg-green-50 border-green-200 text-green-800",
-          duration: 3000,
-        });
-      } else {
-        // Booking status changed but still visible - something went wrong
-        toast({
-          title: "Warning",
-          description: "Booking status updated but may need manual review",
-          className: "bg-yellow-50 border-yellow-200 text-yellow-800",
-          duration: 5000,
-        });
-      }
+      await cancelBookingMutation.mutateAsync(booking.id);
+      toast({
+        title: '✅ Booking Cancelled',
+        description: 'Your booking has been cancelled successfully',
+        className: 'bg-green-50 border-green-200 text-green-800',
+        duration: 3000,
+      });
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast({
-        title: "Error",
-        description: "Failed to cancel booking",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to cancel booking',
+        variant: 'destructive',
       });
     }
   };
@@ -150,102 +97,7 @@ const CustomerUpcomingBookings = () => {
   };
 
   const handleBookingUpdated = () => {
-    fetchUpcomingBookings();
-  };
-
-  const fetchUpcomingBookings = async () => {
-    if (!activeCustomerId) return;
-
-    try {
-      console.log('CustomerUpcomingBookings - Fetching for customer:', {
-        activeCustomerId,
-        userRole,
-        currentTime: new Date().toISOString()
-      });
-
-      // Fetch upcoming bookings - exclude cancelled bookings (handle NULL booking_status)
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          date_time,
-          address,
-          postcode,
-           cleaning_type,
-           service_type,
-          total_hours,
-          total_cost,
-          cleaning_cost_per_hour,
-          booking_status,
-          payment_status,
-          additional_details,
-          property_details,
-          parking_details,
-          key_collection,
-          access,
-          first_name,
-          last_name,
-          phone_number,
-          email,
-          same_day,
-          linen_management,
-          linen_used,
-          created_by_user_id,
-          created_by_source,
-          cleaner:cleaners(first_name, last_name)
-        `)
-        .eq('customer', activeCustomerId)
-        .gte('date_time', new Date().toISOString())
-        .or('booking_status.is.null,booking_status.neq.cancelled')
-        .order('date_time', { ascending: true });
-
-      console.log('CustomerUpcomingBookings - Raw query result:', {
-        data,
-        error,
-        dataLength: data?.length,
-        bookingIds: data?.map(b => ({ id: b.id, date: b.date_time, status: b.booking_status }))
-      });
-
-      if (error) throw error;
-      
-      // Ensure correct types for BookingCard
-      const processedBookings = (data || []).map(booking => ({
-        ...booking,
-        service_type: booking.service_type, // main category (e.g., airbnb, domestic)
-        linen_management: booking.linen_management || false,
-        linen_used: booking.linen_used || []
-      }));
-      setBookings(processedBookings);
-
-      // Fetch completed bookings count
-      const { count, error: countError } = await supabase
-        .from('past_bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('customer', activeCustomerId);
-
-      if (countError) throw countError;
-      setCompletedBookingsCount(count || 0);
-
-      // Fetch unpaid completed bookings count - only truly unpaid statuses
-      const { count: unpaidCount, error: unpaidCountError } = await supabase
-        .from('past_bookings')
-        .select('*', { count: 'exact', head: true })
-        .eq('customer', activeCustomerId)
-        .or('payment_status.ilike.%unpaid%,payment_status.ilike.%collecting%,payment_status.ilike.%outstanding%,payment_status.ilike.%pending%,payment_status.is.null');
-
-      if (unpaidCountError) throw unpaidCountError;
-      setUnpaidCompletedBookingsCount(unpaidCount || 0);
-
-    } catch (error) {
-      console.error('Error fetching upcoming bookings:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load upcoming bookings',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
+    refreshBookings();
   };
 
   if (loading) {
@@ -566,7 +418,7 @@ const CustomerUpcomingBookings = () => {
         booking={duplicatingBooking}
         open={showDuplicateDialog}
         onOpenChange={setShowDuplicateDialog}
-        onBookingCreated={fetchUpcomingBookings}
+        onBookingCreated={refreshBookings}
       />
       
       <ManualPaymentDialog
@@ -587,7 +439,7 @@ const CustomerUpcomingBookings = () => {
           setSelectedBookingForPayment(null);
         }}
         onSuccess={() => {
-          fetchUpcomingBookings();
+          refreshBookings();
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
         }}

@@ -43,3 +43,57 @@ export interface CustomerOverdueInvoice {
   payment_status: string;
   [key: string]: unknown;
 }
+
+export interface CustomerDetailProfile {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  company: string;
+  client_status: string;
+  clent_type?: string;
+  created_at: string;
+}
+
+export interface CustomerDetailPaymentMethod {
+  id: string;
+  stripe_payment_method_id: string;
+  card_brand: string;
+  card_last4: string;
+  card_exp_month: number;
+  card_exp_year: number;
+  is_default: boolean;
+}
+
+export interface CustomerDetailBooking {
+  id: number;
+  date_time: string;
+  address: string;
+  postcode: string;
+  total_cost: string | number;
+  cleaning_type: string;
+  booking_status: string;
+  payment_status: string;
+  cleaner_name?: string;
+}
+
+export interface CustomerDetailUnpaidItem {
+  id: string;
+  date_time: string;
+  address: string;
+  postcode: string;
+  total_cost: number;
+  cleaning_type: string;
+  payment_status: string;
+  source: 'past_booking' | 'linen_order';
+}
+
+export interface CustomerDetailData {
+  customer: CustomerDetailProfile;
+  paymentMethods: CustomerDetailPaymentMethod[];
+  addresses: Array<Record<string, unknown>>;
+  upcomingBookings: CustomerDetailBooking[];
+  pastBookings: CustomerDetailBooking[];
+  unpaidBookings: CustomerDetailUnpaidItem[];
+}

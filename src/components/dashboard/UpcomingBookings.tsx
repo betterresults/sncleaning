@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import {
+  useCancelBooking,
+  useDeleteBooking,
+} from '@/hooks/queries/useBookingsListData';
+import { useUpcomingBookingsCalendarData } from '@/hooks/queries/useUpcomingBookingsCalendar';
+import type { UpcomingCalendarBooking } from '@/api/bookings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,42 +38,7 @@ import ConvertToRecurringDialog from './ConvertToRecurringDialog';
 import DayBookingsDialog from './DayBookingsDialog';
 import ManualEmailDialog from './ManualEmailDialog';
 
-interface Booking {
-  id: number;
-  date_time: string;
-  time_only?: string | null;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  address: string;
-  postcode: string;
-  cleaning_type: string;
-  service_type: string;
-  total_cost: number;
-  payment_status: string;
-  payment_method?: string;
-  invoice_id?: string | null;
-  invoice_link?: string | null;
-  cleaner: number | null;
-  customer: number;
-  cleaner_pay: number | null;
-  total_hours: number | null;
-  linen_management?: boolean;
-  additional_details?: string;
-  frequently?: string;
-  same_day?: boolean; // Same-day Airbnb turnover flag
-  // Primary cleaner from cleaner_payments (single source of truth)
-  primary_cleaner?: {
-    id: number;
-    full_name: string;
-  } | null;
-  customers?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  } | null;
-}
+interface Booking extends UpcomingCalendarBooking {}
 
 interface Cleaner {
   id: number;
@@ -106,14 +76,7 @@ interface UpcomingBookingsProps {
 const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const navigate = useNavigate();
   const { user, userRole, assignedSources } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [availableSources, setAvailableSources] = useState<string[]>([]);
-  const [customerSourceMap, setCustomerSourceMap] = useState<Record<number, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -155,162 +118,35 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[]>([]);
   const [bookedFilter, setBookedFilter] = useState<BookedFilterType>('none');
   const { toast } = useToast();
+  const cancelBookingMutation = useCancelBooking();
+  const deleteBookingMutation = useDeleteBooking();
+
+  const calendarParams = useMemo(
+    () => ({
+      dashboardDateFilter,
+      sortOrder,
+      userRole,
+      userId: user?.id,
+      assignedSources,
+    }),
+    [dashboardDateFilter, sortOrder, userRole, user?.id, assignedSources],
+  );
+
+  const {
+    data: calendarData,
+    isLoading: loading,
+    error: calendarError,
+    refetch: refetchCalendarData,
+  } = useUpcomingBookingsCalendarData(calendarParams, viewMode !== 'list');
+
+  const bookings = calendarData?.bookings ?? [];
+  const cleaners = calendarData?.cleaners ?? [];
+  const availableSources = calendarData?.availableSources ?? [];
+  const customerSourceMap = calendarData?.customerSourceMap ?? {};
+  const error = calendarError ? calendarError.message : null;
 
   // Setup calendar localizer
   const localizer = momentLocalizer(moment);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Build the query with date filtering
-      // For upcoming bookings, always filter from today onwards if no specific filter is provided
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      
-      let bookingsQuery = supabase
-        .from('bookings')
-        .select(`
-          *,
-          time_only,
-          customers!bookings_customer_fkey (
-            id,
-            first_name,
-            last_name
-          )
-        `);
-
-      // Apply dashboard date filter OR default to today onwards
-      if (dashboardDateFilter) {
-        bookingsQuery = bookingsQuery
-          .gte('date_time', dashboardDateFilter.dateFrom)
-          .lte('date_time', dashboardDateFilter.dateTo);
-      } else {
-        // Default: show bookings from today onwards (upcoming only)
-        bookingsQuery = bookingsQuery
-          .gte('date_time', todayStart.toISOString());
-      }
-
-      const { data: bookingsData, error: bookingsError } = await bookingsQuery
-        .order('date_time', { ascending: sortOrder === 'asc' })
-        .limit(500); // Limit for performance
-
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        setError('Failed to load bookings: ' + bookingsError.message);
-        return;
-      }
-
-      // Fetch cleaners for dropdown
-      const { data: cleanersData, error: cleanersError } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name, full_name')
-        .order('first_name');
-
-      if (cleanersError) {
-        console.error('Error fetching cleaners:', cleanersError);
-      }
-
-      const { data: customersData, error: customersError } = await supabase
-        .from('customers')
-        .select('id, first_name, last_name, source')
-        .order('first_name');
-
-      if (customersError) {
-        console.error('Error fetching customers:', customersError);
-      }
-
-      // SINGLE SOURCE OF TRUTH: Fetch primary cleaners from cleaner_payments
-      const bookingIds = (bookingsData || []).map(b => b.id);
-      let primaryCleanersMap: Record<number, { id: number; full_name: string }> = {};
-      
-      if (bookingIds.length > 0) {
-        const { data: primaryCleanersData } = await supabase
-          .from('cleaner_payments')
-          .select(`
-            booking_id,
-            cleaner_id,
-            cleaners (
-              id,
-              full_name
-            )
-          `)
-          .in('booking_id', bookingIds)
-          .eq('is_primary', true);
-
-        if (primaryCleanersData) {
-          primaryCleanersData.forEach(pc => {
-            if (pc.cleaners) {
-              primaryCleanersMap[pc.booking_id] = {
-                id: pc.cleaner_id,
-                full_name: pc.cleaners.full_name || 'Unknown'
-              };
-            }
-          });
-        }
-      }
-
-      // Enrich bookings with primary cleaner from cleaner_payments
-      let enrichedBookings = (bookingsData || []).map(booking => ({
-        ...booking,
-        primary_cleaner: primaryCleanersMap[booking.id] || null
-      }));
-
-      // Build customer source map first (needed for sales agent filtering)
-      const sourceMap: Record<number, string> = {};
-      const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
-      const sourcesWithBookings = new Set<string>();
-      
-      customersData?.forEach(c => {
-        if (c.source) {
-          sourceMap[c.id] = c.source;
-          if (customerIdsInBookings.has(c.id)) {
-            sourcesWithBookings.add(c.source);
-          }
-        }
-      });
-
-      // For sales agents: filter to only their own bookings OR bookings from their assigned sources
-      if (userRole === 'sales_agent' && user?.id) {
-        enrichedBookings = enrichedBookings.filter(booking => {
-          // They can see bookings they created
-          if (booking.created_by_user_id === user.id) return true;
-          
-          // They can see bookings from customers whose source is in their assigned_sources
-          if (assignedSources.length > 0 && booking.customer) {
-            const customerSource = sourceMap[booking.customer];
-            if (customerSource && assignedSources.includes(customerSource)) {
-              return true;
-            }
-          }
-          
-          return false;
-        });
-      }
-
-      console.log('Fetched data:', {
-        bookings: enrichedBookings.length,
-        cleaners: cleanersData?.length || 0,
-        customers: customersData?.length || 0,
-        userRole,
-        assignedSources
-      });
-
-      setCustomerSourceMap(sourceMap);
-      setAvailableSources(Array.from(sourcesWithBookings).sort());
-
-      setBookings(enrichedBookings);
-      setCleaners(cleanersData || []);
-      setCustomers(customersData || []);
-
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const applyFilters = () => {
     let filtered = [...bookings];
@@ -397,80 +233,20 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
 
   const confirmDelete = async () => {
     if (!bookingToDelete) return;
-    
+
     try {
-      // Get booking details for activity log before deletion
-      const { data: bookingData, error: checkError } = await supabase
-        .from('bookings')
-        .select('*, customers(first_name, last_name, email)')
-        .eq('id', bookingToDelete)
-        .single();
-
-      if (checkError || !bookingData) {
-        console.error('Booking not found:', checkError);
-        toast({
-          title: "Error",
-          description: "Booking not found",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const { error, count } = await supabase
-        .from('bookings')
-        .delete({ count: 'exact' })
-        .eq('id', bookingToDelete);
-
-      if (error) {
-        console.error('Error deleting booking:', error);
-        toast({
-          title: "Error",
-          description: `Failed to delete booking: ${error.message}`,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('Deletion result - affected rows:', count);
-      
-      if (count === 0) {
-        toast({
-          title: "Warning",
-          description: "No booking was deleted. It may have already been removed.",
-          variant: "destructive"
-        });
-      } else {
-        // Log deletion to activity_logs for admin notifications
-        await supabase.from('activity_logs').insert({
-          action_type: 'booking_deleted',
-          entity_type: 'booking',
-          entity_id: bookingToDelete.toString(),
-          user_role: 'admin',
-          details: {
-            booking_id: bookingToDelete,
-            customer_name: bookingData.customers ? 
-              `${bookingData.customers.first_name} ${bookingData.customers.last_name}` : 
-              `${bookingData.first_name} ${bookingData.last_name}`,
-            customer_email: bookingData.customers?.email || bookingData.email,
-            booking_date: bookingData.date_time,
-            service_type: bookingData.service_type,
-            address: bookingData.address
-          }
-        });
-
-        toast({
-          title: "Success",
-          description: "Booking deleted successfully!"
-        });
-      }
-      
-      fetchData();
+      await deleteBookingMutation.mutateAsync(bookingToDelete);
+      toast({
+        title: 'Success',
+        description: 'Booking deleted successfully!',
+      });
+      refetchCalendarData();
     } catch (error) {
       console.error('Error deleting booking:', error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred while deleting the booking.",
-        variant: "destructive"
+        title: 'Error',
+        description: 'An unexpected error occurred while deleting the booking.',
+        variant: 'destructive',
       });
     } finally {
       setDeleteDialogOpen(false);
@@ -484,49 +260,27 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   const handleCancel = async (bookingId: number) => {
-    console.log('UpcomingBookings - handleCancel called with bookingId:', bookingId);
     setBookingToCancel(bookingId);
     setCancelDialogOpen(true);
-    console.log('UpcomingBookings - Cancel dialog should now be open');
   };
 
   const confirmCancel = async () => {
-    console.log('UpcomingBookings - confirmCancel called with bookingToCancel:', bookingToCancel);
-    if (!bookingToCancel) {
-      console.log('UpcomingBookings - No booking to cancel, returning');
-      return;
-    }
-    
+    if (!bookingToCancel) return;
+
     try {
-      console.log('UpcomingBookings - Attempting to cancel booking...');
-      
-      // Update booking status to 'cancelled' - the database trigger will automatically:
-      // 1. Cancel the Stripe authorization if payment_status is 'authorized'
-      // 2. Move the booking to past_bookings table
-      // 3. Delete it from the bookings table
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({ booking_status: 'cancelled' })
-        .eq('id', bookingToCancel);
-
-      if (updateError) throw updateError;
-
-      console.log('UpcomingBookings - Booking cancelled, trigger will handle Stripe and moving to past_bookings');
-
+      await cancelBookingMutation.mutateAsync(bookingToCancel);
       toast({
-        title: "Booking cancelled",
-        description: "The booking has been successfully cancelled. Payment authorization has been released.",
+        title: 'Booking cancelled',
+        description:
+          'The booking has been successfully cancelled. Payment authorization has been released.',
       });
-
-      // Wait a moment for the trigger to complete before refreshing
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      fetchData();
+      refetchCalendarData();
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast({
-        title: "Error",
-        description: "Failed to cancel booking. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to cancel booking. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setCancelDialogOpen(false);
@@ -615,42 +369,8 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [sortOrder, dashboardDateFilter, filters.dateFrom, filters.dateTo, userRole, assignedSources]);
-
-  useEffect(() => {
     applyFilters();
-  }, [bookings, filters]);
-
-  // Refresh data when page becomes visible again (e.g., after navigating back)
-  // Only refresh if more than 30 seconds have passed since last fetch
-  useEffect(() => {
-    let lastFetchTime = Date.now();
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden && Date.now() - lastFetchTime > 30000) {
-        lastFetchTime = Date.now();
-        fetchData();
-      }
-    };
-
-    const handleFocus = () => {
-      // Only refetch if more than 30 seconds have passed
-      if (Date.now() - lastFetchTime > 30000) {
-        lastFetchTime = Date.now();
-        fetchData();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
-
+  }, [bookings, filters, customerSourceMap]);
 
   const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -693,7 +413,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
   const hasActiveFilters = filters.searchTerm || filters.dateFrom || filters.dateTo || 
                           (filters.cleanerId && filters.cleanerId !== 'all');
 
-  if (loading) {
+  if (viewMode !== 'list' && loading) {
     return (
       <div className="flex justify-center py-8">
         <div className="text-lg">Loading bookings...</div>
@@ -701,19 +421,20 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
     );
   }
 
-  if (error) {
+  if (viewMode !== 'list' && error) {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={fetchData}>
+        <Button onClick={() => refetchCalendarData()}>
           Retry
         </Button>
       </div>
     );
   }
 
-  // Calculate unassigned bookings
-  const unassignedBookings = filteredBookings.filter(booking => !booking.cleaner);
+  // Calculate unassigned bookings (calendar view only)
+  const unassignedBookings =
+    viewMode !== 'list' ? filteredBookings.filter((booking) => !booking.cleaner) : [];
 
   return (
     <div className="space-y-4">
@@ -861,21 +582,21 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         booking={selectedBookingForEdit}
-        onBookingUpdated={fetchData}
+        onBookingUpdated={refetchCalendarData}
       />
 
       <AssignCleanerDialog
         bookingId={selectedBookingId}
         open={assignCleanerOpen}
         onOpenChange={setAssignCleanerOpen}
-        onSuccess={fetchData}
+        onSuccess={refetchCalendarData}
       />
 
       <DuplicateBookingDialog
         booking={selectedBookingForDuplicate}
         open={duplicateDialogOpen}
         onOpenChange={setDuplicateDialogOpen}
-        onSuccess={fetchData}
+        onSuccess={refetchCalendarData}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -920,7 +641,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
         open={convertToRecurringOpen}
         onOpenChange={setConvertToRecurringOpen}
         booking={selectedBookingForRecurring}
-        onSuccess={fetchData}
+        onSuccess={refetchCalendarData}
       />
 
       <ManualPaymentDialog
@@ -931,7 +652,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           setSelectedBookingForPayment(null);
         }}
         onSuccess={() => {
-          fetchData();
+          refetchCalendarData();
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
         }}
@@ -946,7 +667,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
           setSelectedBookingForInvoiless(null);
         }}
         onSuccess={() => {
-          fetchData();
+          refetchCalendarData();
           setInvoilessDialogOpen(false);
           setSelectedBookingForInvoiless(null);
         }}
