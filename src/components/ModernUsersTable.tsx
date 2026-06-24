@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { UserListItem } from '@/api/users';
+import { useUsersList, useInvalidateUsersList } from '@/hooks/queries/useUsersList';
 import { useToast } from '@/hooks/use-toast';
 import BulkLinkRecordsUtility from '@/components/admin/BulkLinkRecordsUtility';
 import BulkAccountCreationUtility from '@/components/admin/BulkAccountCreationUtility';
@@ -59,34 +61,18 @@ import { CollectPaymentMethodDialog } from '@/components/payments/CollectPayment
 import CustomerDirectPaymentDialog from '@/components/payments/CustomerDirectPaymentDialog';
 import { AssignSourcesDialog } from '@/components/admin/AssignSourcesDialog';
 
-interface UserData {
-  id: string;
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  role?: 'guest' | 'user' | 'admin' | 'customer' | 'sales_agent';
-  cleaner_id?: number;
-  customer_id?: number;
-  // Extended for customers view
-  type?: 'auth_user' | 'business_customer';
-  business_id?: number;
-  phone?: string;
-  address?: string;
-  postcode?: string;
-  client_status?: string;
-  client_type?: string | null;
-  addressCount?: number;
-  assigned_sources?: string[] | null;
-}
+interface UserData extends UserListItem {}
 
 interface ModernUsersTableProps {
   userType?: 'all' | 'admin' | 'cleaner' | 'customer' | 'office';
 }
 
 const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
-  const [users, setUsers] = useState<UserData[]>([]);
+  const { data: users = [], isLoading: loading, error: usersError } = useUsersList(userType);
+  const invalidateUsersList = useInvalidateUsersList();
+  const refreshUsers = () => invalidateUsersList();
+
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>({});
@@ -152,118 +138,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [bulkSource, setBulkSource] = useState<string | 'no-change' | 'empty'>('no-change');
   const [bulkUpdating, setBulkUpdating] = useState(false);
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      
-      console.log('=== FETCHING DATA ===');
-      console.log('User type filter:', userType);
-      
-      // Use admin edge function to bypass RLS
-      const { data, error } = await supabase.functions.invoke('get-all-users-admin');
-      
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch data');
-      }
-
-      console.log('Auth users fetched:', data.authUsers?.length || 0);
-      console.log('Business customers fetched:', data.businessCustomers?.length || 0);
-
-      let processedUsers = [];
-
-      // Filter and combine data based on user type
-      if (userType === 'customer') {
-        // For customers: ONLY show customers from the customers table (business customers)
-        // DO NOT show auth users with admin or cleaner roles
-        const businessCustomers = (data.businessCustomers || []).map(customer => {
-          console.log('Processing business customer:', customer.id, customer.first_name, customer.last_name, 'type will be set to: business_customer');
-          return {
-            ...customer,
-            type: 'business_customer',
-            business_id: customer.id,
-            role: 'customer' // Display as 'customer' for clarity
-          };
-        });
-        processedUsers = businessCustomers;
-        
-        // Get address counts for customers
-        const customerIds = businessCustomers.map(customer => customer.id).filter(Boolean);
-        let addressCounts: { [key: number]: number } = {};
-        
-        if (customerIds.length > 0) {
-          const { data: addressData } = await supabase
-            .from('addresses')
-            .select('customer_id')
-            .in('customer_id', customerIds);
-          
-          if (addressData) {
-            addressCounts = addressData.reduce((acc: { [key: number]: number }, addr: any) => {
-              acc[addr.customer_id] = (acc[addr.customer_id] || 0) + 1;
-              return acc;
-            }, {});
-          }
-        }
-
-        // Add address counts to processed users and ensure type is set
-        processedUsers = processedUsers.map(user => {
-          console.log('Final user processing:', user.id, user.first_name, 'type:', user.type, 'addressCount will be:', user.type === 'business_customer' || !user.type ? (addressCounts[user.id] || 0) : 0);
-          return {
-            ...user,
-            type: user.type || 'business_customer', // Ensure all customers have correct type
-            addressCount: user.type === 'business_customer' || !user.type ? (addressCounts[user.id] || 0) : 0
-          };
-        });
-        
-      } else if (userType === 'all') {
-        // For all: show only auth users (admin + cleaner + guest), DO NOT show business customers here
-        // This prevents duplication since business customers are shown in the "Customers" tab
-        const allAuthUsers = (data.authUsers || []).map(user => ({
-          ...user,
-          type: 'auth_user'
-        }));
-        processedUsers = allAuthUsers;
-        
-      } else {
-        // For admins/cleaners/office: only show auth users with matching roles
-        processedUsers = (data.authUsers || []).filter(user => {
-          switch (userType) {
-            case 'admin':
-              return user.role === 'admin';
-            case 'office':
-              return user.role === 'admin' || user.role === 'sales_agent';
-            case 'cleaner':
-              return user.role === 'user';
-            default:
-              return true;
-          }
-        });
-      }
-
-      console.log('Final processed users for', userType, ':', processedUsers);
-      console.log('Count:', processedUsers.length);
-
-      setUsers(processedUsers);
-      setFilteredUsers(processedUsers);
-    } catch (error: any) {
-      console.error('Error fetching data:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch data: ' + error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAddressChange = () => {
-    // Refresh the data to get updated address counts
-    fetchUsers();
+    refreshUsers();
   };
 
   // Get unique customer types from actual data
@@ -420,7 +296,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
               ? 'admin'
               : 'guest'
       });
-      fetchUsers();
+      refreshUsers();
     } catch (error: any) {
       console.error('Error creating user (caught):', error);
       toast({
@@ -504,7 +380,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
       });
       setExistingUserEmail('');
-      fetchUsers();
+      refreshUsers();
     } catch (error: any) {
       console.error('Error updating user role:', error);
       toast({
@@ -536,7 +412,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       });
 
       setUserToDelete(null);
-      fetchUsers();
+      refreshUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
@@ -653,7 +529,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       });
 
       cancelEditing();
-      fetchUsers();
+      refreshUsers();
     } catch (error: any) {
       console.error('Error updating user:', error);
       toast({
@@ -824,7 +700,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       setSelectedBusinessIds([]);
       setBulkType('no-change');
       setBulkSource('no-change');
-      fetchUsers();
+      refreshUsers();
     } catch (e: any) {
       toast({ title: 'Error', description: e.message || 'Bulk update failed', variant: 'destructive' });
     } finally {
@@ -833,8 +709,14 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [userType]);
+    if (usersError) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch data: ' + usersError.message,
+        variant: 'destructive',
+      });
+    }
+  }, [usersError, toast]);
 
   useEffect(() => {
     handleFilterChange();
@@ -1487,7 +1369,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           customerEmail={selectedCustomerForPayment.email}
           onPaymentMethodsChange={() => {
             refetchPaymentData();
-            fetchUsers();
+            refreshUsers();
           }}
         />
       )}
@@ -1516,7 +1398,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           customerEmail={selectedCustomerForPayment.email}
           onPaymentSuccess={() => {
             refetchPaymentData();
-            fetchUsers();
+            refreshUsers();
           }}
         />
       )}
@@ -1543,7 +1425,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           email: selectedAgentForSources.email,
           assigned_sources: selectedAgentForSources.assigned_sources || null
         } : null}
-        onSuccess={fetchUsers}
+        onSuccess={refreshUsers}
       />
       </Card>
     </div>

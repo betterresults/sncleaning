@@ -1,14 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, DollarSign, AlertTriangle, Banknote } from 'lucide-react';
-
-interface Stats {
-  totalBookings: number;
-  monthlyRevenue: number;
-  unpaidInvoices: number;
-}
+import { Calendar, DollarSign, AlertTriangle } from 'lucide-react';
+import { useDashboardStats } from '@/hooks/queries/useDashboardStats';
 
 interface DashboardStatsProps {
   filters?: {
@@ -20,80 +14,9 @@ interface DashboardStatsProps {
 }
 
 const DashboardStats = ({ filters }: DashboardStatsProps) => {
-  const [stats, setStats] = useState<Stats>({
-    totalBookings: 0,
-    monthlyRevenue: 0,
-    unpaidInvoices: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading } = useDashboardStats(filters);
 
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      
-      // If filters provided, use them; otherwise calculate last 30 days
-      const now = new Date();
-      let dateFrom: string;
-      let dateTo: string;
-      
-      if (filters?.dateFrom && filters?.dateTo) {
-        dateFrom = filters.dateFrom;
-        dateTo = filters.dateTo;
-      } else {
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        dateFrom = thirtyDaysAgo.toISOString();
-        dateTo = now.toISOString();
-      }
-      
-      // Build query for past bookings in date range
-      let bookingsQuery = supabase
-        .from('past_bookings')
-        .select('total_cost, payment_status, date_only')
-        .gte('date_only', dateFrom.split('T')[0])
-        .lte('date_only', dateTo.split('T')[0]);
-
-      // Apply additional filters if provided
-      if (filters?.cleanerId) {
-        bookingsQuery = bookingsQuery.eq('cleaner', filters.cleanerId);
-      }
-      if (filters?.customerId) {
-        bookingsQuery = bookingsQuery.eq('customer', filters.customerId);
-      }
-
-      const { data: bookingsData, error: bookingsError } = await bookingsQuery;
-
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        return;
-      }
-
-      // Calculate stats
-      const totalBookings = bookingsData?.length || 0;
-      const monthlyRevenue = bookingsData?.reduce((sum, booking) => {
-        return sum + (parseFloat(String(booking.total_cost)) || 0);
-      }, 0) || 0;
-      const unpaidInvoices = bookingsData?.filter(booking => 
-        booking.payment_status === 'Unpaid' || booking.payment_status === 'Not Paid'
-      ).length || 0;
-
-      setStats({
-        totalBookings,
-        monthlyRevenue,
-        unpaidInvoices,
-      });
-
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-  }, [filters]);
-
-  if (loading) {
+  if (isLoading || !stats) {
     return (
       <div className="space-y-3 sm:space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">

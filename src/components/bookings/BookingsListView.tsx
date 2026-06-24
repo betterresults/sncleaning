@@ -1,5 +1,11 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useMemo } from 'react';
+import type { BookingListItem, CleanerOption } from '@/api/bookings';
+import {
+  useBookingsListData,
+  useCancelBooking,
+  useCustomerPaymentMethods,
+  useDeleteBooking,
+} from '@/hooks/queries/useBookingsListData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,61 +31,8 @@ import { BookingInvoiceDialog } from '@/components/bookings/BookingInvoiceDialog
 import SetCustomerSourceDialog from '@/components/bookings/SetCustomerSourceDialog';
 import { useServiceTypes, useCleaningTypes, getServiceTypeBadgeColor as getBadgeColor } from '@/hooks/useCompanySettings';
 
-interface Booking {
-  id: number;
-  date_time: string;
-  time_only?: string | null;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone_number: string;
-  address: string;
-  postcode: string;
-  cleaning_type: string;
-  service_type: string;
-  total_cost: number;
-  payment_status: string;
-  payment_method?: string;
-  invoice_id?: string | null;
-  invoice_link?: string | null;
-  cleaner: number | null;
-  customer: number;
-  cleaner_pay: number | null;
-  cleaner_rate?: number | null;
-  total_hours: number | null;
-  hours_required?: number | null;
-  recommended_hours?: number | null;
-  ironing_hours?: number | null;
-  linen_management?: boolean;
-  additional_details?: string;
-  frequently?: string;
-  booking_status?: string;
-  has_photos?: boolean;
-  same_day?: boolean;
-  sub_cleaners_count?: number;
-  sub_cleaners_total_pay?: number;
-  customer_source?: string | null;
-  // Additional fields for domestic booking details
-  property_details?: string | null;
-  oven_size?: string | null;
-  access?: string | null;
-  cleaners?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  } | null;
-  customers?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  } | null;
-}
-
-interface Cleaner {
-  id: number;
-  first_name: string;
-  last_name: string;
-}
+type Booking = BookingListItem;
+type Cleaner = CleanerOption;
 
 interface Filters {
   searchTerm: string;
@@ -104,15 +57,36 @@ interface TodayBookingsCardsProps {
 }
 
 const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterBySubmissionDate = false }: TodayBookingsCardsProps) => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const listParams = useMemo(
+    () => ({ dashboardDateFilter, filterBySubmissionDate }),
+    [dashboardDateFilter, filterBySubmissionDate],
+  );
+  const {
+    data: listData,
+    isLoading,
+    isFetching,
+    error: listError,
+    refetch,
+  } = useBookingsListData(listParams);
+  const cancelBookingMutation = useCancelBooking();
+  const deleteBookingMutation = useDeleteBooking();
+
+  const bookings = listData?.bookings ?? [];
+  const cleaners = listData?.cleaners ?? [];
+  const customerSourceMap = listData?.customerSourceMap ?? {};
+  const availableSources = listData?.availableSources ?? [];
+  const loading = isLoading;
+  const isRefreshing = isFetching && !isLoading;
+  const error = listError?.message ?? null;
+
+  const customerIds = useMemo(
+    () => [...new Set(bookings.map((b) => b.customer).filter(Boolean))],
+    [bookings],
+  );
+  const { data: customersWithPaymentMethods = new Set<number>() } =
+    useCustomerPaymentMethods(customerIds);
+
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
-  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
-  const [availableSources, setAvailableSources] = useState<string[]>([]);
-  const [customerSourceMap, setCustomerSourceMap] = useState<Record<number, string>>({});
-  const [customersWithPaymentMethods, setCustomersWithPaymentMethods] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<Filters>({
     searchTerm: '',
@@ -173,178 +147,12 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
     const found = cleaningTypes?.find(ct => ct.key === key);
     return found?.label ?? humanize(key);
   };
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      let bookingsQuery = supabase
-        .from('bookings')
-        .select(`
-          *,
-          time_only,
-          property_details,
-          oven_size,
-          access,
-          hours_required,
-          recommended_hours,
-          ironing_hours,
-          cleaners!bookings_cleaner_fkey (
-            id,
-            first_name,
-            last_name
-          ),
-          customers!bookings_customer_fkey (
-            id,
-            first_name,
-            last_name
-          )
-        `);
-
-      if (dashboardDateFilter) {
-        if (filterBySubmissionDate) {
-          // Filter by date_submited (when booking was created)
-          // date_submited is stored as text, so we need to handle it differently
-          const dateFrom = dashboardDateFilter.dateFrom.split('T')[0];
-          const dateTo = dashboardDateFilter.dateTo.split('T')[0];
-          bookingsQuery = bookingsQuery
-            .gte('date_submited', dateFrom)
-            .lte('date_submited', dateTo + 'T23:59:59');
-        } else {
-          // Filter by date_time (scheduled booking date)
-          bookingsQuery = bookingsQuery
-            .gte('date_time', dashboardDateFilter.dateFrom)
-            .lte('date_time', dashboardDateFilter.dateTo);
-        }
-      }
-
-      const { data: bookingsData, error: bookingsError } = await bookingsQuery
-        .order('date_time', { ascending: true });
-
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-        setError('Failed to load bookings: ' + bookingsError.message);
-        return;
-      }
-
-      // Fetch all cleaners data from cleaner_payments table (both primary and additional)
-      const bookingIds = (bookingsData || []).map(b => b.id);
-      let primaryCleanersData: Record<number, { cleanerId: number; calculatedPay: number }> = {};
-      let additionalCleanersData: Record<number, { count: number; totalPay: number; totalHours: number }> = {};
-      
-      if (bookingIds.length > 0) {
-        const { data: bookingCleanersData } = await supabase
-          .from('cleaner_payments')
-          .select('booking_id, cleaner_id, calculated_pay, hours_assigned, is_primary')
-          .in('booking_id', bookingIds);
-        
-        if (bookingCleanersData) {
-          bookingCleanersData.forEach(cleaner => {
-            if (cleaner.is_primary) {
-              // Store primary cleaner data
-              primaryCleanersData[cleaner.booking_id] = {
-                cleanerId: cleaner.cleaner_id,
-                calculatedPay: cleaner.calculated_pay || 0
-              };
-            } else {
-              // Aggregate additional cleaners data
-              if (!additionalCleanersData[cleaner.booking_id]) {
-                additionalCleanersData[cleaner.booking_id] = { count: 0, totalPay: 0, totalHours: 0 };
-              }
-              additionalCleanersData[cleaner.booking_id].count += 1;
-              additionalCleanersData[cleaner.booking_id].totalPay += cleaner.calculated_pay || 0;
-              additionalCleanersData[cleaner.booking_id].totalHours += cleaner.hours_assigned || 0;
-            }
-          });
-        }
-      }
-
-      // Merge cleaners data into bookings - use cleaner_payments table as primary source
-      const enrichedBookings = (bookingsData || []).map(booking => {
-        const primaryData = primaryCleanersData[booking.id];
-        const additionalData = additionalCleanersData[booking.id];
-        
-        // Use calculated_pay from cleaner_payments if available, otherwise fall back to bookings table
-        const cleanerPay = primaryData ? primaryData.calculatedPay : (booking.cleaner_pay || 0);
-        
-        return {
-          ...booking,
-          cleaner_pay: cleanerPay,
-          sub_cleaners_count: additionalData?.count || 0,
-          sub_cleaners_total_pay: additionalData?.totalPay || 0
-        };
-      });
-
-      // Fetch cleaners for filter dropdown (only when showing all bookings)
-      if (!dashboardDateFilter) {
-        const { data: cleanersData, error: cleanersError } = await supabase
-          .from('cleaners')
-          .select('id, first_name, last_name')
-          .order('first_name');
-
-        if (cleanersError) {
-          console.error('Error fetching cleaners:', cleanersError);
-        } else {
-          setCleaners(cleanersData || []);
-        }
-      }
-
-      // Always fetch customer sources for source display and filtering
-      const { data: customersData } = await supabase
-        .from('customers')
-        .select('id, source');
-      
-      const sourceMap: Record<number, string> = {};
-      const customerIdsInBookings = new Set((bookingsData || []).map((b: any) => b.customer).filter(Boolean));
-      const sourcesWithBookings = new Set<string>();
-      
-      customersData?.forEach(c => {
-        if (c.source) {
-          sourceMap[c.id] = c.source;
-          if (customerIdsInBookings.has(c.id)) {
-            sourcesWithBookings.add(c.source);
-          }
-        }
-      });
-      
-      setCustomerSourceMap(sourceMap);
-      setAvailableSources(Array.from(sourcesWithBookings).sort());
-
-      setBookings(enrichedBookings);
-    } catch (error) {
-      console.error('Error in fetchData:', error);
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
+  const handleRefresh = () => {
+    refetch();
   };
 
-  // Fetch payment methods for customers in bookings
-  const fetchPaymentMethods = async (customerIds: number[]) => {
-    if (customerIds.length === 0) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('customer_payment_methods')
-        .select('customer_id')
-        .in('customer_id', customerIds);
-      
-      if (error) {
-        console.error('Error fetching payment methods:', error);
-        return;
-      }
-      
-      const customersWithCards = new Set(data?.map(pm => pm.customer_id) || []);
-      setCustomersWithPaymentMethods(customersWithCards);
-    } catch (error) {
-      console.error('Error fetching payment methods:', error);
-    }
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    await fetchData();
+  const refreshBookings = () => {
+    refetch();
   };
 
   const applyFilters = () => {
@@ -433,8 +241,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
   };
 
   useEffect(() => {
-    fetchData();
-    setCurrentPage(1); // Reset to page 1 when filter changes
+    setCurrentPage(1);
   }, [dashboardDateFilter]);
 
   // Sync cleaner filter from parent when it changes
@@ -447,36 +254,6 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
   useEffect(() => {
     applyFilters();
   }, [bookings, filters]);
-
-  // Fetch payment methods when bookings change
-  useEffect(() => {
-    const customerIds = [...new Set(bookings.map(b => b.customer).filter(Boolean))];
-    if (customerIds.length > 0) {
-      fetchPaymentMethods(customerIds);
-    }
-  }, [bookings]);
-
-  // Refresh data when page becomes visible again (e.g., after navigating back)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchData();
-      }
-    };
-
-    const handleFocus = () => {
-      fetchData();
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, []);
-
 
   const handleEdit = (bookingId: number) => {
     const booking = bookings.find(b => b.id === bookingId);
@@ -535,36 +312,14 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
   };
 
   const confirmCancel = async () => {
-    console.log('confirmCancel called with bookingToCancel:', bookingToCancel);
-    if (!bookingToCancel) {
-      console.log('No booking to cancel, returning');
-      return;
-    }
+    if (!bookingToCancel) return;
 
     try {
-      console.log('Attempting to cancel booking...');
-      
-      // Update booking status to 'cancelled' - the database trigger will automatically:
-      // 1. Cancel the Stripe authorization if payment_status is 'authorized'
-      // 2. Move the booking to past_bookings table
-      // 3. Delete it from the bookings table
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({ booking_status: 'cancelled' })
-        .eq('id', bookingToCancel);
-
-      if (updateError) throw updateError;
-
-      console.log('Booking cancelled - trigger will handle Stripe cancellation and moving to past_bookings');
-
+      await cancelBookingMutation.mutateAsync(bookingToCancel);
       toast({
         title: "Success",
         description: "Booking cancelled successfully. Payment authorization has been released.",
       });
-      
-      // Wait a moment for the trigger to complete before refreshing
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      fetchData();
     } catch (error) {
       console.error('Error cancelling booking:', error);
       toast({
@@ -587,46 +342,11 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
     if (!bookingToDelete) return;
 
     try {
-      // Get booking details before deletion for activity log
-      const { data: bookingData } = await supabase
-        .from('bookings')
-        .select('*, customers(first_name, last_name, email)')
-        .eq('id', bookingToDelete)
-        .single();
-
-      const { error } = await supabase
-        .from('bookings')
-        .delete()
-        .eq('id', bookingToDelete);
-
-      if (error) throw error;
-
-      // Log deletion to activity_logs for admin notifications
-      if (bookingData) {
-        await supabase.from('activity_logs').insert({
-          action_type: 'booking_deleted',
-          entity_type: 'booking',
-          entity_id: bookingToDelete.toString(),
-          user_role: 'admin',
-          details: {
-            booking_id: bookingToDelete,
-            customer_name: bookingData.customers ? 
-              `${bookingData.customers.first_name} ${bookingData.customers.last_name}` : 
-              `${bookingData.first_name} ${bookingData.last_name}`,
-            customer_email: bookingData.customers?.email || bookingData.email,
-            booking_date: bookingData.date_time,
-            service_type: bookingData.service_type,
-            address: bookingData.address
-          }
-        });
-      }
-
+      await deleteBookingMutation.mutateAsync(bookingToDelete);
       toast({
         title: "Success",
         description: "Booking deleted successfully",
       });
-      
-      fetchData();
     } catch (error) {
       console.error('Error deleting booking:', error);
       toast({
@@ -920,7 +640,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
               
               {/* Hidden */}
               <div className="hidden">
-                <AuthorizeRemainingAmountDialog booking={booking} onSuccess={fetchData} />
+                <AuthorizeRemainingAmountDialog booking={booking} onSuccess={refreshBookings} />
               </div>
             </div>
 
@@ -1175,21 +895,21 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         booking={selectedBookingForEdit}
-        onBookingUpdated={fetchData}
+        onBookingUpdated={refreshBookings}
       />
 
       <AssignCleanerDialog
         bookingId={selectedBookingId}
         open={assignCleanerOpen}
         onOpenChange={setAssignCleanerOpen}
-        onSuccess={fetchData}
+        onSuccess={refreshBookings}
       />
 
       <DuplicateBookingDialog
         booking={selectedBookingForDuplicate}
         open={duplicateDialogOpen}
         onOpenChange={setDuplicateDialogOpen}
-        onSuccess={fetchData}
+        onSuccess={refreshBookings}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -1234,7 +954,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
         open={convertToRecurringOpen}
         onOpenChange={setConvertToRecurringOpen}
         booking={selectedBookingForRecurring}
-        onSuccess={fetchData}
+        onSuccess={refreshBookings}
       />
 
       <ManualPaymentDialog
@@ -1245,7 +965,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
           setSelectedBookingForPayment(null);
         }}
         onSuccess={() => {
-          fetchData();
+          refreshBookings();
           setPaymentDialogOpen(false);
           setSelectedBookingForPayment(null);
         }}
@@ -1259,7 +979,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
           setSelectedBookingForInvoiceSend(null);
         }}
         onSuccess={() => {
-          fetchData();
+          refreshBookings();
           setInvoiceSendDialogOpen(false);
           setSelectedBookingForInvoiceSend(null);
         }}
@@ -1287,7 +1007,7 @@ const BookingsListView = ({ dashboardDateFilter, initialCleanerFilter, filterByS
           customerName={`${selectedBookingForSource.first_name} ${selectedBookingForSource.last_name}`}
           currentSource={customerSourceMap[selectedBookingForSource.customer] || null}
           onSuccess={() => {
-            fetchData();
+            refreshBookings();
             setSourceDialogOpen(false);
             setSelectedBookingForSource(null);
           }}
