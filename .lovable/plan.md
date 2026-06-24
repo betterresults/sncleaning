@@ -1,52 +1,92 @@
+# Abandoned-Lead WhatsApp Follow-Up Automation
 
 ## Goal
-Report this booking (Saiji@doctors.org.uk) — and future WhatsApp/phone conversions — to Meta as a **Purchase** so it shows up in Ads Manager and is matched back to the Facebook click that started the quote.
+When a visitor fills name + phone on the quote form but doesn't complete a booking, wait 15 minutes after their last activity, then send an SMS to **+447960612595** with a ready-to-tap WhatsApp link that opens a chat with that customer pre-filled with Silvia's check-in message. One SMS per lead, ever. The whole automation can be switched on/off from the admin UI.
 
-## How Meta will match it
-Two matching signals are sent together so Meta can attribute the conversion:
-1. **Hashed PII (Advanced Matching)** — email, phone, first name, last name, city, external_id. Strong match for users logged into Facebook.
-2. **fbc / fbp cookies** — perfect match when present. Today we do NOT store `fbclid` on quote_leads, so for this specific customer we rely on PII only. We will start saving it from now on so future offline conversions match exactly.
+> Note on WhatsApp Business: `wa.me` links open whichever WhatsApp app is the phone's default. Set WhatsApp Business as the default messaging app on your phone once (iPhone: Settings → Apps → Default Apps → Messaging; Android: long-press link → Open with → WhatsApp Business → Always) and every link from these SMS will open Business.
 
-`action_source` will be set to **`business_messaging`** (since the deal closed over WhatsApp) instead of `website` — this is the value Meta expects for offline/messaging conversions and unlocks the offline attribution window (up to 7 days post-click).
+## How it will work
+
+```text
+Visitor types name + phone on /free-quote
+        │  (already saved as quote_leads row via on-blur partial save)
+        ▼
+quote_leads.last_activity_at updated
+        │
+        ▼ every 5 min, pg_cron runs check-abandoned-leads edge function
+        │
+        ├─ skip if automation toggle is OFF
+        ├─ find leads where:
+        │     • first_name & phone present
+        │     • last_activity_at between 15 and 180 min ago
+        │     • no booking exists for that session_id / phone / email
+        │     • abandoned_sms_sent_at IS NULL
+        │
+        ▼
+build WhatsApp deep link:
+  https://wa.me/<customer_phone_no_plus>?text=<encoded message>
+        │
+        ▼
+send SMS to +447960612595 via existing Twilio function:
+  "Lead abandoned: {first_name} ({phone}). Tap to WhatsApp: <wa.me link>"
+        │
+        ▼
+mark quote_leads.abandoned_sms_sent_at = now()
+```
+
+When admin taps the SMS link → WhatsApp Business opens (because it's set as default) → message is pre-typed → just hit Send.
 
 ## What gets built
 
-### 1. DB — capture fbclid on quote_leads (forward-looking)
-- Add `fbclid text`, `fbc text`, `fbp text`, `landing_url text` to `public.quote_leads`.
-- `FbclidCapture` / quote form already reads the cookies — extend it to also persist them onto the `quote_leads` row via `track-funnel-event`.
+### 1. DB changes (one migration)
+On `quote_leads`:
+- `last_activity_at timestamptz` — updated by `track-funnel-event` on every partial save.
+- `abandoned_sms_sent_at timestamptz` — set once when the follow-up SMS goes out (enforces one-per-lead).
 
-### 2. Edge function — `meta-capi-offline-purchase`
-Admin-only function (verifies caller is admin via `has_role`). Input: `{ booking_id }`.
+New `automation_settings` table (key/value, admin-only):
+- Row: `key='abandoned_lead_followup'`, `enabled boolean`, `delay_minutes int default 15`, `admin_phone text default '+447960612595'`, `message_template text`.
+- RLS: only admins can read/update; service role full access.
+- GRANTs included per platform rules.
 
-Steps:
-1. Load booking + customer (`email`, `phone`, `first_name`, `last_name`, `city`, `total_cost`, `quote_session_id` if present).
-2. Look up the matching `quote_leads` row (by `session_id` → fall back to email/phone) to recover `fbc`, `fbp`, `landing_url`, `utm_*`.
-3. Build the CAPI payload:
-   - `event_name: "Purchase"`
-   - `event_id: "booking_<id>"` (idempotent — prevents double-counting if pressed twice or if the Pixel also fires later)
-   - `action_source: "business_messaging"`
-   - `event_source_url`: stored `landing_url` or the public site URL
-   - `user_data`: hashed em / ph / fn / ln / ct / external_id + raw fbc/fbp when available
-   - `custom_data`: `{ currency: "GBP", value: total_cost, content_name: service_type, content_category: "cleaning" }`
-4. POST to `graph.facebook.com/v21.0/<PIXEL_ID>/events` using `META_PIXEL_ID` + `META_ADS_ACCESS_TOKEN` (already configured).
-5. Record the send on the booking (`meta_capi_purchase_sent_at`, `meta_capi_event_id`) so the UI can show "Reported to Meta ✓" and block duplicate sends.
+### 2. Edge function: `check-abandoned-leads` (cron, no JWT)
+Runs every 5 minutes. Steps:
+1. Load automation settings; exit early if disabled.
+2. Query `quote_leads` for candidates (filters above), limit 50 per run.
+3. For each candidate, build message body from template, substituting `{first_name}`, `{wa_link}`.
+4. Call existing `send-sms-notification` function (Twilio) with admin_phone as recipient.
+5. Update `abandoned_sms_sent_at` to lock the lead.
 
-### 3. Admin UI — "Send to Meta Ads" button
-On the booking detail page (admin only):
-- Button visible when booking is paid/confirmed and not yet reported.
-- Click → calls the edge function → toast success + shows the timestamp.
-- Disabled / replaced with "Reported on <date>" once sent.
+Idempotency: `abandoned_sms_sent_at IS NULL` filter + per-row update prevents duplicate sends across cron runs.
 
-### 4. Backfill this specific customer
-After the function is deployed, I'll trigger it once for Saiji@doctors.org.uk's booking from the admin UI (or via a one-off invoke) so Meta receives the Purchase event today.
+### 3. pg_cron schedule
+`select cron.schedule('check-abandoned-leads-every-5min', '*/5 * * * *', ...)` calling the edge function with the project anon key. Inserted via the data tool (contains URL + key).
+
+### 4. Track activity timestamp
+Small edit to `track-funnel-event`: when upserting `quote_leads`, also set `last_activity_at = now()`. No frontend changes needed — on-blur partial save already calls it.
+
+### 5. Admin UI toggle
+Small panel on `/admin-quote-leads`, top of the view:
+- Switch: "Send WhatsApp follow-up SMS for abandoned leads (15 min delay)"
+- Read-only display of admin phone, delay, message template.
+- Writes to `automation_settings` via Supabase client (admin-gated by RLS).
+
+No design changes elsewhere.
+
+## Default SMS body sent to your phone
+```
+Abandoned lead: {first_name} ({phone}).
+Tap to WhatsApp them:
+https://wa.me/44XXXXXXXXXX?text=Hi%20{first_name}%2C%20I%20just%20noticed%20you%20were%20looking%20at%20a%20cleaning%20quote%20on%20our%20website%20earlier%20today.%20I%20wasn%27t%20sure%20whether%20you%20found%20the%20information%20you%20were%20looking%20for%2C%20so%20I%20thought%20I%27d%20quickly%20check%20in%20and%20see%20if%20there%27s%20anything%20I%20can%20help%20with.%20Silvia%2C%20S%26N%20Cleaning%20Services.
+```
 
 ## Out of scope
-- No design changes.
-- No change to the existing browser Pixel / `meta-capi-track` flow for online conversions.
-- No automatic firing on booking creation yet — this is a manual admin action first; once we trust it we can wire it to fire automatically when a WhatsApp/manual booking is marked paid.
+- No quote form UI changes.
+- No re-alerts after the first SMS.
+- No in-UI template editor in v1 (editable via SQL).
+- Booking detection by `session_id` match plus phone/email fallback.
 
 ## Technical notes
-- Same hashing rules as `meta-capi-track` (lowercase trim → SHA-256; phone digits only).
-- Idempotency via deterministic `event_id` = `booking_<id>` (Meta dedups across sends).
-- New columns are nullable; no data migration required.
-- Standard GRANTs on the new columns are inherited from `quote_leads`; no new tables.
+- WhatsApp link uses `wa.me/<digits>` (no `+`), message URL-encoded.
+- Admin phone stored in DB, changeable without redeploy.
+- Cron uses `pg_cron` + `pg_net` (already enabled in this project).
+- Twilio SMS uses existing `send-sms-notification` — no new secret.
