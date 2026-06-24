@@ -41,6 +41,8 @@ export interface CustomerOverdueInvoice {
   date_time: string;
   invoice_link: string | null;
   payment_status: string;
+  address?: string;
+  total_cost?: string | number | null;
   [key: string]: unknown;
 }
 
