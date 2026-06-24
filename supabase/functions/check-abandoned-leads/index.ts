@@ -74,20 +74,13 @@ serve(async (req) => {
       const phone: string = (lead.phone || "").toString();
       if (!firstName || !phone) continue;
 
-      // Skip if a booking already exists for this session / phone / email
+      // Skip if a booking already exists for this phone / email
       let booked = false;
-      if (lead.session_id) {
-        const { count } = await supabase
-          .from("bookings")
-          .select("id", { count: "exact", head: true })
-          .eq("quote_session_id", lead.session_id);
-        if ((count ?? 0) > 0) booked = true;
-      }
       if (!booked && phone) {
         const { count } = await supabase
           .from("bookings")
           .select("id", { count: "exact", head: true })
-          .eq("phone", phone);
+          .eq("phone_number", phone);
         if ((count ?? 0) > 0) booked = true;
       }
       if (!booked && lead.email) {
