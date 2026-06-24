@@ -764,7 +764,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
               <div className="flex gap-2">
                 <Button
                   onClick={handlePreviewLink}
-                  disabled={isGeneratingPreview || isCopyingLink}
+                  disabled={isGeneratingPreview || isCopyingLink || isPropertyIncomplete}
                   variant="outline"
                   className="flex-1 h-11 rounded-xl border-slate-200 hover:border-primary hover:bg-primary/5 transition-all"
                 >
@@ -782,7 +782,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                 </Button>
                 <Button
                   onClick={handleCopyLink}
-                  disabled={isGeneratingPreview || isCopyingLink}
+                  disabled={isGeneratingPreview || isCopyingLink || isPropertyIncomplete}
                   variant="outline"
                   className="flex-1 h-11 rounded-xl border-slate-200 hover:border-green-500 hover:bg-green-50 transition-all"
                 >
@@ -804,8 +804,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
               <div className="grid grid-cols-1 gap-3">
                 <Button
                   onClick={() => setSelectedOption('quote')}
+                  disabled={isPropertyIncomplete}
                   variant="outline"
-                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl hover:border-primary hover:bg-primary/5 transition-all"
+                  className="h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl hover:border-primary hover:bg-primary/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Mail className="w-5 h-5 text-primary" />
@@ -820,8 +821,9 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
 
                 <Button
                   onClick={() => setSelectedOption('complete')}
+                  disabled={isPropertyIncomplete}
                   variant="outline"
-                  className={`h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl transition-all overflow-hidden ${
+                  className={`h-auto py-4 px-5 flex items-start gap-4 border-2 rounded-xl transition-all overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed ${
                     existingQuoteStatus === 'sent' 
                       ? 'border-amber-300 bg-amber-50/50' 
                       : existingQuoteStatus === 'link_clicked'
