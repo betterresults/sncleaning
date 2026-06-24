@@ -100,7 +100,7 @@ export function PastBookingsListDialogs({
       />
 
       <DuplicateBookingDialog
-        booking={selectedBookingForDuplicate as Parameters<typeof DuplicateBookingDialog>[0]['booking']}
+        booking={selectedBookingForDuplicate as unknown as Parameters<typeof DuplicateBookingDialog>[0]['booking']}
         open={duplicateDialogOpen}
         onOpenChange={setDuplicateDialogOpen}
         onSuccess={onRefresh}
@@ -133,7 +133,7 @@ export function PastBookingsListDialogs({
       />
 
       <ManualPaymentDialog
-        booking={selectedBookingForPayment as Parameters<typeof ManualPaymentDialog>[0]['booking']}
+        booking={selectedBookingForPayment as unknown as Parameters<typeof ManualPaymentDialog>[0]['booking']}
         isOpen={paymentDialogOpen}
         onClose={() => {
           setPaymentDialogOpen(false);
@@ -183,7 +183,7 @@ export function PastBookingsListDialogs({
         <ManualEmailDialog
           open={showEmailDialog}
           onOpenChange={setShowEmailDialog}
-          booking={selectedBookingForEmail as Parameters<typeof ManualEmailDialog>[0]['booking']}
+          booking={selectedBookingForEmail as unknown as Parameters<typeof ManualEmailDialog>[0]['booking']}
         />
       )}
     </>
