@@ -147,6 +147,13 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [isCopyingLink, setIsCopyingLink] = useState(false);
   const { toast } = useToast();
+
+  // Block sending/copying an empty prefilled link when key property fields are missing
+  // (Carpet Cleaning and End of Tenancy use different fields, so they're exempt).
+  const isPropertyIncomplete =
+    serviceType !== 'Carpet Cleaning' &&
+    serviceType !== 'End of Tenancy' &&
+    (!quoteData.propertyType || !quoteData.bedrooms || !quoteData.bathrooms || !quoteData.serviceFrequency);
   
   // Check if there's already a quote/link sent for this session
   React.useEffect(() => {
