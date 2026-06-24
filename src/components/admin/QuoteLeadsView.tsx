@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import QuoteLeadCard from './QuoteLeadCard';
 import SentQuotesTab from './SentQuotesTab';
+import AbandonedLeadAutomationToggle from './AbandonedLeadAutomationToggle';
 
 type TimePeriod = 'today' | 'yesterday' | 'last_week' | 'last_month' | 'last_3_months' | 'all';
 
@@ -417,6 +418,9 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
 
   return (
     <div className="space-y-6">
+      {/* Automation toggle */}
+      <AbandonedLeadAutomationToggle />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
