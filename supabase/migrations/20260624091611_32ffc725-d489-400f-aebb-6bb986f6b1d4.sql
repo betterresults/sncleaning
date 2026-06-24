@@ -1,0 +1,1 @@
+SELECT cron.unschedule('check-abandoned-leads-every-5min');
