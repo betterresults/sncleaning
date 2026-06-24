@@ -146,3 +146,6 @@ verify_jwt = false
 
 [functions.cancel-unpaid-booking]
 verify_jwt = false
+
+[functions.check-abandoned-leads]
+verify_jwt = false
