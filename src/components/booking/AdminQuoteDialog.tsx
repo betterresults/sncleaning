@@ -148,12 +148,10 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
   const [isCopyingLink, setIsCopyingLink] = useState(false);
   const { toast } = useToast();
 
-  // Block sending/copying an empty prefilled link when key property fields are missing
-  // (Carpet Cleaning and End of Tenancy use different fields, so they're exempt).
-  const isPropertyIncomplete =
-    serviceType !== 'Carpet Cleaning' &&
-    serviceType !== 'End of Tenancy' &&
-    (!quoteData.propertyType || !quoteData.bedrooms || !quoteData.bathrooms || !quoteData.serviceFrequency);
+  // Note: an earlier guard disabled the Preview/Copy/Send buttons when
+  // property fields were missing. Removed per user request — saving and
+  // prefill work correctly, and the inline warning below is sufficient.
+  const isPropertyIncomplete = false;
   
   // Check if there's already a quote/link sent for this session
   React.useEffect(() => {
