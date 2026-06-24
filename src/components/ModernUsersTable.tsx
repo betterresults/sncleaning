@@ -1,71 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { UserListItem } from '@/api/users';
 import { useUsersList, useInvalidateUsersList } from '@/hooks/queries/useUsersList';
 import { useToast } from '@/hooks/use-toast';
 import BulkLinkRecordsUtility from '@/components/admin/BulkLinkRecordsUtility';
 import BulkAccountCreationUtility from '@/components/admin/BulkAccountCreationUtility';
 import { DeleteUserByEmail } from '@/components/admin/DeleteUserByEmail';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PasswordInput } from '@/components/ui/password-input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Search, 
-  Edit2, 
-  Save, 
-  X, 
-  Mail, 
-  Shield, 
-  UserCheck, 
-  Users,
-  Eye,
-  EyeOff,
-  Loader2,
-  CalendarPlus,
-  MapPin,
-  Plus,
-  Trash2,
-  UserPlus,
-  CreditCard,
-  FileText
-} from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { UserPlus, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useNavigate } from 'react-router-dom';
-import CreateBookingDialogWithCustomer from '@/components/booking/CreateBookingDialogWithCustomer';
-import CustomerAddressDialog from '@/components/customer/CustomerAddressDialog';
-import CustomerDetailView from '@/components/customer/CustomerDetailView';
-import CustomerPaymentDialog from '@/components/customer/CustomerPaymentDialog';
-import PaymentMethodStatusIcon from '@/components/customer/PaymentMethodStatusBadge';
 import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
-import CustomerDirectPaymentDialog from '@/components/payments/CustomerDirectPaymentDialog';
-import { AssignSourcesDialog } from '@/components/admin/AssignSourcesDialog';
-
-interface UserData extends UserListItem {}
-
-interface ModernUsersTableProps {
-  userType?: 'all' | 'admin' | 'cleaner' | 'customer' | 'office';
-}
+import {
+  applyUsersListFilters,
+  createEmptyNewUserForm,
+  getAddButtonText,
+  getTypeTitle,
+  getUniqueCustomerTypes,
+  UsersListAddUserForm,
+  UsersListBulkEditBar,
+  UsersListDialogs,
+  UsersListFilters,
+  UsersListLoading,
+  UsersTableRow,
+  type AddressFilter,
+  type ModernUsersTableProps,
+  type NewUserFormData,
+  type UserData,
+  type UsersTableRowHandlers,
+} from '@/components/users/list';
 
 const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const { data: users = [], isLoading: loading, error: usersError } = useUsersList(userType);
@@ -75,62 +45,41 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [editData, setEditData] = useState<any>({});
+  const [editData, setEditData] = useState<Record<string, unknown>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [resetLoading, setResetLoading] = useState<string | null>(null);
-  
-  // Customer filters
+
   const [customerTypeFilter, setCustomerTypeFilter] = useState<string>('all');
-  const [addressFilter, setAddressFilter] = useState<'all' | 'with-addresses' | 'no-addresses'>('all');
-  
-  // Add new user state
+  const [addressFilter, setAddressFilter] = useState<AddressFilter>('all');
+
   const [showAddUserForm, setShowAddUserForm] = useState(false);
-  const [newUserData, setNewUserData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
-    role: userType === 'customer' 
-      ? 'guest' 
-      : userType === 'cleaner' 
-        ? 'user' 
-        : userType === 'admin' || userType === 'office'
-          ? 'admin'
-          : 'guest'
-  });
+  const [newUserData, setNewUserData] = useState<NewUserFormData>(() => createEmptyNewUserForm(userType));
   const [addingUser, setAddingUser] = useState(false);
   const [showRoleChangeDialog, setShowRoleChangeDialog] = useState(false);
   const [existingUserEmail, setExistingUserEmail] = useState<string>('');
-  
-  // Delete user state
+
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const [collectPaymentDialogUser, setCollectPaymentDialogUser] = useState<UserData | null>(null);
-  
-  // Payment management state
+
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState<UserData | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDirectPaymentDialog, setShowDirectPaymentDialog] = useState(false);
-  
-  // Customer detail view state
+
   const [customerDetailView, setCustomerDetailView] = useState<UserData | null>(null);
-  
-  // Assign sources dialog state (for sales agents)
+
   const [assignSourcesDialogOpen, setAssignSourcesDialogOpen] = useState(false);
   const [selectedAgentForSources, setSelectedAgentForSources] = useState<UserData | null>(null);
-  
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
-  // Get customer IDs for payment data fetching
-  const customerIds = users
-    .filter(user => user.type === 'business_customer' && user.business_id)
-    .map(user => Number(user.business_id!));
-    
-  const { paymentData, loading: paymentLoading, refetch: refetchPaymentData } = useCustomerPaymentMethods(customerIds);
 
-  // Selection and bulk edit state for Customers view
+  const { toast } = useToast();
+
+  const customerIds = users
+    .filter((user) => user.type === 'business_customer' && user.business_id)
+    .map((user) => Number(user.business_id!));
+
+  const { paymentData, refetch: refetchPaymentData } = useCustomerPaymentMethods(customerIds);
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedBusinessIds, setSelectedBusinessIds] = useState<number[]>([]);
   const [bulkType, setBulkType] = useState<string | 'no-change' | 'empty'>('no-change');
@@ -142,67 +91,19 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     refreshUsers();
   };
 
-  // Get unique customer types from actual data
-  const getUniqueCustomerTypes = () => {
-    const types = new Set<string>();
-    users.forEach(user => {
-      if (user.type === 'business_customer') {
-        if (user.client_type) {
-          types.add(user.client_type);
-        } else {
-          types.add('empty');
-        }
-      }
-    });
-    return Array.from(types);
-  };
+  const uniqueCustomerTypes = getUniqueCustomerTypes(users);
 
-  const applyFilters = (usersData: UserData[], searchTerm: string) => {
-    let filtered = usersData;
-
-    // Apply search filter
-    if (searchTerm.trim() !== '') {
-      filtered = filtered.filter(user => 
-        user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.id.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Apply customer-specific filters only for customer view
-    if (userType === 'customer') {
-      // Customer type filter
-      if (customerTypeFilter !== 'all') {
-        filtered = filtered.filter(user => {
-          if (user.type === 'business_customer') {
-            if (customerTypeFilter === 'empty') {
-              return !user.client_type;
-            }
-            return user.client_type === customerTypeFilter;
-          }
-          return false;
-        });
-      }
-
-      // Address filter
-      if (addressFilter === 'with-addresses') {
-        filtered = filtered.filter(user => (user.addressCount || 0) > 0);
-      } else if (addressFilter === 'no-addresses') {
-        filtered = filtered.filter(user => (user.addressCount || 0) === 0);
-      }
-    }
-
-    return filtered;
+  const runFilters = (term: string) => {
+    setFilteredUsers(applyUsersListFilters(users, term, userType, customerTypeFilter, addressFilter));
   };
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    setFilteredUsers(applyFilters(users, term));
+    runFilters(term);
   };
 
   const handleFilterChange = () => {
-    setFilteredUsers(applyFilters(users, searchTerm));
+    runFilters(searchTerm);
   };
 
   const handleAddUser = async () => {
@@ -210,7 +111,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       toast({
         title: 'Error',
         description: 'Please fill in all required fields',
-        variant: 'destructive'
+        variant: 'destructive',
       });
       return;
     }
@@ -223,19 +124,16 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           firstName: newUserData.first_name,
           lastName: newUserData.last_name,
           phone: newUserData.phone || undefined,
-          role: (userType === 'admin' || userType === 'office') ? newUserData.role : newUserData.role
-        }
+          role: userType === 'admin' || userType === 'office' ? newUserData.role : newUserData.role,
+        },
       });
 
       const { data, error } = response;
 
-      // Extract error message - for FunctionsHttpError, the body is in error.context
       let errorMessage = data?.error || null;
-      
-      // If there's a FunctionsHttpError, try to get the message from context
+
       if (error && !errorMessage) {
         try {
-          // error.context is a Response object, we need to parse its JSON
           if (error.context && typeof error.context.json === 'function') {
             const errorBody = await error.context.json();
             errorMessage = errorBody?.error || null;
@@ -247,13 +145,11 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
       console.log('Error message extracted:', errorMessage);
 
-      // Check if user already exists (case-insensitive)
       const errorLower = (errorMessage || '').toLowerCase();
-      const isEmailExists = errorLower.includes('already') && (
-        errorLower.includes('registered') || 
-        errorLower.includes('exists')
-      );
-      
+      const isEmailExists =
+        errorLower.includes('already') &&
+        (errorLower.includes('registered') || errorLower.includes('exists'));
+
       console.log('Is email exists error:', isEmailExists);
 
       if (isEmailExists) {
@@ -265,44 +161,31 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         return;
       }
 
-      // If there's any other error
       if (errorMessage || error) {
         toast({
           title: 'Error',
           description: errorMessage || 'Failed to create user',
-          variant: 'destructive'
+          variant: 'destructive',
         });
         setAddingUser(false);
         return;
       }
 
-      // Success case
       toast({
         title: 'User Created Successfully',
-        description: `An invitation email with login credentials has been sent to ${newUserData.email}`
+        description: `An invitation email with login credentials has been sent to ${newUserData.email}`,
       });
 
       setShowAddUserForm(false);
-      setNewUserData({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        role: userType === 'customer' 
-          ? 'guest' 
-          : userType === 'cleaner' 
-            ? 'user' 
-            : userType === 'admin' || userType === 'office'
-              ? 'admin'
-              : 'guest'
-      });
+      setNewUserData(createEmptyNewUserForm(userType));
       refreshUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to create user';
       console.error('Error creating user (caught):', error);
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to create user',
-        variant: 'destructive'
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       setAddingUser(false);
@@ -312,7 +195,6 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const handleChangeUserRole = async () => {
     setAddingUser(true);
     try {
-      // Find the user by email
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('user_id')
@@ -323,70 +205,63 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
         console.error('Profile query error:', profileError);
         throw new Error('Failed to find user profile');
       }
-      
+
       if (!profileData) {
-        // Profile doesn't exist but auth user does (orphaned user)
-        // Suggest deleting the orphaned auth user or contact admin
         toast({
           title: 'Profile Not Found',
-          description: 'The user exists in authentication but has no profile. Please delete the orphaned user from Supabase Auth and try again.',
-          variant: 'destructive'
+          description:
+            'The user exists in authentication but has no profile. Please delete the orphaned user from Supabase Auth and try again.',
+          variant: 'destructive',
         });
         setShowRoleChangeDialog(false);
         setAddingUser(false);
         return;
       }
 
-      // Get existing role
       const { data: existingRole } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', profileData.user_id)
         .maybeSingle();
 
-      // Delete existing role if exists
       if (existingRole) {
-        await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', profileData.user_id);
+        await supabase.from('user_roles').delete().eq('user_id', profileData.user_id);
       }
 
-      // Insert new role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert([{
+      const { error: roleError } = await supabase.from('user_roles').insert([
+        {
           user_id: profileData.user_id,
-          role: newUserData.role
-        }] as any);
+          role: newUserData.role,
+        },
+      ] as never);
 
       if (roleError) throw roleError;
 
-      const roleDisplay = newUserData.role === 'admin' ? 'Admin' : 
-                          newUserData.role === 'user' ? 'Cleaner' : 
-                          newUserData.role === 'sales_agent' ? 'Sales Agent' : 'Customer';
-      
+      const roleDisplay =
+        newUserData.role === 'admin'
+          ? 'Admin'
+          : newUserData.role === 'user'
+            ? 'Cleaner'
+            : newUserData.role === 'sales_agent'
+              ? 'Sales Agent'
+              : 'Customer';
+
       toast({
         title: 'Success',
-        description: `User role updated to ${roleDisplay}`
+        description: `User role updated to ${roleDisplay}`,
       });
 
       setShowRoleChangeDialog(false);
-      setNewUserData({
-        first_name: '',
-        last_name: '',
-        email: '',
-        phone: '',
-        role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
-      });
+      setNewUserData(createEmptyNewUserForm(userType));
       setExistingUserEmail('');
       refreshUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to update user role';
       console.error('Error updating user role:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to update user role',
-        variant: 'destructive'
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       setAddingUser(false);
@@ -400,15 +275,15 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     try {
       const { error } = await supabase.functions.invoke('delete-user-account', {
         body: {
-          user_id: userToDelete.id
-        }
+          user_id: userToDelete.id,
+        },
       });
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'User deleted successfully'
+        description: 'User deleted successfully',
       });
 
       setUserToDelete(null);
@@ -418,7 +293,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       toast({
         title: 'Error',
         description: 'Failed to delete user',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setDeletingUser(false);
@@ -434,7 +309,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       role: user.role || 'guest',
       password: '',
       client_type: user.client_type ?? null,
-      client_status: user.client_status || ''
+      client_status: user.client_status || '',
     });
   };
 
@@ -449,17 +324,16 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
     console.log('User ID:', userId);
     console.log('User Type:', userType);
     console.log('Edit Data:', editData);
-    
+
     try {
       setUpdating(true);
 
       if (userType === 'customer') {
-        const row = users.find(u => u.id === userId);
+        const row = users.find((u) => u.id === userId);
         console.log('Found user row:', row);
-        
+
         if (row?.type === 'business_customer' && row.business_id) {
-          // Update customer table for business customers
-          const customerUpdates: any = {};
+          const customerUpdates: Record<string, unknown> = {};
           if ('client_type' in editData) {
             customerUpdates.clent_type = editData.client_type === 'empty' ? null : editData.client_type;
           }
@@ -475,9 +349,9 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           if ('email' in editData) {
             customerUpdates.email = editData.email;
           }
-          
+
           console.log('Customer updates:', customerUpdates);
-          
+
           const { error: custErr } = await supabase
             .from('customers')
             .update(customerUpdates)
@@ -488,12 +362,8 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           }
           console.log('Customer table updated successfully');
         }
-        
-        // Always update auth user for customers (both business and regular)
-        // Fall through to the auth user update below
       }
-      
-      // Default path: update auth user via admin function
+
       console.log('Calling update-user-admin with:', {
         userId: userId,
         updates: {
@@ -501,10 +371,10 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           last_name: editData.last_name,
           email: editData.email,
           role: editData.role,
-          password: editData.password
-        }
+          password: editData.password,
+        },
       });
-      
+
       const { data, error } = await supabase.functions.invoke('update-user-admin', {
         body: {
           userId: userId,
@@ -513,9 +383,9 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
             last_name: editData.last_name,
             email: editData.email,
             role: editData.role,
-            password: editData.password
-          }
-        }
+            password: editData.password,
+          },
+        },
       });
 
       console.log('update-user-admin response:', { data, error });
@@ -530,11 +400,12 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
 
       cancelEditing();
       refreshUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to update user';
       console.error('Error updating user:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to update user',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -552,127 +423,44 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       if (error) throw error;
 
       toast({
-        title: "Password Reset Email Sent",
+        title: 'Password Reset Email Sent',
         description: `Reset link sent to ${email}`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to send reset email';
       console.error('Error sending password reset:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to send reset email",
-        variant: "destructive",
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       setResetLoading(null);
     }
   };
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return (
-          <Badge variant="destructive" className="gap-1">
-            <Shield className="h-3 w-3" />
-            Admin
-          </Badge>
-        );
-      case 'sales_agent':
-        return (
-          <Badge variant="default" className="gap-1 bg-blue-600">
-            <UserCheck className="h-3 w-3" />
-            Sales Agent
-          </Badge>
-        );
-      case 'user':
-        return (
-          <Badge variant="default" className="gap-1 bg-primary">
-            <UserCheck className="h-3 w-3" />
-            Cleaner
-          </Badge>
-        );
-      case 'guest':
-      case 'customer':
-        return (
-          <Badge variant="secondary" className="gap-1">
-            <Users className="h-3 w-3" />
-            Customer
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
-  const getCustomerTypeBadge = (user: UserData) => {
-    const t = user.client_type?.toLowerCase();
-    if (t === 'business') {
-      return <Badge variant="secondary" className="gap-1">Business</Badge>;
-    }
-    if (t === 'client') {
-      return <Badge variant="default" className="gap-1">Client</Badge>;
-    }
-    return <Badge variant="outline">—</Badge>;
-  };
-
-  const getTypeTitle = () => {
-    switch (userType) {
-      case 'admin':
-        return 'Admin Users';
-      case 'office':
-        return 'Office Staff';
-      case 'cleaner':
-        return 'Cleaner Users';
-      case 'customer':
-        return 'Customers';
-      default:
-        return 'All Users';
-    }
-  };
-
-  const getAddButtonText = () => {
-    switch (userType) {
-      case 'office':
-        return 'Add Office Staff';
-      case 'customer':
-        return 'Add Customer';
-      case 'cleaner':
-        return 'Add Cleaner';
-      case 'admin':
-        return 'Add Admin';
-      default:
-        return 'Add User';
-    }
-  };
-
-  const getCustomerStatusBadge = (status?: string) => {
-    if (!status) return <Badge variant="outline">—</Badge>;
-    const s = status.toLowerCase();
-    if (s === 'current') return <Badge variant="default">Current</Badge>;
-    if (s === 'new') return <Badge variant="secondary">New</Badge>;
-    return <Badge variant="outline">{status}</Badge>;
-  };
-
   const isSelected = (id: string) => selectedIds.has(id);
 
   const toggleSelect = (user: UserData) => {
     if (user.type !== 'business_customer' || !user.business_id) return;
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(user.id)) next.delete(user.id); else next.add(user.id);
+      if (next.has(user.id)) next.delete(user.id);
+      else next.add(user.id);
       return next;
     });
-    setSelectedBusinessIds(prev => {
+    setSelectedBusinessIds((prev) => {
       const exists = prev.includes(user.business_id!);
-      if (exists) return prev.filter(v => v !== user.business_id);
+      if (exists) return prev.filter((v) => v !== user.business_id);
       return [...prev, user.business_id!];
     });
   };
 
   const toggleSelectAll = () => {
-    const allBusiness = filteredUsers.filter(u => u.type === 'business_customer' && u.business_id);
-    const allIds = allBusiness.map(u => u.id);
-    const allBizIds = allBusiness.map(u => u.business_id!) as number[];
-    const allSelected = allIds.every(id => selectedIds.has(id));
+    const allBusiness = filteredUsers.filter((u) => u.type === 'business_customer' && u.business_id);
+    const allIds = allBusiness.map((u) => u.id);
+    const allBizIds = allBusiness.map((u) => u.business_id!) as number[];
+    const allSelected = allIds.every((id) => selectedIds.has(id));
     if (allSelected) {
       setSelectedIds(new Set());
       setSelectedBusinessIds([]);
@@ -685,11 +473,15 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const applyBulkUpdate = async () => {
     try {
       if (selectedBusinessIds.length === 0) return;
-      const updates: any = {};
+      const updates: Record<string, unknown> = {};
       if (bulkType !== 'no-change') updates.clent_type = bulkType === 'empty' ? null : bulkType;
       if (bulkSource !== 'no-change') updates.source = bulkSource === 'empty' ? null : bulkSource;
       if (Object.keys(updates).length === 0) {
-        toast({ title: 'Nothing to update', description: 'Choose Type or Source to apply', variant: 'destructive' });
+        toast({
+          title: 'Nothing to update',
+          description: 'Choose Type or Source to apply',
+          variant: 'destructive',
+        });
         return;
       }
       setBulkUpdating(true);
@@ -701,11 +493,42 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
       setBulkType('no-change');
       setBulkSource('no-change');
       refreshUsers();
-    } catch (e: any) {
-      toast({ title: 'Error', description: e.message || 'Bulk update failed', variant: 'destructive' });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Bulk update failed';
+      toast({ title: 'Error', description: message, variant: 'destructive' });
     } finally {
       setBulkUpdating(false);
     }
+  };
+
+  const clearBulkSelection = () => {
+    setSelectedIds(new Set());
+    setSelectedBusinessIds([]);
+  };
+
+  const rowHandlers: UsersTableRowHandlers = {
+    onUpdateUser: updateUser,
+    onCancelEditing: cancelEditing,
+    onToggleSelect: toggleSelect,
+    onViewCustomerDetail: setCustomerDetailView,
+    onStartEditing: startEditing,
+    onCollectPayment: setCollectPaymentDialogUser,
+    onPaymentMethodsClick: (user, paymentCount) => {
+      setSelectedCustomerForPayment(user);
+      if (paymentCount > 0) {
+        setShowDirectPaymentDialog(true);
+      } else {
+        setShowPaymentDialog(true);
+      }
+    },
+    onDeleteUser: setUserToDelete,
+    onPasswordReset: handlePasswordReset,
+    onAssignSources: (user) => {
+      setSelectedAgentForSources(user);
+      setAssignSourcesDialogOpen(true);
+    },
+    onAddressChange: handleAddressChange,
+    onToggleShowPassword: () => setShowPassword((prev) => !prev),
   };
 
   useEffect(() => {
@@ -734,13 +557,19 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           <DeleteUserByEmail />
         </>
       )}
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>{getTypeTitle()} ({filteredUsers.length})</span>
+            <span>
+              {getTypeTitle(userType)} ({filteredUsers.length})
+            </span>
             <div className="flex gap-2">
-              <Button onClick={() => setShowAddUserForm(!showAddUserForm)} size="sm" variant={showAddUserForm ? "outline" : "default"}>
+              <Button
+                onClick={() => setShowAddUserForm(!showAddUserForm)}
+                size="sm"
+                variant={showAddUserForm ? 'outline' : 'default'}
+              >
                 {showAddUserForm ? (
                   <>
                     <X className="h-4 w-4 mr-2" />
@@ -749,684 +578,150 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
                 ) : (
                   <>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    {getAddButtonText()}
+                    {getAddButtonText(userType)}
                   </>
                 )}
               </Button>
             </div>
           </CardTitle>
 
-          {/* Inline Add User Form */}
           {showAddUserForm && (
-            <div className="mt-4 p-4 border rounded-lg bg-muted/30 space-y-4">
-              <h3 className="font-medium">{getAddButtonText()}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    value={newUserData.first_name}
-                    onChange={(e) => setNewUserData({...newUserData, first_name: e.target.value})}
-                    placeholder="Enter first name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    value={newUserData.last_name}
-                    onChange={(e) => setNewUserData({...newUserData, last_name: e.target.value})}
-                    placeholder="Enter last name"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newUserData.email}
-                    onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
-                    placeholder="Enter email address"
-                  />
-                </div>
-                {userType === 'cleaner' && (
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={newUserData.phone}
-                      onChange={(e) => setNewUserData({...newUserData, phone: e.target.value})}
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  A temporary password will be auto-generated and sent via email
-                </p>
-              </div>
-              {(userType === 'all' || userType === 'office') && (
-                <div className="max-w-xs">
-                  <Label htmlFor="role">Role *</Label>
-                  <Select value={newUserData.role} onValueChange={(value) => setNewUserData({...newUserData, role: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userType === 'office' ? (
-                        <>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="sales_agent">Sales Agent</SelectItem>
-                        </>
-                      ) : (
-                        <>
-                          <SelectItem value="guest">Customer</SelectItem>
-                          <SelectItem value="user">Cleaner</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setShowAddUserForm(false)}>Cancel</Button>
-                <Button onClick={handleAddUser} disabled={addingUser}>
-                  {addingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                  {getAddButtonText()}
-                </Button>
-              </div>
-            </div>
-          )}
-        
-        {/* Search and Filters */}
-        <div className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search users by name, email..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10"
+            <UsersListAddUserForm
+              userType={userType}
+              newUserData={newUserData}
+              onNewUserDataChange={setNewUserData}
+              addingUser={addingUser}
+              onSubmit={handleAddUser}
+              onCancel={() => setShowAddUserForm(false)}
             />
-          </div>
-
-          {/* Customer Filters */}
-          {userType === 'customer' && (
-            <div className="flex flex-wrap gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Customer Type</label>
-                <Select value={customerTypeFilter} onValueChange={(value: string) => setCustomerTypeFilter(value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {getUniqueCustomerTypes().map(type => (
-                      <SelectItem key={type} value={type}>
-                        {type === 'empty' ? '—' : type.charAt(0).toUpperCase() + type.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-muted-foreground">Addresses</label>
-                <Select value={addressFilter} onValueChange={(value: any) => setAddressFilter(value)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Customers</SelectItem>
-                    <SelectItem value="with-addresses">With Addresses</SelectItem>
-                    <SelectItem value="no-addresses">No Address</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
           )}
-        </div>
 
-        {/* Bulk Edit Controls for Customers */}
-        {showBulkEdit && (
-          <div className="flex flex-wrap items-center gap-2 p-3 bg-muted rounded-lg">
-            <span className="text-sm font-medium">{selectedBusinessIds.length} selected:</span>
-            <Select value={bulkType} onValueChange={setBulkType}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-change">Type: No change</SelectItem>
-                <SelectItem value="client">Client</SelectItem>
-                <SelectItem value="business">Business</SelectItem>
-                <SelectItem value="empty">Clear Type</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={bulkSource} onValueChange={setBulkSource}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-change">Source: No change</SelectItem>
-                <SelectItem value="Facebook ads">Facebook Ads</SelectItem>
-                <SelectItem value="Google ads">Google Ads</SelectItem>
-                <SelectItem value="Organic">Organic</SelectItem>
-                <SelectItem value="Referral">Referral</SelectItem>
-                <SelectItem value="Website">Website</SelectItem>
-                <SelectItem value="empty">Clear Source</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={applyBulkUpdate} disabled={bulkUpdating} size="sm">
-              {bulkUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => { setSelectedIds(new Set()); setSelectedBusinessIds([]); }}>
-              Clear
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const selected = filteredUsers.filter(u => selectedIds.has(u.id));
-                const escape = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`;
-                const header = ['Name', 'Email', 'Phone', 'Postcode'];
-                const rows = selected.map(u => [
-                  `${u.first_name || ''} ${u.last_name || ''}`.trim(),
-                  u.email || '',
-                  u.phone || '',
-                  u.postcode || '',
-                ].map(escape).join(','));
-                const csv = [header.join(','), ...rows].join('\n');
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `customers-${new Date().toISOString().slice(0,10)}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }}
-            >
-              Export CSV
-            </Button>
-          </div>
-        )}
-      </CardHeader>
+          <UsersListFilters
+            searchTerm={searchTerm}
+            onSearchChange={handleSearch}
+            userType={userType}
+            customerTypeFilter={customerTypeFilter}
+            onCustomerTypeFilterChange={setCustomerTypeFilter}
+            addressFilter={addressFilter}
+            onAddressFilterChange={setAddressFilter}
+            uniqueCustomerTypes={uniqueCustomerTypes}
+          />
 
-      <CardContent>
-        {loading ? (
-          <div className="text-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-            <p className="mt-2 text-muted-foreground">Loading users...</p>
-          </div>
-        ) : (
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                   {isCustomerView && (
+          {showBulkEdit && (
+            <UsersListBulkEditBar
+              selectedCount={selectedBusinessIds.length}
+              bulkType={bulkType}
+              onBulkTypeChange={setBulkType}
+              bulkSource={bulkSource}
+              onBulkSourceChange={setBulkSource}
+              bulkUpdating={bulkUpdating}
+              onApply={applyBulkUpdate}
+              onClear={clearBulkSelection}
+              selectedUsers={filteredUsers.filter((u) => selectedIds.has(u.id))}
+            />
+          )}
+        </CardHeader>
+
+        <CardContent>
+          {loading ? (
+            <UsersListLoading />
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {isCustomerView && (
                       <TableHead className="w-12">
                         <Checkbox
-                          checked={filteredUsers.length > 0 && filteredUsers.every(u => isSelected(u.id))}
+                          checked={
+                            filteredUsers.length > 0 && filteredUsers.every((u) => isSelected(u.id))
+                          }
                           onCheckedChange={toggleSelectAll}
                         />
                       </TableHead>
-                   )}
-                   <TableHead>Customer</TableHead>
-                   <TableHead>Email</TableHead>
-                   {isCustomerView ? (
-                     <>
-                       <TableHead>Type</TableHead>
-                       <TableHead>Payment Methods</TableHead>
-                       <TableHead>Addresses</TableHead>
-                     </>
-                   ) : (
-                     <TableHead>Role</TableHead>
-                   )}
-                   <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                   {filteredUsers.length === 0 ? (
-                     <TableRow>
-                       <TableCell colSpan={isCustomerView ? 6 : 4} className="text-center py-8 text-muted-foreground">
-                         {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-                       </TableCell>
-                     </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                       {isCustomerView && (
-                         <TableCell>
-                           <Checkbox
-                             checked={isSelected(user.id)}
-                             onCheckedChange={() => toggleSelect(user)}
-                           />
-                         </TableCell>
-                       )}
-                      
-                      <TableCell>
-                        {editingUser === user.id ? (
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="First Name"
-                              value={editData.first_name}
-                              onChange={(e) => setEditData({ ...editData, first_name: e.target.value })}
-                              className="w-24"
-                            />
-                            <Input
-                              placeholder="Last Name"
-                              value={editData.last_name}
-                              onChange={(e) => setEditData({ ...editData, last_name: e.target.value })}
-                              className="w-24"
-                            />
-                          </div>
-                        ) : (
-                          <div className="font-medium">
-                            {user.first_name} {user.last_name}
-                          </div>
-                        )}
-                      </TableCell>
-                      
-                      <TableCell>
-                        {editingUser === user.id ? (
-                          <div className="space-y-2">
-                            <Input
-                              type="email"
-                              value={editData.email}
-                              onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                              className="w-48"
-                            />
-                            {!isCustomerView && (
-                              <div className="relative">
-                                <Input
-                                  type={showPassword ? "text" : "password"}
-                                  placeholder="New password (optional)"
-                                  value={editData.password}
-                                  onChange={(e) => setEditData({ ...editData, password: e.target.value })}
-                                  className="w-48 pr-10"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="absolute right-0 top-0 h-full px-3"
-                                  onClick={() => setShowPassword(!showPassword)}
-                                >
-                                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="font-mono text-sm">{user.email}</div>
-                        )}
-                      </TableCell>
-                      
-                       {isCustomerView ? (
-                         <>
-                           <TableCell>
-                             {editingUser === user.id && user.type === 'business_customer' ? (
-                               <Select 
-                                 value={editData.client_type ?? 'empty'} 
-                                 onValueChange={(value) => setEditData({ ...editData, client_type: value === 'empty' ? null : value })}
-                               >
-                                 <SelectTrigger className="w-32">
-                                   <SelectValue />
-                                 </SelectTrigger>
-                                 <SelectContent>
-                                   <SelectItem value="empty">—</SelectItem>
-                                   <SelectItem value="client">Client</SelectItem>
-                                   <SelectItem value="business">Business</SelectItem>
-                                 </SelectContent>
-                               </Select>
-                             ) : (
-                               getCustomerTypeBadge(user)
-                             )}
-                           </TableCell>
-                              <TableCell>
-                                {isCustomerView && user.type === 'business_customer' ? (() => {
-                                  const customerId = Number(user.business_id);
-                                  const customerPaymentData = paymentData[customerId];
-                                  const paymentCount = customerPaymentData?.payment_method_count || 0;
-                                  const hasStripe = customerPaymentData?.has_stripe_account || false;
-                                  
-                                  return (
-                                    <PaymentMethodStatusIcon
-                                      paymentMethodCount={paymentCount}
-                                      hasStripeAccount={hasStripe}
-                                      onClick={() => {
-                                        setSelectedCustomerForPayment(user);
-                                        if (paymentCount > 0) {
-                                          setShowDirectPaymentDialog(true);
-                                        } else {
-                                          setShowPaymentDialog(true);
-                                        }
-                                      }}
-                                    />
-                                  );
-                                })() : (
-                                  <span className="text-sm text-muted-foreground">–</span>
-                                )}
-                              </TableCell>
-                           <TableCell>
-                             {user.type === 'business_customer' ? (
-                               <CustomerAddressDialog
-                                 customerId={Number(user.business_id || user.id)}
-                                 addressCount={user.addressCount || 0}
-                                 onAddressChange={handleAddressChange}
-                               >
-                                 <Button variant="outline" size="sm">
-                                   <MapPin className="h-4 w-4 mr-2" />
-                                   {user.addressCount || 0}
-                                 </Button>
-                               </CustomerAddressDialog>
-                             ) : (
-                               <span className="text-sm text-muted-foreground">–</span>
-                             )}
-                           </TableCell>
-                         </>
-                      ) : (
-                        <TableCell>
-                          {editingUser === user.id ? (
-                            <Select 
-                              value={editData.role} 
-                              onValueChange={(value) => setEditData({ ...editData, role: value })}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="guest">Customer</SelectItem>
-                                <SelectItem value="user">Cleaner</SelectItem>
-                                <SelectItem value="admin">Admin</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            getRoleBadge(user.role || 'guest')
-                          )}
-                        </TableCell>
-                      )}
-                      
-                      <TableCell className="text-right">
-                        {editingUser === user.id ? (
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              size="sm"
-                              onClick={() => updateUser(user.id)}
-                              disabled={updating}
-                            >
-                              {updating ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Save className="h-4 w-4" />
-                              )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={cancelEditing}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2 justify-end">
-                            {isCustomerView && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setCustomerDetailView(user)}
-                                className="bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
-                                title="View Customer Details"
-                              >
-                                <FileText className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                console.log('Edit button clicked for user:', user.id, user.first_name, user.last_name, 'type:', user.type);
-                                startEditing(user);
-                              }}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                             {isCustomerView && (
-                               <CreateBookingDialogWithCustomer customer={{
-                                 id: Number(user.business_id || user.id),
-                                 first_name: user.first_name || '',
-                                 last_name: user.last_name || '',
-                                 email: user.email || '',
-                                 phone: user.phone || ''
-                               }}>
-                                 <Button size="sm" variant="outline" onClick={() => console.log('Add booking clicked for:', user.first_name, user.last_name)}>
-                                   <Plus className="h-4 w-4" />
-                                 </Button>
-                               </CreateBookingDialogWithCustomer>
-                             )}
-                             {isCustomerView && (
-                               // Only show collect payment button if customer has no payment methods
-                               !paymentData[user.business_id || user.id]?.payment_method_count && (
-                                 <Button
-                                   size="sm"
-                                   variant="outline"
-                                   onClick={() => {
-                                     console.log('Collect payment clicked for:', user.first_name, user.last_name, 'user object:', user);
-                                     setCollectPaymentDialogUser(user);
-                                   }}
-                                   className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
-                                   title="Collect Payment Method"
-                                 >
-                                   <CreditCard className="h-4 w-4" />
-                                 </Button>
-                               )
-                             )}
-                            {!isCustomerView && (
-                              <>
-                                {/* Assign Sources button for sales agents */}
-                                {user.role === 'sales_agent' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setSelectedAgentForSources(user);
-                                      setAssignSourcesDialogOpen(true);
-                                    }}
-                                    className="bg-purple-50 hover:bg-purple-100 text-purple-600 border-purple-200"
-                                    title="Assign Customer Sources"
-                                  >
-                                    <Users className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handlePasswordReset(user.email, user.id)}
-                                  disabled={resetLoading === user.id}
-                                >
-                                  {resetLoading === user.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Mail className="h-4 w-4" />
-                                  )}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setUserToDelete(user)}
-                                  className="hover:border-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-                             {isCustomerView && (
-                               <Button
-                                 size="sm"
-                                 variant="outline"
-                                 onClick={() => {
-                                   console.log('Delete button clicked for:', user.first_name, user.last_name, 'type:', user.type);
-                                   setUserToDelete(user);
-                                 }}
-                                 className="hover:border-destructive hover:text-destructive"
-                               >
-                                 <Trash2 className="h-4 w-4" />
-                               </Button>
-                             )}
-                          </div>
-                        )}
+                    )}
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Email</TableHead>
+                    {isCustomerView ? (
+                      <>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Payment Methods</TableHead>
+                        <TableHead>Addresses</TableHead>
+                      </>
+                    ) : (
+                      <TableHead>Role</TableHead>
+                    )}
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={isCustomerView ? 6 : 4}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        {searchTerm ? 'No users found matching your search.' : 'No users found.'}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-      
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <UsersTableRow
+                        key={user.id}
+                        user={user}
+                        isCustomerView={isCustomerView}
+                        isEditing={editingUser === user.id}
+                        editData={editData}
+                        onEditDataChange={setEditData}
+                        showPassword={showPassword}
+                        updating={updating}
+                        resetLoading={resetLoading}
+                        isSelected={isSelected(user.id)}
+                        paymentData={paymentData}
+                        handlers={rowHandlers}
+                      />
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
 
-      {/* Change User Role Dialog */}
-      <AlertDialog open={showRoleChangeDialog} onOpenChange={(open) => {
-        if (!open) {
-          setShowRoleChangeDialog(false);
-          setExistingUserEmail('');
-        }
-      }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>User Already Exists</AlertDialogTitle>
-            <AlertDialogDescription>
-              A user with email <strong>{existingUserEmail || 'unknown'}</strong> already exists in the system. 
-              Would you like to change their role to <strong>
-                {newUserData.role === 'admin' ? 'Admin' : 
-                 newUserData.role === 'user' ? 'Cleaner' : 
-                 newUserData.role === 'sales_agent' ? 'Sales Agent' : 'Customer'}
-              </strong> instead?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowRoleChangeDialog(false);
-              setExistingUserEmail('');
-              setNewUserData({
-                first_name: '',
-                last_name: '',
-                email: '',
-                phone: '',
-                role: userType === 'customer' ? 'guest' : userType === 'cleaner' ? 'user' : 'guest'
-              });
-            }}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleChangeUserRole} disabled={addingUser}>
-              {addingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Change Role
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete User Confirmation Dialog */}
-      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {userToDelete?.first_name} {userToDelete?.last_name}? This action cannot be undone and will permanently remove the user account and all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteUser}
-              disabled={deletingUser}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deletingUser ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Delete User
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Customer Payment Dialog */}
-      {selectedCustomerForPayment && (
-        <CustomerPaymentDialog
-          open={showPaymentDialog}
-          onOpenChange={setShowPaymentDialog}
-          customerId={Number(selectedCustomerForPayment.business_id || selectedCustomerForPayment.id)}
-          customerName={`${selectedCustomerForPayment.first_name} ${selectedCustomerForPayment.last_name}`}
-          customerEmail={selectedCustomerForPayment.email}
+        <UsersListDialogs
+          userType={userType}
+          newUserData={newUserData}
+          onNewUserDataChange={setNewUserData}
+          showRoleChangeDialog={showRoleChangeDialog}
+          onRoleChangeDialogOpenChange={(open) => {
+            setShowRoleChangeDialog(open);
+            if (!open) setExistingUserEmail('');
+          }}
+          existingUserEmail={existingUserEmail}
+          addingUser={addingUser}
+          onChangeUserRole={handleChangeUserRole}
+          userToDelete={userToDelete}
+          onUserToDeleteChange={setUserToDelete}
+          deletingUser={deletingUser}
+          onDeleteUser={handleDeleteUser}
+          selectedCustomerForPayment={selectedCustomerForPayment}
+          showPaymentDialog={showPaymentDialog}
+          onShowPaymentDialogChange={setShowPaymentDialog}
+          showDirectPaymentDialog={showDirectPaymentDialog}
+          onShowDirectPaymentDialogChange={setShowDirectPaymentDialog}
           onPaymentMethodsChange={() => {
             refetchPaymentData();
             refreshUsers();
           }}
+          collectPaymentDialogUser={collectPaymentDialogUser}
+          onCollectPaymentDialogUserChange={setCollectPaymentDialogUser}
+          customerDetailView={customerDetailView}
+          onCustomerDetailViewChange={setCustomerDetailView}
+          assignSourcesDialogOpen={assignSourcesDialogOpen}
+          onAssignSourcesDialogOpenChange={setAssignSourcesDialogOpen}
+          selectedAgentForSources={selectedAgentForSources}
+          onRefreshUsers={refreshUsers}
         />
-      )}
-
-      {/* Collect Payment Method Dialog */}
-      {collectPaymentDialogUser && (
-        <CollectPaymentMethodDialog
-          open={!!collectPaymentDialogUser}
-          onOpenChange={(open) => !open && setCollectPaymentDialogUser(null)}
-          customer={{
-            id: collectPaymentDialogUser.business_id || parseInt(collectPaymentDialogUser.id),
-            first_name: collectPaymentDialogUser.first_name || '',
-            last_name: collectPaymentDialogUser.last_name || '',
-            email: collectPaymentDialogUser.email
-          }}
-        />
-      )}
-
-      {/* Direct Payment Dialog */}
-      {selectedCustomerForPayment && (
-        <CustomerDirectPaymentDialog
-          open={showDirectPaymentDialog}
-          onOpenChange={setShowDirectPaymentDialog}
-          customerId={Number(selectedCustomerForPayment.business_id || selectedCustomerForPayment.id)}
-          customerName={`${selectedCustomerForPayment.first_name} ${selectedCustomerForPayment.last_name}`}
-          customerEmail={selectedCustomerForPayment.email}
-          onPaymentSuccess={() => {
-            refetchPaymentData();
-            refreshUsers();
-          }}
-        />
-      )}
-
-      {/* Customer Detail View */}
-      {customerDetailView && (
-        <CustomerDetailView
-          open={!!customerDetailView}
-          onOpenChange={(open) => !open && setCustomerDetailView(null)}
-          customerId={customerDetailView.business_id || parseInt(customerDetailView.id)}
-          customerName={`${customerDetailView.first_name || ''} ${customerDetailView.last_name || ''}`.trim()}
-          customerEmail={customerDetailView.email}
-        />
-      )}
-
-      {/* Assign Sources Dialog for Sales Agents */}
-      <AssignSourcesDialog
-        open={assignSourcesDialogOpen}
-        onOpenChange={setAssignSourcesDialogOpen}
-        agent={selectedAgentForSources ? {
-          user_id: selectedAgentForSources.id,
-          first_name: selectedAgentForSources.first_name || null,
-          last_name: selectedAgentForSources.last_name || null,
-          email: selectedAgentForSources.email,
-          assigned_sources: selectedAgentForSources.assigned_sources || null
-        } : null}
-        onSuccess={refreshUsers}
-      />
       </Card>
     </div>
   );
