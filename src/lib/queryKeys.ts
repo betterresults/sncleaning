@@ -1,5 +1,4 @@
-import type { BookingsListParams } from '@/api/bookings/types';
-import type { PastBookingsListParams } from '@/api/bookings/types';
+import type { BookingsListParams, PastBookingsListParams, UpcomingCalendarParams } from '@/api/bookings/types';
 import type { DashboardStatsFilters } from '@/api/dashboard/types';
 import type { UserListType } from '@/api/users/types';
 
@@ -28,6 +27,8 @@ export const queryKeys = {
       ['customers', 'overdue-invoices', customerId] as const,
     upcomingBookings: (customerId: number | null | undefined) =>
       ['customers', 'upcoming-bookings', customerId] as const,
+    detail: (customerId: number | null | undefined) =>
+      ['customers', 'detail', customerId] as const,
   },
   dashboard: {
     all: ['dashboard'] as const,
@@ -39,5 +40,9 @@ export const queryKeys = {
   users: {
     all: ['users'] as const,
     list: (userType: UserListType) => ['users', 'list', userType] as const,
+  },
+  upcomingCalendar: {
+    all: ['upcoming-calendar'] as const,
+    data: (params: UpcomingCalendarParams) => ['upcoming-calendar', 'data', params] as const,
   },
 };

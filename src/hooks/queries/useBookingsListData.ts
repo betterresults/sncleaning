@@ -39,6 +39,7 @@ export function useCancelBooking() {
       queryClient.invalidateQueries({ queryKey: queryKeys.pastBookings.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.upcomingCalendar.all });
     },
   });
 }
@@ -53,6 +54,7 @@ export function useDeleteBooking() {
       queryClient.invalidateQueries({ queryKey: queryKeys.pastBookings.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.upcomingCalendar.all });
     },
   });
 }

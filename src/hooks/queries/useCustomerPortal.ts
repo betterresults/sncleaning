@@ -1,5 +1,7 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { cancelBooking } from '@/api/bookings';
 import {
+  fetchCustomerDetailData,
   fetchCustomerIsBusinessClient,
   fetchCustomerOverdueInvoices,
   fetchCustomerPaymentMethodsList,
@@ -51,5 +53,35 @@ export function useInvalidateCustomerPortal() {
     queryClient.invalidateQueries({
       queryKey: queryKeys.customers.paymentMethodsList(customerId),
     });
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.customers.detail(customerId),
+    });
   };
+}
+
+export function useCancelCustomerBooking(customerId: number | null | undefined) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: cancelBooking,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.customers.upcomingBookings(customerId),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pastBookings.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+    },
+  });
+}
+
+export function useCustomerDetailData(
+  customerId: number | null | undefined,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: queryKeys.customers.detail(customerId),
+    queryFn: () => fetchCustomerDetailData(customerId!),
+    enabled: !!customerId && enabled,
+  });
 }

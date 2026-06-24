@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  useCustomerDetailData,
+} from '@/hooks/queries/useCustomerPortal';
+import { queryKeys } from '@/lib/queryKeys';
+import type {
+  CustomerDetailBooking,
+  CustomerDetailPaymentMethod,
+  CustomerDetailProfile,
+  CustomerDetailUnpaidItem,
+} from '@/api/customers';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,50 +57,13 @@ interface CustomerDetailViewProps {
   customerEmail?: string;
 }
 
-interface UnpaidBooking {
-  id: string;
-  date_time: string;
-  address: string;
-  postcode: string;
-  total_cost: number;
-  cleaning_type: string;
-  payment_status: string;
-  source: 'past_booking' | 'linen_order';
-}
+interface UnpaidBooking extends CustomerDetailUnpaidItem {}
 
-interface PaymentMethod {
-  id: string;
-  stripe_payment_method_id: string;
-  card_brand: string;
-  card_last4: string;
-  card_exp_month: number;
-  card_exp_year: number;
-  is_default: boolean;
-}
+interface PaymentMethod extends CustomerDetailPaymentMethod {}
 
-interface Booking {
-  id: number;
-  date_time: string;
-  address: string;
-  postcode: string;
-  total_cost: string | number;
-  cleaning_type: string;
-  booking_status: string;
-  payment_status: string;
-  cleaner_name?: string;
-}
+interface Booking extends CustomerDetailBooking {}
 
-interface Customer {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  company: string;
-  client_status: string;
-  clent_type?: string; // Note: typo in database field name
-  created_at: string;
-}
+interface Customer extends CustomerDetailProfile {}
 
 const CustomerDetailView = ({ 
   open, 
@@ -98,163 +72,38 @@ const CustomerDetailView = ({
   customerName, 
   customerEmail 
 }: CustomerDetailViewProps) => {
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const queryClient = useQueryClient();
+  const { data, isLoading: loading, error: detailError } = useCustomerDetailData(
+    customerId,
+    open,
+  );
   const [editingCustomer, setEditingCustomer] = useState(false);
   const [editCustomerData, setEditCustomerData] = useState<Partial<Customer>>({});
   const [updatingCustomer, setUpdatingCustomer] = useState(false);
-  const [unpaidBookings, setUnpaidBookings] = useState<UnpaidBooking[]>([]);
-  const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
-  const [pastBookings, setPastBookings] = useState<Booking[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [addresses, setAddresses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [showDirectPayment, setShowDirectPayment] = useState(false);
   const [showManualCardDialog, setShowManualCardDialog] = useState(false);
   const { toast } = useToast();
 
+  const customer = data?.customer ?? null;
+  const unpaidBookings = data?.unpaidBookings ?? [];
+  const upcomingBookings = data?.upcomingBookings ?? [];
+  const pastBookings = data?.pastBookings ?? [];
+  const paymentMethods = data?.paymentMethods ?? [];
+  const addresses = data?.addresses ?? [];
+
+  const invalidateDetail = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.customers.detail(customerId) });
+  };
+
   useEffect(() => {
-    if (open && customerId) {
-      fetchCustomerData();
-    }
-  }, [open, customerId]);
-
-  const fetchCustomerData = async () => {
-    if (!customerId) return;
-    
-    setLoading(true);
-    try {
-      // Fetch customer details
-      const { data: customerData, error: customerError } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('id', customerId)
-        .single();
-
-      if (customerError) throw customerError;
-      setCustomer(customerData);
-
-      // Fetch payment methods
-      const { data: paymentMethodsData, error: pmError } = await supabase
-        .from('customer_payment_methods')
-        .select('*')
-        .eq('customer_id', customerId);
-
-      setPaymentMethods(paymentMethodsData || []);
-
-      // Fetch addresses
-      const { data: addressesData, error: addressError } = await supabase
-        .from('addresses')
-        .select('*')
-        .eq('customer_id', customerId);
-
-      setAddresses(addressesData || []);
-
-      // Fetch upcoming bookings
-      const { data: upcomingData, error: upcomingError } = await supabase
-        .from('bookings')
-        .select(`
-          id, date_time, address, postcode, total_cost, 
-          cleaning_type, booking_status, payment_status,
-          cleaners!inner(first_name, last_name)
-        `)
-        .eq('customer', customerId)
-        .gte('date_time', new Date().toISOString())
-        .order('date_time', { ascending: true });
-
-      const upcoming = upcomingData?.map(booking => ({
-        ...booking,
-        cleaner_name: booking.cleaners ? 
-          `${booking.cleaners.first_name} ${booking.cleaners.last_name}` : 
-          'Not assigned'
-      })) || [];
-      setUpcomingBookings(upcoming);
-
-      // Fetch past bookings (paid and unpaid)
-      const { data: pastData, error: pastError } = await supabase
-        .from('past_bookings')
-        .select('*')
-        .eq('customer', customerId)
-        .order('date_time', { ascending: false })
-        .limit(20);
-
-      setPastBookings(pastData || []);
-
-      // Fetch unpaid bookings for payment section
-      const [pastBookingsResponse, linenOrdersResponse] = await Promise.all([
-        supabase
-          .from('past_bookings')
-          .select('id, date_time, address, postcode, total_cost, cleaning_type, payment_status')
-          .eq('customer', customerId)
-          .or('payment_status.ilike.%unpaid%,payment_status.ilike.%collecting%,payment_status.ilike.%outstanding%,payment_status.ilike.%pending%,payment_status.is.null')
-          .order('date_time', { ascending: false }),
-        
-        supabase
-          .from('linen_orders')
-          .select('id, order_date, total_cost, payment_status, address_id')
-          .eq('customer_id', customerId)
-          .neq('payment_status', 'paid')
-          .order('order_date', { ascending: false })
-      ]);
-
-      const pastBookingsUnpaid = pastBookingsResponse.data || [];
-      const linenOrders = linenOrdersResponse.data || [];
-
-      // Get addresses for linen orders
-      const addressIds = linenOrders.map(order => order.address_id).filter(Boolean);
-      let addressesLookup = {};
-      
-      if (addressIds.length > 0) {
-        const { data: addressesData } = await supabase
-          .from('addresses')
-          .select('id, address, postcode')
-          .in('id', addressIds);
-        
-        addressesLookup = (addressesData || []).reduce((acc, addr) => {
-          acc[addr.id] = addr;
-          return acc;
-        }, {} as Record<string, any>);
-      }
-
-      // Combine unpaid items
-      const allUnpaidItems = [
-        ...pastBookingsUnpaid.map(booking => ({
-          id: booking.id.toString(),
-          date_time: booking.date_time,
-          address: booking.address || 'No address',
-          postcode: booking.postcode || '',
-          total_cost: parseFloat(booking.total_cost?.toString() || '0'),
-          cleaning_type: booking.cleaning_type || 'Cleaning Service',
-          payment_status: booking.payment_status || 'unpaid',
-          source: 'past_booking' as const
-        })),
-        ...linenOrders.map(order => {
-          const address = addressesLookup[order.address_id];
-          return {
-            id: order.id,
-            date_time: order.order_date,
-            address: address?.address || 'Linen Order',
-            postcode: address?.postcode || '',
-            total_cost: parseFloat(order.total_cost?.toString() || '0'),
-            cleaning_type: 'Linen Service',
-            payment_status: order.payment_status || 'unpaid',
-            source: 'linen_order' as const
-          };
-        })
-      ];
-
-      setUnpaidBookings(allUnpaidItems);
-
-    } catch (error) {
-      console.error('Error fetching customer data:', error);
+    if (detailError) {
       toast({
         title: 'Error',
         description: 'Failed to load customer data',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [detailError, toast]);
 
   const startEditingCustomer = () => {
     if (customer) {
@@ -291,10 +140,9 @@ const CustomerDetailView = ({
 
       if (error) throw error;
 
-      // Update local state
-      setCustomer(prev => prev ? { ...prev, ...editCustomerData } : null);
       setEditingCustomer(false);
       setEditCustomerData({});
+      invalidateDetail();
 
       toast({
         title: 'Success',
@@ -321,7 +169,7 @@ const CustomerDetailView = ({
 
       if (error) throw error;
 
-      setPaymentMethods(prev => prev.filter(pm => pm.id !== paymentMethodId));
+      invalidateDetail();
       
       toast({
         title: 'Success',
@@ -355,9 +203,7 @@ const CustomerDetailView = ({
 
       if (error) throw error;
 
-      setPaymentMethods(prev => 
-        prev.map(pm => ({ ...pm, is_default: pm.id === paymentMethodId }))
-      );
+      invalidateDetail();
       
       toast({
         title: 'Success',
@@ -893,7 +739,7 @@ const CustomerDetailView = ({
           customerEmail={customerEmail}
           onPaymentSuccess={() => {
             setShowDirectPayment(false);
-            fetchCustomerData(); // Refresh data after payment
+            invalidateDetail(); // Refresh data after payment
           }}
         />
       )}
@@ -903,7 +749,7 @@ const CustomerDetailView = ({
           open={showManualCardDialog}
           onOpenChange={setShowManualCardDialog}
           customerId={customerId}
-          onSuccess={fetchCustomerData}
+          onSuccess={invalidateDetail}
         />
       )}
     </>

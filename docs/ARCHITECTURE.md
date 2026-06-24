@@ -22,7 +22,7 @@ Frontend operations platform for a UK cleaning business: public booking funnels,
 - **React 18** + **TypeScript** + **Vite 5**
 - **UI:** shadcn/ui (Radix), Tailwind CSS
 - **Routing:** react-router-dom v6 — flat route table in `src/App.tsx`
-- **Server state:** TanStack React Query — shared `queryClient`, `queryKeys`, and `src/api/` layer covering bookings, past bookings, dashboard stats, users, and customer portal reads/mutations
+- **Server state:** TanStack React Query — shared `queryClient`, `queryKeys`, and `src/api/` layer covering bookings, past bookings, dashboard stats, users, customer portal, customer detail, and upcoming calendar reads/mutations
 - **Auth & DB:** `@supabase/supabase-js` with generated types in `src/integrations/supabase/types.ts`
 - **Payments:** Stripe (`@stripe/react-stripe-js`)
 - **Mobile:** Capacitor 7 (PWA + native Android)
@@ -174,5 +174,6 @@ The Supabase client (`src/integrations/supabase/client.ts`) reads these at build
 | 1 | `ProtectedRoute`, consistent auth ✅ |
 | 2 | Merge booking forms into `src/features/booking/` ✅ |
 | 3 | React Query data layer ✅ |
+| 3b | Finish React Query on customer upcoming, admin customer detail, upcoming calendar ✅ |
 | 4 | Split large components |
 | 5 | Tests on critical paths |

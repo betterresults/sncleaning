@@ -15,6 +15,9 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Local agent session notes (credentials, test accounts — never commit)
+.cursor/LOCAL_CONTEXT.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
