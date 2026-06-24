@@ -45,7 +45,9 @@ serve(async (req) => {
           sanitizedData[field] = null;
         }
       }
-      
+      // Always bump activity timestamp on every save
+      sanitizedData.last_activity_at = new Date().toISOString();
+
       // Use upsert for quote_leads
       const { error } = await supabase
         .from(table)
