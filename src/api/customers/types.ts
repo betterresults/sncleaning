@@ -41,6 +41,8 @@ export interface CustomerOverdueInvoice {
   date_time: string;
   invoice_link: string | null;
   payment_status: string;
+  address?: string;
+  total_cost?: string | number | null;
   [key: string]: unknown;
 }
 
@@ -92,7 +94,14 @@ export interface CustomerDetailUnpaidItem {
 export interface CustomerDetailData {
   customer: CustomerDetailProfile;
   paymentMethods: CustomerDetailPaymentMethod[];
-  addresses: Array<Record<string, unknown>>;
+  addresses: Array<{
+    id: string | number;
+    address: string;
+    postcode: string;
+    is_default?: boolean;
+    access?: string;
+    [key: string]: unknown;
+  }>;
   upcomingBookings: CustomerDetailBooking[];
   pastBookings: CustomerDetailBooking[];
   unpaidBookings: CustomerDetailUnpaidItem[];

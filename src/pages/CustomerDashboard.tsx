@@ -132,7 +132,7 @@ const CustomerDashboard = () => {
                                 {new Date(booking.date_time).toLocaleDateString('en-GB')} - {booking.address}
                               </p>
                               <p className="text-sm text-gray-600">
-                                Amount: £{parseFloat(booking.total_cost || '0').toFixed(2)} • {daysOverdue} days overdue
+                                Amount: £{parseFloat(String(booking.total_cost ?? '0')).toFixed(2)} • {daysOverdue} days overdue
                               </p>
                             </div>
                             {booking.invoice_link && (
