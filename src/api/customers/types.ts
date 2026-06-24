@@ -92,7 +92,14 @@ export interface CustomerDetailUnpaidItem {
 export interface CustomerDetailData {
   customer: CustomerDetailProfile;
   paymentMethods: CustomerDetailPaymentMethod[];
-  addresses: Array<Record<string, unknown>>;
+  addresses: Array<{
+    id: string | number;
+    address: string;
+    postcode: string;
+    is_default?: boolean;
+    access?: string;
+    [key: string]: unknown;
+  }>;
   upcomingBookings: CustomerDetailBooking[];
   pastBookings: CustomerDetailBooking[];
   unpaidBookings: CustomerDetailUnpaidItem[];
