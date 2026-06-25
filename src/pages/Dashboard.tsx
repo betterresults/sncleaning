@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
+import { AppShell } from '@/layouts/shell';
 import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
 import BookingsListView from '@/components/bookings/BookingsListView';
@@ -53,25 +51,15 @@ const Dashboard = () => {
   const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
 
   return (
-    <SidebarProvider>
-        <div className="min-h-screen flex flex-col w-full bg-gray-50">
-          <UnifiedHeader 
-            title=""
-            user={user}
-            userRole={userRole}
-            onSignOut={handleSignOut}
-          />
-          <div className="flex flex-1 w-full">
-            <UnifiedSidebar 
-              navigationItems={navigation}
-              user={user}
-              userRole={userRole}
-              onSignOut={handleSignOut}
-            />
-            <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
-              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
-                {/* Statistics - Last 30 Days - ONLY for admins */}
-                {userRole === 'admin' && <DashboardStats />}
+    <AppShell
+      navigationItems={navigation}
+      user={user}
+      userRole={userRole}
+      title="Dashboard"
+      onSignOut={handleSignOut}
+    >
+      <div className="space-y-6 w-full max-w-7xl mx-auto">
+        {userRole === 'admin' && <DashboardStats />}
                 
                 {/* Today's Bookings */}
                 <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
@@ -132,11 +120,8 @@ const Dashboard = () => {
                     </Card>
                   </div>
                 )}
-              </main>
-            </SidebarInset>
-          </div>
-        </div>
-      </SidebarProvider>
+      </div>
+    </AppShell>
   );
 };
 
