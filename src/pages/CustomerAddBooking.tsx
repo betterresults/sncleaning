@@ -8,6 +8,7 @@ import ServiceSelection from '@/components/booking/ServiceSelection';
 import NewBookingForm from '@/components/booking/NewBookingForm';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CustomerAddBooking = () => {
   const { user, userRole, signOut, customerId } = useAuth();
@@ -57,7 +58,7 @@ const CustomerAddBooking = () => {
   };
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 {selectedService ? (
                   <div className="space-y-6">
                   {selectedService !== 'airbnb-cleaning' && (
@@ -86,7 +87,7 @@ const CustomerAddBooking = () => {
                   <ServiceSelection onServiceSelect={handleServiceSelect} isAdminView={false} />
                 </div>
               )}
-            </div>
+            </ShellPage>
   );
 };
 

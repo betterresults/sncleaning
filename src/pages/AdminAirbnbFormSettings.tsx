@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AirbnbConfigPanel } from '@/components/airbnb/AirbnbConfigPanel';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminAirbnbFormSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -10,9 +11,9 @@ const AdminAirbnbFormSettings = () => {
   }
 
   return (
-<div className="max-w-4xl mx-auto">
+    <ShellPage width="narrow">
                 <AirbnbConfigPanel />
-              </div>
+              </ShellPage>
   );
 };
 

@@ -3,13 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import ModernUsersTable from '@/components/ModernUsersTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, UserCheck, UserPlus } from 'lucide-react';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const Users = () => {
   const { user, userRole, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('customers');
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-6">
                       <TabsTrigger value="customers" className="flex items-center gap-2">
@@ -38,7 +39,7 @@ const Users = () => {
                       <ModernUsersTable userType="office" />
                     </TabsContent>
                   </Tabs>
-                </div>
+                </ShellPage>
   );
 };
 

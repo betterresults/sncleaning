@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { CustomerPricingOverrides } from '@/components/admin/CustomerPricingOverrides';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminCustomerPricing = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -10,9 +11,9 @@ const AdminCustomerPricing = () => {
   }
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 <CustomerPricingOverrides />
-              </div>
+              </ShellPage>
   );
 };
 

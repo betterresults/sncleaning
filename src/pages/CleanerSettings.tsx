@@ -13,6 +13,7 @@ import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
 import { isCapacitor } from '@/utils/capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -377,11 +378,7 @@ const CleanerSettings = () => {
   );
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading settings...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
@@ -524,9 +521,8 @@ const CleanerSettings = () => {
     );
   }
 
-  // Desktop view with sidebar
   return (
-<div className="w-full px-1 sm:px-0 max-w-2xl mx-auto">
+    <ShellPage width="narrow">
                 <h1 className="text-2xl font-bold text-[#185166] mb-6">Account Settings</h1>
                 
                 {/* Profile Photo */}
@@ -639,7 +635,7 @@ const CleanerSettings = () => {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
+              </ShellPage>
   );
 };
 

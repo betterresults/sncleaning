@@ -19,6 +19,11 @@ const ROUTE_TITLES: Record<string, string> = {
   '/users/customers': 'Customers',
   '/admin-linen-management': 'Linen Management',
   '/admin-photo-management': 'Photo Management',
+  '/admin/airbnb': 'Airbnb Booking',
+  '/admin/domestic': 'Domestic Booking',
+  '/admin/carpet': 'Carpet Booking',
+  '/admin/end-of-tenancy': 'End of Tenancy',
+  '/admin/linen': 'Linen Order',
   '/admin-settings': 'Admin Settings',
   '/users': 'Users',
   '/users/admins': 'Admins',
@@ -55,6 +60,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/customer-add-booking': 'Add Booking',
   '/customer-linen-management': 'Linen Management',
   '/customer-messages': 'Messages',
+  '/customer/airbnb-form': 'Airbnb Booking',
+  '/customer/linen-form': 'Linen Order',
 };
 
 export function getShellRouteTitle(pathname: string): string {

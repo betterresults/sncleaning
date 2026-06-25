@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateCleanerUsersUtility from '@/components/admin/CreateCleanerUsersUtility';
 import { BulkCreateAccountsDialog } from '@/components/admin/BulkCreateAccountsDialog';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CreateCustomerAccounts = () => {
   const { user, userRole, signOut } = useAuth();
@@ -9,13 +10,13 @@ const CreateCustomerAccounts = () => {
   const isSalesAgent = userRole === 'sales_agent';
 
   return (
-<div className="max-w-7xl mx-auto space-y-6">
+    <ShellPage width="wide">
                 <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-semibold">Customer Account Management</h1>
                   {!isSalesAgent && <BulkCreateAccountsDialog />}
                 </div>
                 <CreateCleanerUsersUtility readOnly={isSalesAgent} />
-              </div>
+              </ShellPage>
   );
 };
 

@@ -5,6 +5,7 @@ import NewBookingForm from '@/components/booking/NewBookingForm';
 import ServiceSelection from '@/components/booking/ServiceSelection';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminAddBooking = () => {
   const { user, userRole, customerId, cleanerId, signOut } = useAuth();
@@ -45,7 +46,7 @@ const AdminAddBooking = () => {
   // Allow admin and sales_agent
 
   return (
-<div className="max-w-4xl mx-auto space-y-6">
+    <ShellPage width="narrow">
                 {selectedService ? (
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
@@ -70,7 +71,7 @@ const AdminAddBooking = () => {
                     </div>
                   </div>
                 )}
-              </div>
+              </ShellPage>
   );
 };
 

@@ -17,6 +17,7 @@ import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from "@/hooks/useCompanySettings";
 import { useLinkedCleaners } from "@/hooks/useLinkedCleaners";
+import { ShellPage } from '@/layouts/shell';
 
 interface Customer {
   id: number;
@@ -454,8 +455,8 @@ export default function AddRecurringBooking() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <ShellPage width="wide">
+      <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button 
@@ -896,6 +897,6 @@ export default function AddRecurringBooking() {
           </CreateCleanerDialog>
         )}
       </div>
-    </div>
+    </ShellPage>
   );
 }

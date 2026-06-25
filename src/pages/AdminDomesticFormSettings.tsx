@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { DomesticConfigPanel } from '@/components/domestic/DomesticConfigPanel';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminDomesticFormSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -10,9 +11,9 @@ const AdminDomesticFormSettings = () => {
   }
 
   return (
-<div className="max-w-4xl mx-auto">
+    <ShellPage width="narrow">
                 <DomesticConfigPanel />
-              </div>
+              </ShellPage>
   );
 };
 

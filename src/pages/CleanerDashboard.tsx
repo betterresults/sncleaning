@@ -7,6 +7,7 @@ import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
 import { isCapacitor } from '@/utils/capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerDashboard = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -17,11 +18,7 @@ const CleanerDashboard = () => {
   const isMobileView = isCapacitor() || isMobile;
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading dashboard...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
@@ -30,7 +27,7 @@ const CleanerDashboard = () => {
     return (
       <div className="min-h-screen bg-background">
         <CleanerTopNav />
-        
+
         <main className="pt-header-safe pb-20 content-bottom-spacer">
           <div className="p-4 pt-2">
             {userRole === 'admin' && (
@@ -41,21 +38,21 @@ const CleanerDashboard = () => {
             <CleanerUpcomingBookings />
           </div>
         </main>
-        
+
         <CleanerBottomNav />
       </div>
     );
   }
 
   return (
-<div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full">
-                {userRole === 'admin' && (
-                  <div className="mb-3 sm:mb-4">
-                    <AdminCleanerSelector />
-                  </div>
-                )}
-                <CleanerUpcomingBookings />
-              </div>
+    <ShellPage width="wide">
+      {userRole === 'admin' && (
+        <div className="mb-3 sm:mb-4">
+          <AdminCleanerSelector />
+        </div>
+      )}
+      <CleanerUpcomingBookings />
+    </ShellPage>
   );
 };
 

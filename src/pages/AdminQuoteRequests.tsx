@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 type QuoteRequest = {
   id: string;
@@ -88,7 +89,7 @@ const AdminQuoteRequests: React.FC = () => {
   };
 
   return (
-<div className="max-w-6xl mx-auto space-y-4">
+    <ShellPage width="wide">
                 <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold text-[#185166]">Quote Requests</h1>
                   <Button variant="outline" onClick={load}>Refresh</Button>
@@ -184,7 +185,7 @@ const AdminQuoteRequests: React.FC = () => {
                     ))}
                   </div>
                 )}
-              </div>
+              </ShellPage>
   );
 };
 

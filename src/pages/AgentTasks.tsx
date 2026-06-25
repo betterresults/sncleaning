@@ -26,6 +26,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AgentTasks = () => {
   usePageTracking('Agent Tasks');
@@ -157,18 +158,14 @@ const AgentTasks = () => {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   const pendingCount = tasks.filter(t => t.status === 'pending').length;
   const inProgressCount = tasks.filter(t => t.status === 'in_progress').length;
 
   return (
-<div className="w-full px-1 sm:px-0 max-w-4xl mx-auto">
+    <ShellPage width="narrow">
                 <div className="mb-6">
                   <h1 className="text-3xl font-bold text-[#185166]">My Tasks</h1>
                   <p className="text-gray-600 mt-2">
@@ -365,7 +362,7 @@ const AgentTasks = () => {
                     ))}
                   </div>
                 )}
-              </div>
+              </ShellPage>
   );
 };
 

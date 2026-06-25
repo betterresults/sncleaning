@@ -1,12 +1,10 @@
 import { Outlet } from 'react-router-dom';
 import { AppShell } from './AppShell';
+import { ShellLayoutProvider, useShellLayoutContext } from './ShellLayoutContext';
 import { useShellLayoutConfig } from './useShellLayoutConfig';
 
-/**
- * Authenticated app layout — wraps all protected routes with the glass shell.
- * Cleaner mobile / Capacitor routes render without the shell (native bottom nav).
- */
-export function ShellLayout() {
+function ShellLayoutFrame() {
+  const { pageTitle } = useShellLayoutContext();
   const {
     skipShell,
     navigationItems,
@@ -14,7 +12,6 @@ export function ShellLayout() {
     userRole,
     customerId,
     cleanerId,
-    title,
     showBackToAdmin,
     handleSignOut,
   } = useShellLayoutConfig();
@@ -30,11 +27,23 @@ export function ShellLayout() {
       userRole={userRole}
       customerId={customerId}
       cleanerId={cleanerId}
-      title={title}
+      title={pageTitle}
       showBackToAdmin={showBackToAdmin}
       onSignOut={handleSignOut}
     >
       <Outlet />
     </AppShell>
+  );
+}
+
+/**
+ * Authenticated app layout — wraps all protected routes with the glass shell.
+ * Cleaner mobile / Capacitor routes render without the shell (native bottom nav).
+ */
+export function ShellLayout() {
+  return (
+    <ShellLayoutProvider>
+      <ShellLayoutFrame />
+    </ShellLayoutProvider>
   );
 }

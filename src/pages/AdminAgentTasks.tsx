@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -107,15 +108,11 @@ const AdminAgentTasks = () => {
 
   // Auth checks AFTER all hooks
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   return (
-<div className="w-full px-1 sm:px-0 max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-3xl font-bold text-[#185166]">Task Management</h1>
@@ -167,7 +164,7 @@ const AdminAgentTasks = () => {
                     salesAgents={salesAgents}
                   />
                 )}
-              </div>
+              </ShellPage>
   );
 };
 

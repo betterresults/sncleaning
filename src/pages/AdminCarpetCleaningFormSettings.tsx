@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { CarpetCleaningConfigPanel } from '@/components/carpet-cleaning/CarpetCleaningConfigPanel';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminCarpetCleaningFormSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -10,9 +11,9 @@ const AdminCarpetCleaningFormSettings = () => {
   }
 
   return (
-<div className="max-w-4xl mx-auto">
+    <ShellPage width="narrow">
                 <CarpetCleaningConfigPanel />
-              </div>
+              </ShellPage>
   );
 };
 

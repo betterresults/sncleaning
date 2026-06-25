@@ -7,6 +7,7 @@ import ChatInterface from '@/components/chat/ChatInterface';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 import { useChat } from '@/hooks/useChat';
 import { ChatType } from '@/types/chat';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CustomerMessages = () => {
   const { user, userRole, customerId, loading, signOut } = useAuth();
@@ -30,11 +31,7 @@ const CustomerMessages = () => {
   } = useChat(undefined, effectiveCustomerId);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading messages...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   const handleSelectContact = async (contact: any, booking?: any) => {
@@ -84,7 +81,7 @@ const CustomerMessages = () => {
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Customer';
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 h-full -mx-5 md:-mx-7 -my-5 md:-my-6">
+    <ShellPage>
       {isAdminViewing && (
         <div className="p-4 border-b border-border bg-muted/30">
           <AdminCustomerSelector />
@@ -140,7 +137,7 @@ const CustomerMessages = () => {
                 </div>
               </div>
             )}
-    </div>
+    </ShellPage>
   );
 };
 

@@ -22,6 +22,7 @@ import { pdf } from '@react-pdf/renderer';
 import { BookingsPDF } from '@/components/bookings/BookingsPDF';
 import BookingsPagination from '@/components/cleaner/BookingsPagination';
 import TableControls from '@/components/cleaner/TableControls';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 interface Booking {
   id: number;
@@ -715,15 +716,11 @@ const BulkEditBookings = () => {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   return (
-<div className="max-w-7xl mx-auto space-y-6">
+    <ShellPage width="wide">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                   <Button
@@ -1054,7 +1051,7 @@ const BulkEditBookings = () => {
                     onPageChange={setCurrentPage}
                   />
                 )}
-              </div>
+              </ShellPage>
   );
 };
 

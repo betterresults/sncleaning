@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import PastBookingsListView from '@/components/bookings/PastBookingsListView';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const PastBookings = () => {
   const { user, userRole, signOut } = useAuth();
@@ -8,9 +9,9 @@ const PastBookings = () => {
   // Allow admin and sales_agent
 
   return (
-<div className="max-w-7xl mx-auto space-y-6">
+    <ShellPage width="wide">
                 <PastBookingsListView showStatsForAdmin={userRole === 'admin'} />
-              </div>
+              </ShellPage>
   );
 };
 

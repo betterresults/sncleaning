@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -72,17 +73,13 @@ const AdminSettings = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading settings...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Only allow admins
 
   return (
-<div className="w-full px-1 sm:px-0 max-w-2xl mx-auto">
+    <ShellPage width="narrow">
                 <h1 className="text-2xl font-bold text-[#185166] mb-6">Admin Settings</h1>
                 
                 {/* Account Information */}
@@ -189,7 +186,7 @@ const AdminSettings = () => {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
+              </ShellPage>
   );
 };
 

@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { PostponeDialog } from '@/components/recurringBookings/PostponeDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 interface RecurringService {
   id: number;
   customer: number;
@@ -228,18 +229,11 @@ export default function RecurringBookings() {
     }
   };
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading recurring services...</p>
-        </div>
-      </div>
-    );
+    return <ShellLoading message="Loading recurring services..." />;
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <ShellPage width="wide">
               {/* Header with Search and Filters */}
               <Card>
                 <CardContent className="p-4 space-y-4">
@@ -504,6 +498,6 @@ export default function RecurringBookings() {
             </div>
           ))}
         </div>}
-    </div>
+    </ShellPage>
   );
 }

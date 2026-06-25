@@ -14,6 +14,7 @@ import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from "@/hooks/useCompanySettings";
 import UpdateBookingsCleanerDialog from "@/components/recurring/UpdateBookingsCleanerDialog";
 import { useLinkedCleaners } from "@/hooks/useLinkedCleaners";
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 interface Customer {
   id: number;
@@ -315,20 +316,11 @@ export default function EditRecurringBooking() {
   };
 
   if (initialLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading recurring service...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <ShellLoading message="Loading recurring service..." />;
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <ShellPage width="wide">
       <div className="flex items-center gap-4 mb-8">
         <Button 
           variant="outline" 
@@ -678,6 +670,6 @@ export default function EditRecurringBooking() {
         onConfirm={handleConfirmCleanerChange}
         onCancel={() => setPendingSubmit(false)}
       />
-    </div>
+    </ShellPage>
   );
 }

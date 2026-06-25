@@ -1,22 +1,19 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfitTrackingDashboard } from '@/components/payments/ProfitTrackingDashboard';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminProfitTracking = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 <ProfitTrackingDashboard />
-              </div>
+              </ShellPage>
   );
 };
 

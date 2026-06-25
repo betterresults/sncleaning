@@ -1,22 +1,19 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import PaymentManagementDashboard from '@/components/payments/PaymentManagementDashboard';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminPaymentManagement = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 <PaymentManagementDashboard />
-              </div>
+              </ShellPage>
   );
 };
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { CleanerChecklistsList } from '@/components/cleaner/CleanerChecklistsList';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerChecklists = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
@@ -11,20 +12,16 @@ const CleanerChecklists = () => {
   const isAdminViewing = userRole === 'admin';
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading checklists...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 {isAdminViewing && <AdminCleanerSelector />}
                 <CleanerChecklistsList />
-              </div>
+              </ShellPage>
   );
 };
 

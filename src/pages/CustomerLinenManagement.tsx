@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import LinenInventoryView from '@/components/customer/LinenInventoryView';
 import LinenOrdersView from '@/components/customer/LinenOrdersView';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CustomerLinenManagement = () => {
   const { user, userRole, customerId, cleanerId, signOut } = useAuth();
@@ -11,7 +12,7 @@ const CustomerLinenManagement = () => {
   const [activeTab, setActiveTab] = useState('inventory');
 
   return (
-<div className="w-full max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6">
                     <TabsTrigger value="inventory">Inventory</TabsTrigger>
@@ -26,7 +27,7 @@ const CustomerLinenManagement = () => {
                     <LinenOrdersView />
                   </TabsContent>
                 </Tabs>
-              </div>
+              </ShellPage>
   );
 };
 

@@ -1,14 +1,15 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ModernUsersTable from '@/components/ModernUsersTable';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const UsersAdmins = () => {
   const { user, userRole, signOut } = useAuth();
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                   <ModernUsersTable userType="admin" />
-                </div>
+                </ShellPage>
   );
 };
 

@@ -7,6 +7,7 @@ import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckSquare } from 'lucide-react';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerChecklist = () => {
   const { userRole, cleanerId, loading } = useAuth();
@@ -61,16 +62,12 @@ const CleanerChecklist = () => {
   }, [bookingId, userRole, selectedCleanerId]);
 
   if (loading || bookingLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px] p-4">
-        <div className="text-base">Loading checklist...</div>
-      </div>
-    );
+    return <ShellLoading message="Loading checklist..." />;
   }
 
   if (!bookingId || !bookingData) {
     return (
-      <div className="max-w-7xl mx-auto">
+      <ShellPage width="wide">
         <Card>
           <CardContent className="p-8 text-center">
             <CheckSquare className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -80,13 +77,13 @@ const CleanerChecklist = () => {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </ShellPage>
     );
   }
 
   if (!effectiveCleanerId) {
     return (
-      <div className="max-w-7xl mx-auto space-y-4">
+      <ShellPage width="wide">
         {isAdminViewing && <AdminCleanerSelector />}
         <Card>
           <CardContent className="p-8 text-center">
@@ -97,19 +94,19 @@ const CleanerChecklist = () => {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </ShellPage>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <ShellPage width="wide">
       {isAdminViewing && <AdminCleanerSelector />}
       <CleaningChecklistInterface
         bookingId={parseInt(bookingId)}
         cleanerId={effectiveCleanerId}
         bookingData={bookingData}
       />
-    </div>
+    </ShellPage>
   );
 };
 

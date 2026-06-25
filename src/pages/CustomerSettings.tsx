@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Lock, Eye, EyeOff, User, MapPin, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CustomerSettings = () => {
   const { user, userRole, customerId, cleanerId, signOut } = useAuth();
@@ -93,7 +94,7 @@ const CustomerSettings = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <ShellPage width="wide">
                 <div className="text-center mb-8">
                   <p className="text-muted-foreground mt-2">Manage your account preferences and security</p>
                 </div>
@@ -227,7 +228,7 @@ const CustomerSettings = () => {
                     </div>
                   </TabsContent>
                 </Tabs>
-    </div>
+    </ShellPage>
   );
 };
 

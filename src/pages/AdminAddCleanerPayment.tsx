@@ -14,6 +14,7 @@ import { ArrowLeft, ChevronDown, User, Calendar, MapPin, DollarSign, Clock, Cred
 import { format } from 'date-fns';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { Badge } from '@/components/ui/badge';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 interface PastBooking {
   id: number;
@@ -190,15 +191,11 @@ const AdminAddCleanerPayment = () => {
   const selectedCleaner = linkedCleaners.find(c => c.id === selectedCleanerId);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   return (
-<div className="max-w-4xl mx-auto space-y-6">
+    <ShellPage width="narrow">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                   <Button
@@ -545,7 +542,7 @@ const AdminAddCleanerPayment = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              </ShellPage>
   );
 };
 

@@ -7,6 +7,7 @@ import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
 import { isCapacitor } from '@/utils/capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerEarningsPage = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
@@ -16,11 +17,7 @@ const CleanerEarningsPage = () => {
   const isMobileView = isCapacitor() || isMobile;
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading earnings...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
@@ -30,7 +27,7 @@ const CleanerEarningsPage = () => {
     return (
       <div className="min-h-screen bg-background">
         <CleanerTopNav />
-        
+
         <main className="pt-header-safe pb-20 content-bottom-spacer">
           <div className="p-4 pt-2">
             {userRole === 'admin' && <AdminCleanerSelector />}
@@ -43,12 +40,11 @@ const CleanerEarningsPage = () => {
     );
   }
 
-  // Desktop view with sidebar
   return (
-<div className="max-w-7xl mx-auto">
-                {userRole === 'admin' && <AdminCleanerSelector />}
-                <CleanerEarnings />
-              </div>
+    <ShellPage width="wide">
+      {userRole === 'admin' && <AdminCleanerSelector />}
+      <CleanerEarnings />
+    </ShellPage>
   );
 };
 

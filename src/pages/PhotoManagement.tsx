@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 interface PhotoFolder {
   key: string;
@@ -306,6 +307,7 @@ const PhotoManagement = () => {
   const selectedFolderLabel = folders.find(f => f.key === selectedFolder)?.label || selectedFolder;
 
   return (
+    <ShellPage width="wide">
 <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
                   <CardHeader className="pb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -451,6 +453,7 @@ const PhotoManagement = () => {
                     )}
                   </CardContent>
                 </Card>
+    </ShellPage>
   );
 };
 
@@ -479,7 +482,7 @@ const PhotoThumbnail = ({
   }, [photo.file_path]);
 
   return (
-    <div className="relative group rounded-xl overflow-hidden border border-border bg-muted aspect-square">
+    <div className="relative aspect-square rounded-lg overflow-hidden border border-border group">
       {loading ? (
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>

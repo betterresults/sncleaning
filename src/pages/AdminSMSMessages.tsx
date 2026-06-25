@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User, UserSearch, Calendar, MapPin, Clock, ExternalLink, Mail, Bell, AlertCircle } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 import {
   Dialog,
   DialogContent,
@@ -563,7 +564,7 @@ const AdminSMSMessages = () => {
   };
 
   return (
-<div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
+    <ShellPage width="wide">
                 {/* Unread Messages Alert Banner */}
                 {(() => {
                   const totalUnread = threads.reduce((sum, t) => sum + t.unread_count, 0);
@@ -1180,7 +1181,7 @@ const AdminSMSMessages = () => {
                     )}
                   </Card>
                 </div>
-              </div>
+              </ShellPage>
   );
 };
 

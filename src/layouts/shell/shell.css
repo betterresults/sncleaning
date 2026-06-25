@@ -692,3 +692,78 @@
 .shell-sidebar--collapsed .shell-nav-flyout-anchor [data-tooltip]::after {
   display: none;
 }
+
+/* ─── Page content primitives (ShellPage / ShellLoading) ─── */
+.shell-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--shell-page-gap, 1.5rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.shell-page--default {
+  max-width: var(--shell-page-max, 80rem);
+}
+
+.shell-page--narrow {
+  max-width: 42rem;
+}
+
+.shell-page--wide {
+  max-width: 96rem;
+}
+
+.shell-page--full {
+  max-width: none;
+}
+
+.shell-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shell-page-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--shell-text);
+  line-height: 1.2;
+}
+
+.shell-page-description {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--shell-text-muted);
+  line-height: 1.45;
+}
+
+.shell-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 12rem;
+  padding: 2rem 1rem;
+  color: var(--shell-text-muted);
+}
+
+.shell-loading-spinner {
+  width: 1.75rem;
+  height: 1.75rem;
+  animation: shell-spin 0.8s linear infinite;
+  color: var(--shell-tint);
+}
+
+.shell-loading-text {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+@keyframes shell-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

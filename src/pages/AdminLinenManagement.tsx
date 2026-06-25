@@ -5,12 +5,13 @@ import { Package, ShoppingCart, BarChart3 } from "lucide-react";
 import { LinenProductsManager } from "@/components/linen/LinenProductsManager";
 import { LinenOrdersManager } from "@/components/linen/LinenOrdersManager";
 import { InventoryManager } from "@/components/linen/InventoryManager";
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminLinenManagement = () => {
   const [activeTab, setActiveTab] = useState("products");
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <ShellPage width="wide">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Linen Management</h1>
         <p className="text-muted-foreground">Manage products, orders, and inventory</p>
@@ -83,7 +84,7 @@ const AdminLinenManagement = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </ShellPage>
   );
 };
 

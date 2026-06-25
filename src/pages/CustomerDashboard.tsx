@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, CreditCard, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
@@ -18,6 +18,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { useToast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CustomerDashboard = () => {
   const { user, userRole, customerId, cleanerId, signOut, loading } = useAuth();
@@ -60,15 +61,11 @@ const CustomerDashboard = () => {
 
   // Auth checks AFTER all hooks
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <ShellLoading message="Loading dashboard…" />;
   }
 
   return (
-<div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
+    <ShellPage width="wide">
                 {isAdminViewing && <AdminCustomerSelector />}
                 
                 {isBusinessClient && overdueInvoices.length > 0 && (
@@ -271,8 +268,8 @@ const CustomerDashboard = () => {
                 </Card>
               )}
               
-              <CustomerUpcomingBookings />
-            </div>
+      <CustomerUpcomingBookings />
+    </ShellPage>
   );
 };
 

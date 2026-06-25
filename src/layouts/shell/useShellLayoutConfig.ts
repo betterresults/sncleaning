@@ -11,7 +11,6 @@ import {
   salesAgentNavigation,
 } from '@/lib/navigationItems';
 import type { ShellNavigationItem } from './types';
-import { getShellRouteTitle } from './shellRouteTitles';
 
 const CLEANER_MOBILE_APP_ROUTES = new Set([
   '/cleaner-today',
@@ -74,8 +73,6 @@ export function useShellLayoutConfig() {
     [userRole, pathname, hasLinenAccess]
   );
 
-  const title = useMemo(() => getShellRouteTitle(pathname), [pathname]);
-
   const showBackToAdmin = useMemo(
     () => userRole === 'admin' && (isCustomerArea(pathname) || isCleanerArea(pathname)),
     [userRole, pathname]
@@ -96,7 +93,6 @@ export function useShellLayoutConfig() {
     userRole,
     customerId,
     cleanerId,
-    title,
     showBackToAdmin,
     handleSignOut,
   };

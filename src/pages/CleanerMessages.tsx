@@ -6,6 +6,7 @@ import CleanerContacts from '@/components/chat/CleanerContacts';
 import ChatInterface from '@/components/chat/ChatInterface';
 import { useChat } from '@/hooks/useChat';
 import { ChatType } from '@/types/chat';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerMessages = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
@@ -57,17 +58,13 @@ const CleanerMessages = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading messages...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
 
   return (
-<div className="h-full max-w-7xl mx-auto p-4">
+    <ShellPage width="wide">
                 {userRole === 'admin' && (
                   <div className="mb-4">
                     <AdminCleanerSelector />
@@ -123,7 +120,7 @@ const CleanerMessages = () => {
                     </div>
                   </div>
                 )}
-              </div>
+              </ShellPage>
   );
 };
 

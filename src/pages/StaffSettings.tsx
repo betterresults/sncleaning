@@ -8,6 +8,7 @@ import { Lock, User, Eye, EyeOff, Camera, Building2, Upload, Loader2 } from 'luc
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const StaffSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -294,19 +295,11 @@ const StaffSettings = () => {
 
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading settings...</div>
-      </div>
-    );
+    return <ShellLoading message="Loading settings…" />;
   }
 
-  // Allow admins and sales agents
-
   return (
-<div className="w-full px-1 sm:px-0 max-w-2xl mx-auto">
-                <h1 className="text-2xl font-bold text-[#185166] mb-6">My Profile</h1>
-                
+    <ShellPage width="narrow" title="My Profile">
                 {/* Profile Photo Section */}
                 <Card className="mb-6">
                   <CardHeader>
@@ -550,7 +543,7 @@ const StaffSettings = () => {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
+    </ShellPage>
   );
 };
 

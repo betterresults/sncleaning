@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import WhatsAppContactList from '@/components/chat/WhatsAppContactList';
 import WhatsAppMessageList from '@/components/chat/WhatsAppMessageList';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminChatManagement = () => {
   const { user, userRole, signOut } = useAuth();
@@ -15,7 +16,7 @@ const AdminChatManagement = () => {
   // Allow admin and sales_agent
 
   return (
-<div className="max-w-7xl mx-auto">
+    <ShellPage width="wide">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
                   {/* Contacts List */}
                   <Card className="lg:col-span-1">
@@ -43,7 +44,7 @@ const AdminChatManagement = () => {
                     </CardContent>
                   </Card>
                 </div>
-              </div>
+              </ShellPage>
   );
 };
 
