@@ -6,6 +6,18 @@ export { ShellNav } from './ShellNav';
 export { ShellPage } from './ShellPage';
 export { ShellLoading } from './ShellLoading';
 export {
+  ShellSection,
+  ShellSectionHeader,
+  ShellSectionBody,
+  ShellStat,
+  ShellStatGrid,
+  ShellCard,
+  ShellCardHeader,
+  ShellCardBody,
+  ShellStatCard,
+} from './ShellSection';
+export type { ShellStatTone } from './ShellSection';
+export {
   ShellLayoutProvider,
   useShellLayoutContext,
   useShellPageTitle,

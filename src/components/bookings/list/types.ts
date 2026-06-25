@@ -35,6 +35,8 @@ export interface BookingsListViewProps {
   };
   initialCleanerFilter?: string;
   filterBySubmissionDate?: boolean;
+  showPagination?: boolean;
+  maxItems?: number;
 }
 
 export interface BookingsListCardHandlers {

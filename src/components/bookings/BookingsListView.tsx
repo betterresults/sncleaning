@@ -24,6 +24,8 @@ const BookingsListView = ({
   dashboardDateFilter,
   initialCleanerFilter,
   filterBySubmissionDate = false,
+  showPagination = true,
+  maxItems,
 }: BookingsListViewProps) => {
   const listParams = useMemo(
     () => ({ dashboardDateFilter, filterBySubmissionDate }),
@@ -226,11 +228,14 @@ const BookingsListView = ({
   const totalPages = Math.ceil(displayBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const displayedBookings = displayBookings.slice(startIndex, endIndex);
+  let displayedBookings = displayBookings.slice(startIndex, endIndex);
+  if (maxItems != null) {
+    displayedBookings = displayedBookings.slice(0, maxItems);
+  }
   const showFilters = !dashboardDateFilter;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4 min-w-0">
       {showFilters && (
         <UpcomingBookingsFilters
           filters={filters}
@@ -252,14 +257,16 @@ const BookingsListView = ({
         />
       ))}
 
-      <BookingsListPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        startIndex={startIndex}
-        endIndex={endIndex}
-        totalItems={displayBookings.length}
-        onPageChange={setCurrentPage}
-      />
+      {showPagination && (
+        <BookingsListPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={displayBookings.length}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       <BookingsListDialogs
         editDialogOpen={editDialogOpen}

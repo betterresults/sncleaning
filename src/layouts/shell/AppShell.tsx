@@ -5,6 +5,7 @@ import { ShellDrawer, ShellSidebar } from './ShellSidebar';
 import { useShellCollapsed } from './useShellCollapsed';
 import type { AppShellProps } from './types';
 import './shell.css';
+import './shell-content.css';
 
 const ShellMain = memo(function ShellMain({
   children,

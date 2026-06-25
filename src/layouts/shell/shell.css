@@ -18,8 +18,10 @@
 /* ─── Full-viewport gradient canvas ─── */
 .shell {
   position: relative;
+  width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
+  overflow-x: clip;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -44,6 +46,7 @@
   align-items: stretch;
   gap: var(--shell-gap);
   box-sizing: border-box;
+  width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
   padding: var(--shell-gutter);
@@ -63,11 +66,7 @@
   flex-direction: column;
   width: var(--shell-sidebar-width);
   flex-shrink: 0;
-  align-self: flex-start;
-  height: calc(100dvh - (var(--shell-gutter) * 2));
-  max-height: calc(100dvh - (var(--shell-gutter) * 2));
   position: sticky;
-  top: var(--shell-gutter);
   background: rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
@@ -75,7 +74,6 @@
   box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.25);
   transition: width 0.28s var(--shell-sidebar-ease);
   overflow: visible;
-  contain: layout style paint;
   isolation: isolate;
 }
 
@@ -89,8 +87,19 @@
 }
 
 @media (min-width: 768px) {
+  .shell-frame {
+    padding: 0;
+    align-items: flex-start;
+  }
+
   .shell-sidebar {
     display: flex;
+    align-self: flex-start;
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+    top: 0;
+    contain: layout style;
   }
 }
 
@@ -533,6 +542,13 @@
   }
 }
 
+@media (min-width: 768px) {
+  .shell-main {
+    margin: var(--shell-gutter) var(--shell-gutter) var(--shell-gutter) 0;
+    min-height: calc(100dvh - (var(--shell-gutter) * 2));
+  }
+}
+
 .shell-card {
   flex: 1 1 auto;
   display: flex;
@@ -611,6 +627,22 @@
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px 22px 28px;
+}
+
+@media (max-width: 767px) {
+  .shell-card-body {
+    padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+  }
+
+  .shell-card-header {
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
+    gap: 8px;
+  }
+
+  .shell-card-title {
+    font-size: 16px;
+  }
 }
 
 @media (min-width: 768px) {
