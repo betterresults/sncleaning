@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { salesAgentNavigation } from '@/lib/navigationItems';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useAgentTasks, AgentTask } from '@/hooks/useAgentTasks';
 import { TaskDetailsDialog } from '@/components/admin/TaskDetailsDialog';
@@ -49,14 +45,6 @@ const AgentTasks = () => {
     assignedTo: user?.id,
     includeCompleted: statusFilter === 'all' || statusFilter === 'completed',
   });
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   const handleViewTask = (task: AgentTask) => {
     setSelectedTask(task);
@@ -180,26 +168,7 @@ const AgentTasks = () => {
   const inProgressCount = tasks.filter(t => t.status === 'in_progress').length;
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={salesAgentNavigation}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
-              <div className="w-full px-1 sm:px-0 max-w-4xl mx-auto">
+<div className="w-full px-1 sm:px-0 max-w-4xl mx-auto">
                 <div className="mb-6">
                   <h1 className="text-3xl font-bold text-[#185166]">My Tasks</h1>
                   <p className="text-gray-600 mt-2">
@@ -397,78 +366,6 @@ const AgentTasks = () => {
                   </div>
                 )}
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-
-      <TaskDetailsDialog
-        task={selectedTask}
-        open={detailsDialogOpen}
-        onOpenChange={setDetailsDialogOpen}
-      />
-
-      <Dialog open={completeDialogOpen} onOpenChange={setCompleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Complete Task</DialogTitle>
-            <DialogDescription>
-              Mark this task as completed. You can add notes about what was done.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="notes">Completion Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              value={completionNotes}
-              onChange={(e) => setCompletionNotes(e.target.value)}
-              placeholder="e.g., Customer confirmed they were happy with the cleaning..."
-              rows={4}
-              className="mt-2"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCompleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCompleteTask} disabled={completing}>
-              {completing ? 'Completing...' : 'Complete Task'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Notes Dialog */}
-      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selectedTask?.notes ? 'Edit Notes' : 'Add Notes'}</DialogTitle>
-            <DialogDescription>
-              Add notes about this task. These will be visible to your admin.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="task-notes">Notes</Label>
-            <Textarea
-              id="task-notes"
-              value={editingNotes}
-              onChange={(e) => setEditingNotes(e.target.value)}
-              placeholder="e.g., Customer requested callback at 3pm, Left voicemail..."
-              rows={5}
-              className="mt-2"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNotesDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveNotes} disabled={savingNotes}>
-              {savingNotes ? 'Saving...' : 'Save Notes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </SidebarProvider>
   );
 };
 

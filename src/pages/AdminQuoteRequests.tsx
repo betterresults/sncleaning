@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -92,14 +88,7 @@ const AdminQuoteRequests: React.FC = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
-        <UnifiedHeader title="Quote Requests" user={user} userRole={userRole} onSignOut={signOut} />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar navigationItems={adminNavigation} user={user} onSignOut={signOut} />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 md:p-6 max-w-full overflow-x-hidden">
-              <div className="max-w-6xl mx-auto space-y-4">
+<div className="max-w-6xl mx-auto space-y-4">
                 <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold text-[#185166]">Quote Requests</h1>
                   <Button variant="outline" onClick={load}>Refresh</Button>
@@ -196,11 +185,6 @@ const AdminQuoteRequests: React.FC = () => {
                   </div>
                 )}
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
   );
 };
 

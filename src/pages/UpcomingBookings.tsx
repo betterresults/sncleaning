@@ -1,21 +1,9 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
 
 const UpcomingBookingsPage = () => {
   const { user, userRole, cleanerId, loading, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   if (loading) {
     return (
@@ -29,38 +17,15 @@ const UpcomingBookingsPage = () => {
 
   // Allow admin and sales_agent
 
-  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
-
   // No date filter means show ALL future bookings
   const noDateFilter = undefined;
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={navigation}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 lg:p-6 space-y-2 sm:space-y-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto">
+<div className="max-w-7xl mx-auto">
                 <UpcomingBookings 
                   dashboardDateFilter={noDateFilter}
                 />
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
   );
 };
 

@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams } from 'react-router-dom';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { getCustomerNavigation } from '@/lib/navigationItems';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PersonalInfoEditor from '@/components/customer/PersonalInfoEditor';
@@ -82,18 +78,6 @@ const CustomerSettings = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      console.log('CustomerSettings: Starting sign out process...');
-      await signOut();
-      console.log('CustomerSettings: Sign out completed');
-      // Redirect to auth page after successful sign out
-      window.location.href = '/auth';
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   // Set active tab based on URL parameter
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -109,26 +93,7 @@ const CustomerSettings = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gradient-to-br from-slate-50 to-blue-50 overflow-x-hidden">
-        <UnifiedSidebar 
-          navigationItems={getCustomerNavigation(hasLinenAccess)}
-          user={user}
-          userRole={userRole}
-          customerId={customerId}
-          cleanerId={cleanerId}
-          onSignOut={handleSignOut}
-        />
-        <SidebarInset className="flex-1 overflow-x-hidden max-w-full">
-          <UnifiedHeader 
-            title=""
-            user={user}
-            userRole={userRole}
-          />
-          
-          <main className="flex-1 w-full max-w-full overflow-x-hidden">
-            <div className="p-2 sm:p-4 space-y-3 sm:space-y-4 max-w-full">
-              <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
                 <div className="text-center mb-8">
                   <p className="text-muted-foreground mt-2">Manage your account preferences and security</p>
                 </div>
@@ -262,12 +227,7 @@ const CustomerSettings = () => {
                     </div>
                   </TabsContent>
                 </Tabs>
-              </div>
-            </div>
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    </div>
   );
 };
 

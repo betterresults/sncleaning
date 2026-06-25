@@ -2,8 +2,6 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AppShell } from '@/layouts/shell';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import DashboardStats from '@/components/admin/DashboardStats';
 import BookingsListView from '@/components/bookings/BookingsListView';
 import RecentActivity from '@/components/dashboard/RecentActivity';
@@ -14,14 +12,6 @@ import { useNavigate } from 'react-router-dom';
 const Dashboard = () => {
   const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   // Calculate date range for today's bookings
   const getTodayRange = () => {
@@ -48,17 +38,9 @@ const Dashboard = () => {
   const next7DaysRange = getNext7DaysRange();
 
   // Determine which navigation to use based on role
-  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
 
   return (
-    <AppShell
-      navigationItems={navigation}
-      user={user}
-      userRole={userRole}
-      title="Dashboard"
-      onSignOut={handleSignOut}
-    >
-      <div className="space-y-6 w-full">
+<div className="space-y-6 w-full">
         {userRole === 'admin' && <DashboardStats />}
                 
                 {/* Today's Bookings */}
@@ -121,7 +103,6 @@ const Dashboard = () => {
                   </div>
                 )}
       </div>
-    </AppShell>
   );
 };
 

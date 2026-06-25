@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export const useCustomerLinenAccess = () => {
+export const useCustomerLinenAccess = (options?: { enabled?: boolean }) => {
+  const enabled = options?.enabled ?? true;
   const [hasLinenAccess, setHasLinenAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
+    if (!enabled) {
+      setHasLinenAccess(false);
+      setLoading(false);
+      return;
+    }
+
     const checkLinenAccess = async () => {
       if (!user) {
         console.log('No user found for linen access check');
@@ -101,7 +108,7 @@ export const useCustomerLinenAccess = () => {
     };
 
     checkLinenAccess();
-  }, [user]);
+  }, [user, enabled]);
 
   return { hasLinenAccess, loading };
 };

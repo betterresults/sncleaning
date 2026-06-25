@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
 import { usePageTracking } from '@/hooks/usePageTracking';
 import { useAgentTasks, useSalesAgents, AgentTask, CreateTaskInput } from '@/hooks/useAgentTasks';
 import { CreateTaskDialog } from '@/components/admin/CreateTaskDialog';
@@ -53,14 +49,6 @@ const AdminAgentTasks = () => {
   });
 
   const { agents: salesAgents } = useSalesAgents();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   const handleCreateTask = async (input: CreateTaskInput) => {
     await createTask(input);
@@ -127,26 +115,7 @@ const AdminAgentTasks = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
-              <div className="w-full px-1 sm:px-0 max-w-7xl mx-auto">
+<div className="w-full px-1 sm:px-0 max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                   <div>
                     <h1 className="text-3xl font-bold text-[#185166]">Task Management</h1>
@@ -199,71 +168,6 @@ const AdminAgentTasks = () => {
                   />
                 )}
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-
-      <CreateTaskDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        onSubmit={handleCreateTask}
-      />
-
-      <TaskDetailsDialog
-        task={selectedTask}
-        open={detailsDialogOpen}
-        onOpenChange={setDetailsDialogOpen}
-      />
-
-      <EditTaskDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        task={taskToEdit}
-        onSubmit={async (input) => {
-          await updateTask(input);
-          setEditDialogOpen(false);
-          setTaskToEdit(null);
-        }}
-      />
-
-      <BookingSelectorDialog
-        open={bookingSelectorOpen}
-        onOpenChange={setBookingSelectorOpen}
-        onSelect={handleBookingSelect}
-        customerId={taskForBookingEdit?.customer_id}
-      />
-
-      <AlertDialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Task</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this task? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={!!cancelTaskId} onOpenChange={() => setCancelTaskId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Task</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to cancel this task?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>No, keep it</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelConfirm}>Yes, cancel task</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </SidebarProvider>
   );
 };
 

@@ -1,9 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import WhatsAppContactList from '@/components/chat/WhatsAppContactList';
 import WhatsAppMessageList from '@/components/chat/WhatsAppMessageList';
@@ -12,40 +8,14 @@ const AdminChatManagement = () => {
   const { user, userRole, signOut } = useAuth();
   const [activeContact, setActiveContact] = React.useState<any>(null);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   const handleContactSelect = (contact: any) => {
     setActiveContact(contact);
   };
 
   // Allow admin and sales_agent
 
-  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={navigation}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto">
+<div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
                   {/* Contacts List */}
                   <Card className="lg:col-span-1">
@@ -74,11 +44,6 @@ const AdminChatManagement = () => {
                   </Card>
                 </div>
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
   );
 };
 

@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { getCustomerNavigation } from '@/lib/navigationItems';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import { Button } from '@/components/ui/button';
 import ServiceSelection from '@/components/booking/ServiceSelection';
@@ -39,14 +35,6 @@ const CustomerAddBooking = () => {
     fetchCustomerData();
   }, [customerId]);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   const handleServiceSelect = (serviceType: string) => {
     if (serviceType === 'airbnb-cleaning') {
       // Redirect to dedicated customer Airbnb booking page
@@ -69,23 +57,7 @@ const CustomerAddBooking = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gradient-to-br from-slate-50 to-blue-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={getCustomerNavigation(hasLinenAccess)}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto">
+<div className="max-w-7xl mx-auto">
                 {selectedService ? (
                   <div className="space-y-6">
                   {selectedService !== 'airbnb-cleaning' && (
@@ -115,11 +87,6 @@ const CustomerAddBooking = () => {
                 </div>
               )}
             </div>
-          </main>
-        </SidebarInset>
-      </div>
-      </div>
-    </SidebarProvider>
   );
 };
 

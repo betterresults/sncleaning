@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { ShellLayout } from '@/layouts/shell';
 import { Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -132,7 +133,7 @@ export function ProtectedRoute({
     return roleHomeRedirect;
   }
 
-  return <Outlet />;
+  return <ShellLayout />;
 }
 
 /** Admin + sales agent (operations console) */

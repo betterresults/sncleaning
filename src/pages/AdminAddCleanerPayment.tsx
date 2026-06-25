@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,14 +61,6 @@ const AdminAddCleanerPayment = () => {
   const [paymentDate, setPaymentDate] = useState('');
 
   const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(true);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   useEffect(() => {
     fetchBookings();
@@ -210,26 +198,7 @@ const AdminAddCleanerPayment = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-background">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden">
-              <div className="max-w-4xl mx-auto space-y-6">
+<div className="max-w-4xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                   <Button
@@ -577,11 +546,6 @@ const AdminAddCleanerPayment = () => {
                   </CardContent>
                 </Card>
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
   );
 };
 

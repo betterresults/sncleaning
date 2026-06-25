@@ -20,10 +20,6 @@ import { CreditCard, Download } from 'lucide-react';
 import { useServiceTypes, useCleaningTypes, ServiceType, CleaningType } from '@/hooks/useCompanySettings';
 import { pdf } from '@react-pdf/renderer';
 import { BookingsPDF } from '@/components/bookings/BookingsPDF';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
 import BookingsPagination from '@/components/cleaner/BookingsPagination';
 import TableControls from '@/components/cleaner/TableControls';
 
@@ -113,14 +109,6 @@ const BulkEditBookings = () => {
   const [sendingPaymentLinks, setSendingPaymentLinks] = useState(false);
   const [availablePaymentStatuses, setAvailablePaymentStatuses] = useState<string[]>([]);
   const [availableBookingStatuses, setAvailableBookingStatuses] = useState<string[]>([]);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   // Fetch service types and cleaning types
   const { data: serviceTypes } = useServiceTypes();
@@ -735,23 +723,7 @@ const BulkEditBookings = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-6 space-y-6 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto space-y-6">
+<div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                   <Button
@@ -1083,11 +1055,6 @@ const BulkEditBookings = () => {
                   />
                 )}
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
   );
 };
 

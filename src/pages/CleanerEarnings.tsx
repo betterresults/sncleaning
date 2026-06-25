@@ -1,9 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { cleanerNavigation } from '@/lib/navigationItems';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerEarnings from '@/components/cleaner/CleanerEarnings';
@@ -18,14 +14,6 @@ const CleanerEarningsPage = () => {
   
   // Determine mobile view BEFORE any conditional returns
   const isMobileView = isCapacitor() || isMobile;
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   if (loading) {
     return (
@@ -57,32 +45,10 @@ const CleanerEarningsPage = () => {
 
   // Desktop view with sidebar
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-24">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          showBackToAdmin={userRole === 'admin'}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={cleanerNavigation}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto">
+<div className="max-w-7xl mx-auto">
                 {userRole === 'admin' && <AdminCleanerSelector />}
                 <CleanerEarnings />
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
   );
 };
 

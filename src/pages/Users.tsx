@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
 import ModernUsersTable from '@/components/ModernUsersTable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, UserCheck, UserPlus } from 'lucide-react';
@@ -12,32 +8,8 @@ const Users = () => {
   const { user, userRole, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('customers');
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   return (
-    <SidebarProvider>
-        <div className="min-h-screen flex flex-col w-full bg-gray-50">
-          <UnifiedHeader 
-            title=""
-            user={user}
-            userRole={userRole}
-            onSignOut={handleSignOut}
-          />
-          <div className="flex flex-1 w-full">
-            <UnifiedSidebar 
-              navigationItems={adminNavigation}
-              user={user}
-              onSignOut={handleSignOut}
-            />
-            <SidebarInset className="flex-1">
-              <main className="flex-1 p-4 space-y-4 max-w-full overflow-x-hidden">
-                <div className="max-w-7xl mx-auto">
+<div className="max-w-7xl mx-auto">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-6">
                       <TabsTrigger value="customers" className="flex items-center gap-2">
@@ -67,11 +39,6 @@ const Users = () => {
                     </TabsContent>
                   </Tabs>
                 </div>
-              </main>
-            </SidebarInset>
-          </div>
-        </div>
-      </SidebarProvider>
   );
 };
 

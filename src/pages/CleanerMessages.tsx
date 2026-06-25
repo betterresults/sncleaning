@@ -1,9 +1,5 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { cleanerNavigation } from '@/lib/navigationItems';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerContacts from '@/components/chat/CleanerContacts';
@@ -17,7 +13,6 @@ const CleanerMessages = () => {
   
   // Use selected cleaner ID if admin is viewing, otherwise use authenticated cleaner's ID
   const effectiveCleanerId = userRole === 'admin' ? selectedCleanerId : cleanerId;
-  const isAdminViewing = userRole === 'admin';
 
   const {
     chats,
@@ -31,13 +26,7 @@ const CleanerMessages = () => {
     createChat
   } = useChat(effectiveCleanerId, undefined);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  const isAdminViewing = userRole === 'admin';
 
   const handleSelectContact = async (contact: any, booking?: any) => {
     if (contact.chat) {
@@ -78,24 +67,7 @@ const CleanerMessages = () => {
   // Allow users with role 'user' who have a cleanerId, or admins
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          showBackToAdmin={userRole === 'admin'}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={cleanerNavigation}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 overflow-hidden">
-              <div className="h-full max-w-7xl mx-auto p-4">
+<div className="h-full max-w-7xl mx-auto p-4">
                 {userRole === 'admin' && (
                   <div className="mb-4">
                     <AdminCleanerSelector />
@@ -152,11 +124,6 @@ const CleanerMessages = () => {
                   </div>
                 )}
               </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
   );
 };
 
