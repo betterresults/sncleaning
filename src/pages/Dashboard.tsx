@@ -58,7 +58,7 @@ const Dashboard = () => {
       title="Dashboard"
       onSignOut={handleSignOut}
     >
-      <div className="space-y-6 w-full max-w-7xl mx-auto">
+      <div className="space-y-6 w-full">
         {userRole === 'admin' && <DashboardStats />}
                 
                 {/* Today's Bookings */}

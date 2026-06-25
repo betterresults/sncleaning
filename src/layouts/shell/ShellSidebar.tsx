@@ -1,11 +1,6 @@
+import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, PanelLeftClose, PanelLeft, User } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { ShellNav } from './ShellNav';
 import { getShellDisplayName, getShellSettingsPath } from './useShellNav';
 import type { ShellNavigationItem, ShellUser } from './types';
@@ -21,7 +16,7 @@ interface ShellSidebarBodyProps {
   onNavigate?: () => void;
 }
 
-export function ShellSidebarBody({
+function ShellSidebarBodyComponent({
   navigationItems,
   user,
   userRole,
@@ -36,14 +31,20 @@ export function ShellSidebarBody({
   const email = user?.email ?? '';
   const initials = displayName.slice(0, 1).toUpperCase();
 
+  const handleUserClick = useCallback(() => {
+    navigate(getShellSettingsPath(userRole, customerId, cleanerId));
+    onNavigate?.();
+  }, [navigate, userRole, customerId, cleanerId, onNavigate]);
+
   return (
     <div className="shell-sidebar-inner">
       <div className="shell-brand-row">
-        <span className="shell-brand-name">SN Cleaning</span>
+        {!collapsed && <span className="shell-brand-name">SN Cleaning</span>}
         {onToggleCollapse && (
           <button
             type="button"
-            className="shell-collapse-btn"
+            className={`shell-collapse-btn${collapsed ? ' shell-collapse-btn--collapsed' : ''}`}
+            data-tooltip={collapsed ? 'Expand sidebar' : undefined}
             onClick={onToggleCollapse}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -54,43 +55,47 @@ export function ShellSidebarBody({
 
       <ShellNav items={navigationItems} collapsed={collapsed} onNavigate={onNavigate} />
 
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className={`shell-user${collapsed ? ' shell-user--collapsed' : ''}`}
-              onClick={() => {
-                navigate(getShellSettingsPath(userRole, customerId, cleanerId));
-                onNavigate?.();
-              }}
-            >
-              <div className="shell-user-avatar">
-                {initials || <User size={16} />}
-              </div>
-              <div className="shell-user-text min-w-0 flex-1">
-                <div className="shell-user-name truncate">{displayName}</div>
-                <div className="shell-user-email truncate">{email}</div>
-              </div>
-              <ChevronDown size={16} className="shell-user-chevron" />
-            </button>
-          </TooltipTrigger>
-          {collapsed && (
-            <TooltipContent side="right" sideOffset={12}>
-              {displayName}
-            </TooltipContent>
-          )}
-        </Tooltip>
-      </TooltipProvider>
+      <button
+        type="button"
+        className={`shell-user${collapsed ? ' shell-user--collapsed' : ''}`}
+        data-tooltip={collapsed ? displayName : undefined}
+        onClick={handleUserClick}
+      >
+        <div className="shell-user-avatar">{initials || <User size={16} />}</div>
+        <div className="shell-user-text min-w-0 flex-1">
+          <div className="shell-user-name truncate">{displayName}</div>
+          <div className="shell-user-email truncate">{email}</div>
+        </div>
+        <ChevronDown size={16} className="shell-user-chevron" />
+      </button>
     </div>
   );
 }
+
+function sidebarBodyPropsEqual(
+  prev: ShellSidebarBodyProps,
+  next: ShellSidebarBodyProps
+): boolean {
+  return (
+    prev.collapsed === next.collapsed &&
+    prev.navigationItems === next.navigationItems &&
+    prev.userRole === next.userRole &&
+    prev.customerId === next.customerId &&
+    prev.cleanerId === next.cleanerId &&
+    prev.user?.email === next.user?.email &&
+    prev.user?.user_metadata?.first_name === next.user?.user_metadata?.first_name &&
+    prev.onToggleCollapse === next.onToggleCollapse &&
+    prev.onNavigate === next.onNavigate
+  );
+}
+
+export const ShellSidebarBody = memo(ShellSidebarBodyComponent, sidebarBodyPropsEqual);
 
 interface ShellSidebarProps extends ShellSidebarBodyProps {
   onSignOut: () => void;
 }
 
-export function ShellSidebar({ collapsed, onToggleCollapse, ...props }: ShellSidebarProps) {
+function ShellSidebarComponent({ collapsed, onToggleCollapse, ...props }: ShellSidebarProps) {
   return (
     <aside
       className={`shell-sidebar${collapsed ? ' shell-sidebar--collapsed' : ''}`}
@@ -101,6 +106,14 @@ export function ShellSidebar({ collapsed, onToggleCollapse, ...props }: ShellSid
     </aside>
   );
 }
+
+export const ShellSidebar = memo(ShellSidebarComponent, (prev, next) => {
+  return (
+    prev.collapsed === next.collapsed &&
+    prev.onSignOut === next.onSignOut &&
+    sidebarBodyPropsEqual(prev, next)
+  );
+});
 
 interface ShellDrawerProps extends ShellSidebarProps {
   open: boolean;
