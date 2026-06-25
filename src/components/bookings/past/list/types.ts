@@ -39,6 +39,7 @@ export interface PastBookingsListViewProps {
   };
   showOnlyCancelled?: boolean;
   showStatsForAdmin?: boolean;
+  openBookingId?: number;
 }
 
 export interface PastBookingsListCardHandlers {

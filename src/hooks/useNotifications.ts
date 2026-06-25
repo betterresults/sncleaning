@@ -12,7 +12,10 @@ export interface Notification {
   entityType?: string;
   actionType: string;
   dismissed?: boolean;
-  bookingTime?: string; // The actual booking time if available
+  bookingTime?: string;
+  bookingId?: number;
+  customerId?: number;
+  newStatus?: string;
 }
 
 export const useNotifications = () => {
@@ -145,6 +148,22 @@ export const useNotifications = () => {
     // Extract booking time from details if available
     const bookingTime = log.details?.date_time || log.details?.booking_date;
 
+    const parseId = (value: unknown): number | undefined => {
+      if (value == null || value === '') return undefined;
+      const parsed = Number.parseInt(String(value), 10);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+
+    const bookingId =
+      parseId(log.details?.booking_id) ??
+      (log.entity_type === 'booking' || log.entity_type === 'past_booking'
+        ? parseId(log.entity_id)
+        : undefined);
+
+    const customerId =
+      parseId(log.details?.customer_id) ??
+      (log.entity_type === 'customer' ? parseId(log.entity_id) : undefined);
+
     return {
       id: log.id,
       message,
@@ -155,7 +174,10 @@ export const useNotifications = () => {
       entityType: log.entity_type,
       actionType: log.action_type,
       dismissed: false,
-      bookingTime: bookingTime ? new Date(bookingTime).toISOString() : undefined
+      bookingTime: bookingTime ? new Date(bookingTime).toISOString() : undefined,
+      bookingId,
+      customerId,
+      newStatus: log.details?.new_status,
     };
   };
 
@@ -207,7 +229,10 @@ export const useNotifications = () => {
 
   // Setup real-time updates
   useEffect(() => {
-    if (!user || userRole !== 'admin') return;
+    if (!user || userRole !== 'admin') {
+      setLoading(false);
+      return;
+    }
 
     fetchNotifications();
 

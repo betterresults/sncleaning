@@ -1,7 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { MessageSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useUnreadSMSCount } from '@/hooks/useUnreadSMSCount';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,23 +34,20 @@ const SMSNotificationBadge = () => {
   };
 
   return (
-    <Button
+    <button
+      type="button"
       onClick={handleClick}
-      variant="ghost"
-      size="sm"
-      className="relative h-8 w-8 p-0 text-white hover:bg-white/10 hover:text-white flex-shrink-0"
+      className="shell-icon-btn shell-icon-btn--badge"
       title={count > 0 ? `${count} unanswered message${count !== 1 ? 's' : ''}` : 'SMS Messages'}
+      aria-label={count > 0 ? `${count} unanswered SMS messages` : 'SMS Messages'}
     >
-      <MessageSquare className="h-4 w-4" />
+      <MessageSquare size={18} />
       {count > 0 && (
-        <Badge 
-          variant="destructive" 
-          className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center min-w-[20px] animate-pulse"
-        >
+        <span className="shell-icon-badge" aria-hidden>
           {count > 99 ? '99+' : count}
-        </Badge>
+        </span>
       )}
-    </Button>
+    </button>
   );
 };
 

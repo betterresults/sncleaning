@@ -26,6 +26,7 @@ const BookingsListView = ({
   filterBySubmissionDate = false,
   showPagination = true,
   maxItems,
+  openBookingId,
 }: BookingsListViewProps) => {
   const listParams = useMemo(
     () => ({ dashboardDateFilter, filterBySubmissionDate }),
@@ -101,6 +102,15 @@ const BookingsListView = ({
       setFilters((prev) => ({ ...prev, cleanerId: initialCleanerFilter }));
     }
   }, [initialCleanerFilter, filters.cleanerId]);
+
+  useEffect(() => {
+    if (!openBookingId || loading) return;
+    const booking = bookings.find((b) => b.id === openBookingId);
+    if (booking) {
+      setSelectedBookingForEdit(booking);
+      setEditDialogOpen(true);
+    }
+  }, [openBookingId, loading, bookings]);
 
   const handleEdit = (bookingId: number) => {
     const booking = bookings.find((b) => b.id === bookingId);

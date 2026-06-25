@@ -71,9 +71,10 @@ interface UpcomingBookingsProps {
     dateFrom: string;
     dateTo: string;
   };
+  openBookingId?: number;
 }
 
-const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
+const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookingsProps) => {
   const navigate = useNavigate();
   const { user, userRole, assignedSources } = useAuth();
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
@@ -518,6 +519,7 @@ const UpcomingBookings = ({ dashboardDateFilter }: UpcomingBookingsProps) => {
               })() : dashboardDateFilter}
               initialCleanerFilter={filters.cleanerId}
               filterBySubmissionDate={bookedFilter !== 'none'}
+              openBookingId={openBookingId}
             />
           ) : (
             <div className="p-4" style={{ height: '600px' }}>

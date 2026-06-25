@@ -1,17 +1,17 @@
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import ModernUsersTable from '@/components/ModernUsersTable';
-import { ShellLoading, ShellPage } from '@/layouts/shell';
+import { ShellPage } from '@/layouts/shell';
 
 const UsersCustomers = () => {
-  const { user, userRole, signOut } = useAuth();
-
-  // Allow admin and sales_agent
+  const [searchParams] = useSearchParams();
+  const openCustomerId = Number.parseInt(searchParams.get('customerId') || '', 10);
+  const customerId = Number.isFinite(openCustomerId) ? openCustomerId : undefined;
 
   return (
     <ShellPage width="wide">
-                <ModernUsersTable userType="customer" />
-              </ShellPage>
+      <ModernUsersTable userType="customer" openCustomerId={customerId} />
+    </ShellPage>
   );
 };
 

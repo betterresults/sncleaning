@@ -37,7 +37,7 @@ import {
   type UsersTableRowHandlers,
 } from '@/components/users/list';
 
-const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
+const ModernUsersTable = ({ userType = 'all', openCustomerId }: ModernUsersTableProps) => {
   const { data: users = [], isLoading: loading, error: usersError } = useUsersList(userType);
   const invalidateUsersList = useInvalidateUsersList();
   const refreshUsers = () => invalidateUsersList();
@@ -105,6 +105,16 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const handleFilterChange = () => {
     runFilters(searchTerm);
   };
+
+  useEffect(() => {
+    if (!openCustomerId || loading) return;
+    const user = users.find(
+      (u) => u.business_id === openCustomerId || Number(u.id) === openCustomerId,
+    );
+    if (user) {
+      setCustomerDetailView(user);
+    }
+  }, [openCustomerId, loading, users]);
 
   const handleAddUser = async () => {
     if (!newUserData.first_name || !newUserData.last_name || !newUserData.email) {
