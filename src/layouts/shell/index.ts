@@ -16,6 +16,8 @@ export {
   ShellCardBody,
   ShellStatCard,
 } from './ShellSection';
+export { ShellSegment } from './ShellSegment';
+export type { ShellSegmentOption } from './ShellSegment';
 export type { ShellStatTone } from './ShellSection';
 export {
   ShellLayoutProvider,

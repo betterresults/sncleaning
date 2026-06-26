@@ -1,0 +1,29 @@
+---
+description: SN Cleaning admin UI shell design principles — layout, surfaces, primitives
+globs: src/pages/**/*.tsx,src/layouts/shell/**,src/components/**/list/**
+alwaysApply: false
+---
+
+# UI design principles
+
+Full reference: `.cursor/design-principles.md` (includes **CSS → Tailwind migration plan**)
+
+## Rules
+
+1. **One surface** — `shell-main` is the only page card. No nested `Card` wrappers for page sections.
+2. **Flat sections** — `ShellSectionHeader` + hairline dividers between major blocks.
+3. **Shell primitives** — `ShellPage`, `ShellSectionHeader`, `ShellStatGrid`, `ShellSegment`, list/notification components.
+4. **Exemplar pages** — `Dashboard.tsx` (layout); `Users.tsx` + `users/list/*` (Tailwind chrome).
+5. **Tables/lists** — do not restyle table rows when doing page chrome work; table unification is separate.
+6. **No legacy chrome** — use `ShellSegment`, not shadcn `Tabs`. No heavy `rounded-3xl` shadow stacks.
+
+## Styling (single source of truth — migrating)
+
+- **Use Tailwind** on components for all **new** styles.
+- **Do not add** rules to `shell.css` or `shell-content.css`.
+- **Tokens** belong in `tailwind.config.ts` (`shell.*` colors/spacing) + `index.css` shadcn vars — not duplicated in feature CSS.
+- When editing a file that still uses `shell-*` classes, migrate those styles to Tailwind in the same PR and delete the dead CSS.
+
+## Migration order
+
+0. Tokens in `tailwind.config.ts` → 1. Shell primitives → 2. Pages/features (`shell-list`, notifications, booking cards) → 3. Sidebar/frame → 4. Delete shell CSS files.
