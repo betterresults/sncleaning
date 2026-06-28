@@ -2353,6 +2353,8 @@ export type Database = {
           converted_booking_id: number | null
           created_at: string | null
           created_by_admin_id: string | null
+          crm_lead_status_sent: string | null
+          crm_lead_status_sent_at: string | null
           discount_amount: number | null
           email: string | null
           equipment_arrangement: string | null
@@ -2429,6 +2431,8 @@ export type Database = {
           converted_booking_id?: number | null
           created_at?: string | null
           created_by_admin_id?: string | null
+          crm_lead_status_sent?: string | null
+          crm_lead_status_sent_at?: string | null
           discount_amount?: number | null
           email?: string | null
           equipment_arrangement?: string | null
@@ -2505,6 +2509,8 @@ export type Database = {
           converted_booking_id?: number | null
           created_at?: string | null
           created_by_admin_id?: string | null
+          crm_lead_status_sent?: string | null
+          crm_lead_status_sent_at?: string | null
           discount_amount?: number | null
           email?: string | null
           equipment_arrangement?: string | null
