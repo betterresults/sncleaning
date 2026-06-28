@@ -85,6 +85,8 @@ Deno.serve(async (req) => {
     let fbc: string | undefined;
     let fbp: string | undefined;
     let landingUrl: string | undefined;
+    let clientUserAgent: string | undefined;
+    let clientIp: string | undefined;
     try {
       const email = booking.email?.trim().toLowerCase();
       const phoneDigits = (booking.phone_number ?? '').replace(/[^\d]/g, '');
@@ -94,7 +96,7 @@ Deno.serve(async (req) => {
       if (orParts.length) {
         const { data: lead } = await admin
           .from('quote_leads')
-          .select('fbc, fbp, landing_url')
+          .select('fbc, fbp, landing_url, user_agent, client_ip')
           .or(orParts.join(','))
           .order('created_at', { ascending: false })
           .limit(1)
@@ -103,6 +105,8 @@ Deno.serve(async (req) => {
           fbc = lead.fbc ?? undefined;
           fbp = lead.fbp ?? undefined;
           landingUrl = lead.landing_url ?? undefined;
+          clientUserAgent = lead.user_agent ?? undefined;
+          clientIp = lead.client_ip ?? undefined;
         }
       }
     } catch (e) {
@@ -121,6 +125,8 @@ Deno.serve(async (req) => {
       external_id: await hashOrUndef(String(booking.customer ?? booking.id)),
       fbc,
       fbp,
+      client_user_agent: clientUserAgent,
+      client_ip_address: clientIp,
     };
     Object.keys(user_data).forEach((k) => { if (user_data[k] === undefined) delete user_data[k]; });
 
