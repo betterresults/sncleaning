@@ -2346,6 +2346,7 @@ export type Database = {
           carpet_items: Json | null
           cleaning_products: string[] | null
           cleaning_type: string | null
+          client_ip: string | null
           confirmation_sent_at: string | null
           confirmation_token: string | null
           confirmed_at: string | null
@@ -2421,6 +2422,7 @@ export type Database = {
           carpet_items?: Json | null
           cleaning_products?: string[] | null
           cleaning_type?: string | null
+          client_ip?: string | null
           confirmation_sent_at?: string | null
           confirmation_token?: string | null
           confirmed_at?: string | null
@@ -2496,6 +2498,7 @@ export type Database = {
           carpet_items?: Json | null
           cleaning_products?: string[] | null
           cleaning_type?: string | null
+          client_ip?: string | null
           confirmation_sent_at?: string | null
           confirmation_token?: string | null
           confirmed_at?: string | null

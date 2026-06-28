@@ -53,18 +53,52 @@ function setCookie(name: string, value: string, days = 90) {
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${exp}; path=/; SameSite=Lax`;
 }
 
+function readStorage(name: string): string | undefined {
+  try {
+    if (typeof localStorage === 'undefined') return undefined;
+    return localStorage.getItem(name) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeStorage(name: string, value: string) {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(name, value);
+  } catch {
+    // ignore
+  }
+}
+
+function persistFbId(name: '_fbc' | '_fbp', value: string) {
+  setCookie(name, value);
+  writeStorage(name, value);
+}
+
 function getFbc(): string | undefined {
   let fbc = getCookie('_fbc');
-  if (fbc) return fbc;
+  if (!fbc) fbc = readStorage('_fbc');
+  if (fbc) {
+    // Re-prime cookie if it was lost (Safari ITP)
+    if (!getCookie('_fbc')) setCookie('_fbc', fbc);
+    return fbc;
+  }
   if (typeof window === 'undefined') return undefined;
   const params = new URLSearchParams(window.location.search);
   const fbclid = params.get('fbclid');
   if (fbclid) {
     fbc = `fb.1.${Date.now()}.${fbclid}`;
-    setCookie('_fbc', fbc);
+    persistFbId('_fbc', fbc);
     return fbc;
   }
   return undefined;
+}
+
+function getFbp(): string | undefined {
+  let fbp = getCookie('_fbp');
+  if (!fbp) fbp = readStorage('_fbp');
+  if (fbp && !getCookie('_fbp')) setCookie('_fbp', fbp);
+  return fbp;
 }
 
 function genUuid(): string {
@@ -111,15 +145,19 @@ export async function trackMetaEvent(
       user: {
         ...opts.user,
         fbc: getFbc(),
-        fbp: getCookie('_fbp'),
+        fbp: getFbp(),
         client_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
       },
       custom_data: customData,
     };
     void supabase.functions
       .invoke('meta-capi-track', { body })
-      .then(({ error }) => {
+      .then(({ data, error }) => {
         if (error) console.warn('[metaCapi] CAPI invoke error', error);
+        // Persist server-issued fbp so subsequent events use the same one
+        const assigned = (data as { assigned?: { fbp?: string; fbc?: string } } | null)?.assigned;
+        if (assigned?.fbp) persistFbId('_fbp', assigned.fbp);
+        if (assigned?.fbc) persistFbId('_fbc', assigned.fbc);
       })
       .catch((err) => console.warn('[metaCapi] CAPI invoke threw', err));
   } catch (err) {

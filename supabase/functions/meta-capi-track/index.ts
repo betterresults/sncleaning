@@ -60,6 +60,22 @@ async function hashOrUndef(v?: string | null) {
   return n ? await sha256(n) : undefined;
 }
 
+function extractFbclid(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return u.searchParams.get('fbclid');
+  } catch {
+    return null;
+  }
+}
+
+function generateFbp(): string {
+  // Meta-compliant format: fb.1.<unix_ms>.<10-digit random>
+  const rand = Math.floor(1_000_000_000 + Math.random() * 9_000_000_000);
+  return `fb.1.${Date.now()}.${rand}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -87,6 +103,23 @@ Deno.serve(async (req) => {
     const ip = u.client_ip || xff.split(',')[0].trim() || undefined;
     const ua = u.client_user_agent || req.headers.get('user-agent') || undefined;
 
+    // Synthesize fbc from event_source_url or Referer fbclid if missing
+    let fbc = u.fbc || undefined;
+    if (!fbc) {
+      const fbclid =
+        extractFbclid(body.event_source_url) ||
+        extractFbclid(req.headers.get('referer'));
+      if (fbclid) fbc = `fb.1.${Date.now()}.${fbclid}`;
+    }
+
+    // Generate a server-side fbp when the browser didn't provide one
+    let fbp = u.fbp || undefined;
+    let generatedFbp: string | undefined;
+    if (!fbp) {
+      fbp = generateFbp();
+      generatedFbp = fbp;
+    }
+
     const phoneNormalized = normPhone(u.phone);
 
     const user_data: Record<string, unknown> = {
@@ -96,8 +129,8 @@ Deno.serve(async (req) => {
       ln: await hashOrUndef(u.last_name),
       ct: await hashOrUndef(u.city),
       external_id: await hashOrUndef(u.external_id),
-      fbc: u.fbc || undefined,
-      fbp: u.fbp || undefined,
+      fbc,
+      fbp,
       client_user_agent: ua,
       client_ip_address: ip,
     };
@@ -138,7 +171,11 @@ Deno.serve(async (req) => {
     }
 
     console.log('[meta-capi-track] sent', body.event_name, body.event_id, metaBody);
-    return new Response(JSON.stringify({ ok: true, meta: metaBody }), {
+    return new Response(JSON.stringify({
+      ok: true,
+      meta: metaBody,
+      assigned: { fbp: generatedFbp, fbc: u.fbc ? undefined : fbc },
+    }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

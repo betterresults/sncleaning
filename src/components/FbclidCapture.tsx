@@ -22,11 +22,41 @@ function setCookie(name: string, value: string, days = 90) {
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${exp}; path=/; SameSite=Lax`;
 }
 
+function persistFbId(name: "_fbc" | "_fbp", value: string) {
+  try {
+    setCookie(name, value);
+    if (typeof localStorage !== "undefined") localStorage.setItem(name, value);
+  } catch {
+    // ignore
+  }
+}
+
+function restoreFromStorage(name: "_fbc" | "_fbp") {
+  try {
+    if (getCookie(name)) return;
+    if (typeof localStorage === "undefined") return;
+    const v = localStorage.getItem(name);
+    if (v) setCookie(name, v);
+  } catch {
+    // ignore
+  }
+}
+
 export const FbclidCapture = () => {
   const { pathname, search } = useLocation();
 
   useEffect(() => {
     try {
+      // Restore _fbc/_fbp from localStorage if Safari/ITP cleared the cookies
+      restoreFromStorage("_fbc");
+      restoreFromStorage("_fbp");
+
+      // Mirror Pixel-set _fbp into localStorage for resilience
+      const fbp = getCookie("_fbp");
+      if (fbp && typeof localStorage !== "undefined" && localStorage.getItem("_fbp") !== fbp) {
+        try { localStorage.setItem("_fbp", fbp); } catch { /* ignore */ }
+      }
+
       const params = new URLSearchParams(search);
       const fbclid = params.get("fbclid");
       if (!fbclid) return;
@@ -35,7 +65,7 @@ export const FbclidCapture = () => {
       // Only (re)write if missing or for a different fbclid
       if (!existing || !existing.endsWith(`.${fbclid}`)) {
         const fbc = `fb.1.${Date.now()}.${fbclid}`;
-        setCookie("_fbc", fbc);
+        persistFbId("_fbc", fbc);
       }
     } catch {
       // no-op
