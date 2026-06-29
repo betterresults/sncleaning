@@ -48,6 +48,16 @@ serve(async (req) => {
       // Always bump activity timestamp on every save
       sanitizedData.last_activity_at = new Date().toISOString();
 
+      // Capture client IP / UA from request headers if not supplied, so Meta
+      // CAPI events can later be enriched with these identifiers.
+      const xff = req.headers.get('x-forwarded-for') ?? '';
+      const ip = xff.split(',')[0].trim();
+      if (ip && !sanitizedData.client_ip) sanitizedData.client_ip = ip;
+      if (!sanitizedData.user_agent) {
+        const ua = req.headers.get('user-agent');
+        if (ua) sanitizedData.user_agent = ua;
+      }
+
       // Use upsert for quote_leads
       const { error } = await supabase
         .from(table)

@@ -1,0 +1,1 @@
+ALTER TABLE public.quote_leads ADD COLUMN IF NOT EXISTS client_ip text;
