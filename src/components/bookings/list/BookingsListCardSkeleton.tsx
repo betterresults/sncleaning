@@ -1,8 +1,9 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { bookingListCardClass } from './bookingListCardClass';
 
 export function BookingsListCardSkeleton() {
   return (
-    <div className="booking-list-card" aria-hidden>
+    <div className={bookingListCardClass()} aria-hidden>
       <div className="hidden lg:block">
         <div className="flex items-stretch">
           <div className="flex w-32 shrink-0 items-center justify-center bg-primary/5 py-4">

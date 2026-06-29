@@ -18,6 +18,21 @@ export {
 } from './ShellSection';
 export { ShellSegment } from './ShellSegment';
 export type { ShellSegmentOption } from './ShellSegment';
+export { ShellDivideBlock, ShellSplitCell } from './ShellDivideBlock';
+export {
+  ShellList,
+  ShellListItem,
+  ShellListIcon,
+  ShellListContent,
+  ShellListTitle,
+  ShellListMeta,
+  ShellListValue,
+  ShellListFooter,
+  ShellEmpty,
+} from './ShellList';
+export { ShellIconButton, ShellIconBadge } from './ShellIconButton';
+export { ShellAmbient } from './ShellAmbient';
+export type { ShellListIconTone } from './ShellList';
 export type { ShellStatTone } from './ShellSection';
 export {
   ShellLayoutProvider,

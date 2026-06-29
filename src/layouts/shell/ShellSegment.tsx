@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface ShellSegmentOption {
   value: string;
@@ -29,7 +30,10 @@ export function ShellSegment({
 }: ShellSegmentProps) {
   return (
     <div
-      className={`shell-segment${fullWidth ? ' shell-segment--full' : ''}`}
+      className={cn(
+        'max-w-full items-stretch gap-0.5 rounded-shell-segment bg-black/5 p-0.5',
+        fullWidth ? 'flex w-full' : 'inline-flex',
+      )}
       role="tablist"
       aria-label={ariaLabel}
     >
@@ -43,21 +47,27 @@ export function ShellSegment({
             type="button"
             role="tab"
             aria-selected={isActive}
-            className={`shell-segment__option${isActive ? ' shell-segment__option--active' : ''}`}
+            className={cn(
+              'inline-flex min-w-0 flex-[1_1_0] cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border-none px-3 py-[7px] text-[13px] font-medium tracking-tight transition-[background,color,box-shadow] duration-150 max-[479px]:px-2 max-[479px]:py-[7px] max-[479px]:text-xs',
+              isActive
+                ? 'bg-white text-shell-text shadow-[0_1px_3px_rgba(0,0,0,0.08)]'
+                : 'bg-transparent text-shell-muted hover:text-shell-text',
+              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[rgba(0,122,255,0.45)]',
+            )}
             onClick={() => onValueChange(option.value)}
           >
             {Icon && (
-              <span className="shell-segment__icon" aria-hidden>
+              <span className="inline-flex shrink-0 items-center justify-center [&_svg]:h-3.5 [&_svg]:w-3.5">
                 <Icon />
               </span>
             )}
             {option.shortLabel ? (
               <>
-                <span className="shell-segment__label shell-segment__label--long">{option.label}</span>
-                <span className="shell-segment__label shell-segment__label--short">{option.shortLabel}</span>
+                <span className="max-[479px]:hidden">{option.label}</span>
+                <span className="hidden max-[479px]:inline">{option.shortLabel}</span>
               </>
             ) : (
-              <span className="shell-segment__label">{option.label}</span>
+              <span>{option.label}</span>
             )}
           </button>
         );

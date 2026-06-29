@@ -122,6 +122,35 @@ body {
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /*
+     * Shell design tokens (canonical). Tailwind: shell.* in tailwind.config.ts.
+     * Shell layout + Tailwind theme.extend.shell consume these via var(--shell-*).
+     */
+    --shell-sidebar-width: 248px;
+    --shell-sidebar-collapsed-width: 72px;
+    --shell-gutter: 14px;
+    --shell-gap: 14px;
+    --shell-text: rgba(28, 28, 32, 0.92);
+    --shell-text-muted: rgba(28, 28, 32, 0.5);
+    --shell-text-faint: rgba(28, 28, 32, 0.38);
+    --shell-tint: #007aff;
+    --shell-card-radius: 26px;
+    --shell-sidebar-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --shell-divider: rgba(0, 0, 0, 0.06);
+    --shell-section-gap: 20px;
+    --shell-after-divider: 28px;
+    --shell-block-gap: 16px;
+    --shell-page-max: 80rem;
+    --shell-page-gap: 1.5rem;
+    --shell-stat-brand-bg: rgba(0, 122, 255, 0.1);
+    --shell-stat-brand-fg: #007aff;
+    --shell-stat-success-bg: rgba(52, 199, 89, 0.12);
+    --shell-stat-success-fg: #248a3d;
+    --shell-stat-warning-bg: rgba(255, 149, 0, 0.12);
+    --shell-stat-warning-fg: #c93400;
+    --shell-stat-error-bg: rgba(255, 59, 48, 0.12);
+    --shell-stat-error-fg: #d70015;
   }
 
   .dark {
@@ -175,5 +204,50 @@ body {
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --shell-after-divider: 20px;
+      --shell-block-gap: 12px;
+    }
+  }
+}
+
+@layer components {
+  /* Collapsed sidebar CSS tooltips (pseudo-elements — not practical in Tailwind) */
+  aside[data-sidebar-collapsed] [data-tooltip] {
+    position: relative;
+  }
+
+  aside[data-sidebar-collapsed] [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 70;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(28, 28, 32, 0.9);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease, visibility 0.12s ease;
+  }
+
+  aside[data-sidebar-collapsed] [data-tooltip]:hover::after,
+  aside[data-sidebar-collapsed] [data-tooltip]:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  aside[data-sidebar-collapsed] .relative [data-tooltip]::after {
+    display: none;
   }
 }

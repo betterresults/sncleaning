@@ -17,6 +17,7 @@ import { AuthorizeRemainingAmountDialog } from '@/components/payments/AuthorizeR
 import DomesticBookingDetails from '@/components/bookings/DomesticBookingDetails';
 import { useToast } from '@/hooks/use-toast';
 import { BookingsListActionsMenu } from './BookingsListActionsMenu';
+import { bookingListCardClass } from './bookingListCardClass';
 import type { Booking, BookingsListCardHandlers } from './types';
 import { getCleanerName, useBookingsListLabels } from './useBookingsListLabels';
 
@@ -52,7 +53,7 @@ export function BookingsListCard({
   return (
           <div
             key={booking.id}
-            className={`booking-list-card${booking.same_day ? ' booking-list-card--urgent' : ''}`}
+            className={bookingListCardClass(!!booking.same_day)}
           >
             {/* Desktop Layout - 5 Equal Columns */}
             <div className="hidden lg:block">

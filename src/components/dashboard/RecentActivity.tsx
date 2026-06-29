@@ -5,6 +5,18 @@ import { CheckCircle, DollarSign, Calendar, TrendingUp, ArrowRight } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
+import {
+  ShellList,
+  ShellListItem,
+  ShellListIcon,
+  ShellListContent,
+  ShellListTitle,
+  ShellListMeta,
+  ShellListValue,
+  ShellListFooter,
+  ShellEmpty,
+  type ShellListIconTone,
+} from '@/layouts/shell';
 
 interface ActivityItem {
   id: number;
@@ -61,73 +73,71 @@ const RecentActivity = () => {
     }
   };
 
-  const getIcon = (type: ActivityItem['type']) => {
+  const getIconTone = (type: ActivityItem['type']): ShellListIconTone => {
     switch (type) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4" />;
+        return 'success';
       case 'payment':
-        return <DollarSign className="h-4 w-4" />;
       case 'booking':
-        return <Calendar className="h-4 w-4" />;
+        return 'brand';
       default:
-        return <TrendingUp className="h-4 w-4" />;
+        return 'default';
     }
   };
 
-  const getIconClass = (type: ActivityItem['type']) => {
+  const getIcon = (type: ActivityItem['type']) => {
     switch (type) {
       case 'completed':
-        return 'shell-list__icon shell-list__icon--success';
+        return CheckCircle;
       case 'payment':
+        return DollarSign;
       case 'booking':
-        return 'shell-list__icon shell-list__icon--brand';
+        return Calendar;
       default:
-        return 'shell-list__icon';
+        return TrendingUp;
     }
   };
 
   if (loading) {
     return (
-      <div className="shell-list" aria-busy aria-label="Loading recent activity">
+      <ShellList aria-busy aria-label="Loading recent activity">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="shell-list__item">
-            <Skeleton className="shell-list__icon h-9 w-9 shrink-0 rounded-full" />
-            <div className="shell-list__content space-y-2">
+          <ShellListItem key={i}>
+            <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+            <ShellListContent className="space-y-2">
               <Skeleton className="h-3.5 w-3/4 max-w-[14rem]" />
               <Skeleton className="h-3 w-1/2 max-w-[10rem]" />
-            </div>
+            </ShellListContent>
             <Skeleton className="hidden h-4 w-14 shrink-0 sm:block" />
-          </div>
+          </ShellListItem>
         ))}
-      </div>
+      </ShellList>
     );
   }
 
   if (activities.length === 0) {
-    return <div className="shell-empty">No recent activity</div>;
+    return <ShellEmpty>No recent activity</ShellEmpty>;
   }
 
   return (
     <>
-      <div className="shell-list">
+      <ShellList>
         {activities.map((activity) => (
-          <div key={`${activity.type}-${activity.id}`} className="shell-list__item">
-            <span className={getIconClass(activity.type)} aria-hidden>
-              {getIcon(activity.type)}
-            </span>
-            <div className="shell-list__content">
-              <p className="shell-list__title">{activity.title}</p>
-              <p className="shell-list__meta">
+          <ShellListItem key={`${activity.type}-${activity.id}`}>
+            <ShellListIcon icon={getIcon(activity.type)} tone={getIconTone(activity.type)} />
+            <ShellListContent>
+              <ShellListTitle>{activity.title}</ShellListTitle>
+              <ShellListMeta>
                 {activity.subtitle} · {format(new Date(activity.timestamp), 'dd MMM, HH:mm')}
-              </p>
-            </div>
+              </ShellListMeta>
+            </ShellListContent>
             {activity.amount != null && (
-              <span className="shell-list__value">£{activity.amount.toFixed(2)}</span>
+              <ShellListValue>£{activity.amount.toFixed(2)}</ShellListValue>
             )}
-          </div>
+          </ShellListItem>
         ))}
-      </div>
-      <div className="shell-list__footer">
+      </ShellList>
+      <ShellListFooter>
         <Button
           variant="ghost"
           size="sm"
@@ -137,7 +147,7 @@ const RecentActivity = () => {
           View all activity
           <ArrowRight className="h-4 w-4" />
         </Button>
-      </div>
+      </ShellListFooter>
     </>
   );
 };
