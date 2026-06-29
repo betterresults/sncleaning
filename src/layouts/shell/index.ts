@@ -19,6 +19,11 @@ export {
 export { ShellSegment } from './ShellSegment';
 export type { ShellSegmentOption } from './ShellSegment';
 export { ShellDivideBlock, ShellSplitCell } from './ShellDivideBlock';
+export { ShellWorkspace } from './ShellWorkspace';
+export { ShellPane } from './ShellPane';
+export { ShellFilterBar } from './ShellFilterBar';
+export { ShellAlertBanner } from './ShellAlertBanner';
+export { shellFilterInputClass, shellFilterSelectClass } from './shellFilterStyles';
 export {
   ShellList,
   ShellListItem,
