@@ -222,7 +222,9 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
               <div
                 key={sms.id}
                 className={`rounded-lg p-2 text-sm ${
-                  sms.direction === 'outgoing' ? 'ml-4 bg-primary/10' : 'mr-4 bg-muted'
+                  sms.direction === 'outgoing'
+                    ? 'ml-4 bg-shell-stat-brand-bg'
+                    : 'mr-4 bg-black/[0.05]'
                 }`}
               >
                 <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">

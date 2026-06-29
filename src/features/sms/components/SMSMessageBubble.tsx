@@ -13,13 +13,13 @@ export function SMSMessageBubble({ message }: SMSMessageBubbleProps) {
     <div className={`flex ${isOutgoing ? 'justify-end' : 'justify-start'}`}>
       <div
         className={`max-w-[80%] rounded-lg px-4 py-2 ${
-          isOutgoing ? 'bg-primary text-primary-foreground' : 'bg-muted'
+          isOutgoing ? 'bg-shell-brand text-white' : 'bg-black/[0.05]'
         }`}
       >
         <p className="whitespace-pre-wrap break-words">{message.message}</p>
         <div
           className={`mt-1 flex items-center justify-end gap-1 ${
-            isOutgoing ? 'text-primary-foreground/70' : 'text-muted-foreground'
+            isOutgoing ? 'text-white/70' : 'text-shell-muted'
           }`}
         >
           <span className="text-xs">{formatMessageTime(message.created_at)}</span>

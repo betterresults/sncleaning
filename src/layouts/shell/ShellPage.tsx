@@ -9,6 +9,8 @@ interface ShellPageProps {
   title?: string;
   description?: string;
   width?: ShellPageWidth;
+  /** Fill remaining viewport height — for master/detail tool pages (SMS, chat). */
+  fill?: boolean;
   className?: string;
 }
 
@@ -28,10 +30,22 @@ export function ShellPage({
   title,
   description,
   width = 'default',
+  fill = false,
   className = '',
 }: ShellPageProps) {
   return (
-    <div className={cn('flex w-full min-w-0 flex-col gap-0', widthClass[width], className)}>
+    <div
+      className={cn(
+        'flex w-full min-w-0 flex-col gap-0',
+        widthClass[width],
+        fill && [
+          'min-h-0 overflow-hidden',
+          'h-[calc(100dvh-14.5rem)] max-h-[calc(100dvh-14.5rem)]',
+          'max-md:h-[calc(100dvh-8.5rem)] max-md:max-h-[calc(100dvh-8.5rem)]',
+        ],
+        className,
+      )}
+    >
       {(title || description) && (
         <header className="flex flex-col gap-1.5">
           {title && (

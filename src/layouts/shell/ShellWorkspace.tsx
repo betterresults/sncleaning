@@ -59,13 +59,13 @@ export function ShellWorkspace({
       className={cn(
         'grid min-h-0 grid-cols-1 gap-4',
         ratioGridClass[ratio],
-        fill && 'min-h-0 flex-1',
+        fill && 'min-h-0 flex-1 overflow-hidden',
         className,
       )}
     >
       <div
         className={cn(
-          'min-h-0 flex-col overflow-hidden',
+          'min-h-0 h-full flex-col overflow-hidden',
           ratioSidebarClass[ratio],
           sidebarVisibility,
         )}
@@ -74,7 +74,7 @@ export function ShellWorkspace({
       </div>
       <div
         className={cn(
-          'min-h-0 flex-col overflow-hidden',
+          'min-h-0 h-full flex-col overflow-hidden',
           ratioDetailClass[ratio],
           detailVisibility,
         )}

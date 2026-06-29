@@ -1,4 +1,5 @@
 import { Phone, Search } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,20 +46,20 @@ export function SMSNewMessageDialog({
         </div>
         {searchingCustomers && (
           <div className="flex items-center justify-center py-4">
-            <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-primary" />
+            <Loader2 className="h-5 w-5 animate-spin text-shell-brand" aria-hidden />
           </div>
         )}
         {customers.length > 0 && (
-          <div className="mt-2 max-h-48 overflow-y-auto rounded-md border">
+          <div className="mt-2 max-h-48 overflow-y-auto rounded-md border border-shell-divider">
             {customers.map((customer) => (
               <button
                 key={customer.id}
                 type="button"
                 onClick={() => onSelectCustomer(customer)}
-                className="flex w-full items-center gap-3 border-b p-3 text-left last:border-b-0 hover:bg-muted/50"
+                className="flex w-full items-center gap-3 border-b border-shell-divider p-3 text-left last:border-b-0 hover:bg-black/[0.03]"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                  <AvatarFallback className="bg-shell-stat-brand-bg text-xs text-shell-stat-brand">
                     {(customer.full_name || customer.first_name || '?')[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>

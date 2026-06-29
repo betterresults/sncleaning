@@ -1,4 +1,5 @@
 import { Phone, UserSearch } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -57,7 +58,7 @@ export function CustomerLookupSheet({
 
           {lookupLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-shell-brand" aria-hidden />
             </div>
           ) : lookupResult ? (
             <CustomerLookupContent lookupResult={lookupResult} />
