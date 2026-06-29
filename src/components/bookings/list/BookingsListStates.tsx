@@ -1,20 +1,36 @@
 import { Calendar } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { BookingsListCardSkeleton } from './BookingsListCardSkeleton';
 
-export function BookingsListLoading() {
+interface BookingsListLoadingProps {
+  count?: number;
+  showPagination?: boolean;
+}
+
+export function BookingsListLoading({
+  count = 3,
+  showPagination = false,
+}: BookingsListLoadingProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {[1, 2, 3].map((i) => (
-        <Card key={i} className="shadow-md">
-          <CardContent className="p-6">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-              <div className="h-3 bg-gray-200 rounded w-1/2" />
-              <div className="h-3 bg-gray-200 rounded w-2/3" />
-            </div>
-          </CardContent>
-        </Card>
+    <div
+      className="min-w-0 space-y-3 sm:space-y-4"
+      aria-busy
+      aria-label="Loading bookings"
+    >
+      {Array.from({ length: count }).map((_, index) => (
+        <BookingsListCardSkeleton key={index} />
       ))}
+
+      {showPagination && (
+        <div className="mt-4 flex flex-col gap-3 px-0 sm:mt-6 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+          <Skeleton className="mx-auto h-4 w-36 sm:mx-0" />
+          <div className="flex items-center justify-center gap-2">
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-8 w-16 rounded-md" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

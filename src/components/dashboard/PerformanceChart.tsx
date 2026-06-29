@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format, subDays } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { PerformanceChartSkeleton } from './PerformanceChartSkeleton';
 
 interface ChartData {
   date: string;
@@ -61,11 +62,7 @@ const PerformanceChart = () => {
   const chartHeight = isMobile ? 240 : 280;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center" style={{ height: chartHeight }}>
-        <div className="text-sm text-[var(--shell-text-muted)] animate-pulse">Loading chart…</div>
-      </div>
-    );
+    return <PerformanceChartSkeleton height={chartHeight} />;
   }
 
   if (chartData.length === 0) {

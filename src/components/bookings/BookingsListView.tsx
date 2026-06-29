@@ -229,7 +229,14 @@ const BookingsListView = ({
     onRefresh: refreshBookings,
   };
 
-  if (loading) return <BookingsListLoading />;
+  if (loading) {
+    return (
+      <BookingsListLoading
+        count={maxItems ?? 5}
+        showPagination={showPagination}
+      />
+    );
+  }
   if (error) return <BookingsListError message={error} />;
   if (bookings.length === 0 && filteredBookings.length === 0) return <BookingsListEmpty />;
 

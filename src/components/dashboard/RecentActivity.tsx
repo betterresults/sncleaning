@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { CheckCircle, DollarSign, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 
 interface ActivityItem {
@@ -87,14 +88,15 @@ const RecentActivity = () => {
 
   if (loading) {
     return (
-      <div className="shell-list">
+      <div className="shell-list" aria-busy aria-label="Loading recent activity">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="shell-list__item animate-pulse">
-            <div className="shell-list__icon bg-black/5" />
+          <div key={i} className="shell-list__item">
+            <Skeleton className="shell-list__icon h-9 w-9 shrink-0 rounded-full" />
             <div className="shell-list__content space-y-2">
-              <div className="h-3.5 bg-black/5 rounded w-3/4" />
-              <div className="h-3 bg-black/5 rounded w-1/2" />
+              <Skeleton className="h-3.5 w-3/4 max-w-[14rem]" />
+              <Skeleton className="h-3 w-1/2 max-w-[10rem]" />
             </div>
+            <Skeleton className="hidden h-4 w-14 shrink-0 sm:block" />
           </div>
         ))}
       </div>
