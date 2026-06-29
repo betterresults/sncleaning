@@ -9,12 +9,9 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { Plus, Edit, Trash2, Calendar, User, MapPin, Pause, Play, Clock, Search, DollarSign, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import { PostponeDialog } from '@/components/recurringBookings/PostponeDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 interface RecurringService {
   id: number;
   customer: number;
@@ -49,16 +46,7 @@ export default function RecurringBookings() {
     userRole,
     signOut
   } = useAuth();
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
   // Allow admin and sales_agent
-  
-  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
   useEffect(() => {
     fetchRecurringServices();
   }, []);
@@ -241,33 +229,11 @@ export default function RecurringBookings() {
     }
   };
   if (loading) {
-    return <SidebarProvider>
-        <div className="min-h-screen flex flex-col w-full bg-gray-50">
-          <UnifiedHeader title="" user={user} userRole={userRole} onSignOut={handleSignOut} />
-          <div className="flex flex-1 w-full">
-            <UnifiedSidebar navigationItems={navigation} user={user} userRole={userRole} onSignOut={handleSignOut} />
-            <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
-              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
-                <div className="flex items-center justify-center min-h-[400px]">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading recurring services...</p>
-                  </div>
-                </div>
-              </main>
-            </SidebarInset>
-          </div>
-        </div>
-      </SidebarProvider>;
+    return <ShellLoading message="Loading recurring services..." />;
   }
-  return <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader title="" user={user} userRole={userRole} onSignOut={handleSignOut} />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar navigationItems={navigation} user={user} userRole={userRole} onSignOut={handleSignOut} />
-          <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
-            <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
-            <div className="max-w-7xl mx-auto space-y-6">
+
+  return (
+    <ShellPage width="wide">
               {/* Header with Search and Filters */}
               <Card>
                 <CardContent className="p-4 space-y-4">
@@ -532,10 +498,6 @@ export default function RecurringBookings() {
             </div>
           ))}
         </div>}
-            </div>
-          </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>;
+    </ShellPage>
+  );
 }

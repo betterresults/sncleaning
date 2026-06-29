@@ -29,6 +29,7 @@ const PastBookingsListView = ({
   dashboardDateFilter,
   showOnlyCancelled = false,
   showStatsForAdmin = false,
+  openBookingId,
 }: PastBookingsListViewProps) => {
   const { user, userRole, assignedSources } = useAuth();
   const listParams = usePastBookingsListParams(
@@ -91,6 +92,15 @@ const PastBookingsListView = ({
     setFilteredBookings(applyPastBookingsListFilters(bookings, filters, customerSourceMap));
     setCurrentPage(1);
   }, [bookings, filters, customerSourceMap]);
+
+  useEffect(() => {
+    if (!openBookingId || loading) return;
+    const booking = bookings.find((b) => b.id === openBookingId);
+    if (booking) {
+      setSelectedBookingForEdit(booking);
+      setEditDialogOpen(true);
+    }
+  }, [openBookingId, loading, bookings]);
 
   const handleEdit = (bookingId: number) => {
     const booking = bookings.find((b) => b.id === bookingId);

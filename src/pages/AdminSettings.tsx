@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AdminSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -23,14 +20,6 @@ const AdminSettings = () => {
     newPassword: '',
     confirmPassword: ''
   });
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,36 +73,13 @@ const AdminSettings = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading settings...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Only allow admins
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
-              <div className="w-full px-1 sm:px-0 max-w-2xl mx-auto">
+    <ShellPage width="narrow">
                 <h1 className="text-2xl font-bold text-[#185166] mb-6">Admin Settings</h1>
                 
                 {/* Account Information */}
@@ -220,12 +186,7 @@ const AdminSettings = () => {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+              </ShellPage>
   );
 };
 

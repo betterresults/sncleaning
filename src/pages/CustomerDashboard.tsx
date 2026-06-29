@@ -1,14 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, CreditCard, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MapPin, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
-import { getCustomerNavigation } from '@/lib/navigationItems';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 import CustomerUpcomingBookings from '@/components/customer/CustomerUpcomingBookings';
 import { BulkPaymentDialog } from '@/components/customer/BulkPaymentDialog';
@@ -22,13 +18,13 @@ import { AlertTriangle } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { useToast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CustomerDashboard = () => {
   const { user, userRole, customerId, cleanerId, signOut, loading } = useAuth();
   const { selectedCustomerId } = useAdminCustomer();
   const { hasLinenAccess, loading: linenLoading } = useCustomerLinenAccess();
   const { toast } = useToast();
-  const isAdminViewing = userRole === 'admin';
 
   const activeCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
 
@@ -46,6 +42,8 @@ const CustomerDashboard = () => {
   const [showBulkPayment, setShowBulkPayment] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const isAdminViewing = userRole === 'admin';
+
   // Handle payment_setup success parameter
   useEffect(() => {
     if (searchParams.get('payment_setup') === 'success') {
@@ -61,49 +59,13 @@ const CustomerDashboard = () => {
 
   console.log('CustomerDashboard render - hasLinenAccess:', hasLinenAccess, 'loading:', linenLoading);
 
-  const handleSignOut = async () => {
-    try {
-      console.log('Starting sign out process...');
-      await signOut();
-      console.log('Sign out completed');
-      // Redirect to auth page after successful sign out
-      window.location.href = '/auth';
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   // Auth checks AFTER all hooks
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <ShellLoading message="Loading dashboard…" />;
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          showBackToAdmin={isAdminViewing}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar
-            navigationItems={getCustomerNavigation(hasLinenAccess)}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1 flex flex-col w-full">
-            <main className="flex-1 p-2 sm:p-4 lg:p-6 w-full overflow-x-hidden">
-              <div className="w-full max-w-7xl mx-auto space-y-4 sm:space-y-6">
+    <ShellPage width="wide">
                 {isAdminViewing && <AdminCustomerSelector />}
                 
                 {isBusinessClient && overdueInvoices.length > 0 && (
@@ -306,23 +268,8 @@ const CustomerDashboard = () => {
                 </Card>
               )}
               
-              <CustomerUpcomingBookings />
-            </div>
-          </main>
-        </SidebarInset>
-      </div>
-      </div>
-      
-      <BulkPaymentDialog
-        open={showBulkPayment}
-        onOpenChange={setShowBulkPayment}
-        unpaidBookings={unpaidBookings}
-        onPaymentSuccess={() => {
-          refetchPayments();
-          setShowBulkPayment(false);
-        }}
-      />
-    </SidebarProvider>
+      <CustomerUpcomingBookings />
+    </ShellPage>
   );
 };
 

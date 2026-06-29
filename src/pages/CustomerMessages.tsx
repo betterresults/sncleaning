@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { getCustomerNavigation } from '@/lib/navigationItems';
 import { useCustomerLinenAccess } from '@/hooks/useCustomerLinenAccess';
 import CustomerContacts from '@/components/chat/CustomerContacts';
 import ChatInterface from '@/components/chat/ChatInterface';
 import AdminCustomerSelector from '@/components/admin/AdminCustomerSelector';
 import { useChat } from '@/hooks/useChat';
 import { ChatType } from '@/types/chat';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CustomerMessages = () => {
   const { user, userRole, customerId, loading, signOut } = useAuth();
@@ -20,15 +17,6 @@ const CustomerMessages = () => {
   
   // Use selectedCustomerId for admin, otherwise use authenticated customer's ID
   const effectiveCustomerId = userRole === 'admin' ? selectedCustomerId : customerId;
-  const isAdminViewing = userRole === 'admin';
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   const {
     chats,
@@ -43,11 +31,7 @@ const CustomerMessages = () => {
   } = useChat(undefined, effectiveCustomerId);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading messages...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   const handleSelectContact = async (contact: any, booking?: any) => {
@@ -86,6 +70,8 @@ const CustomerMessages = () => {
     }
   };
 
+  const isAdminViewing = userRole === 'admin';
+
   const handleSendMessage = async (message: string, fileUrl?: string) => {
     if (activeChat) {
       await sendMessage(activeChat.id, message, fileUrl);
@@ -95,31 +81,14 @@ const CustomerMessages = () => {
   const firstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Customer';
 
   return (
-    <SidebarProvider>
-      <div className="h-screen flex flex-col w-full bg-gray-50 overflow-hidden">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          showBackToAdmin={isAdminViewing}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={getCustomerNavigation(hasLinenAccess)}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 flex flex-col overflow-hidden">
-              {/* Admin Customer Selector */}
-              {isAdminViewing && (
-                <div className="p-4 border-b border-border bg-muted/30">
-                  <AdminCustomerSelector />
-                </div>
-              )}
+    <ShellPage>
+      {isAdminViewing && (
+        <div className="p-4 border-b border-border bg-muted/30">
+          <AdminCustomerSelector />
+        </div>
+      )}
 
-            {!effectiveCustomerId && isAdminViewing ? (
+      {!effectiveCustomerId && isAdminViewing ? (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                   <h3 className="text-lg font-medium text-foreground mb-2">
@@ -167,12 +136,8 @@ const CustomerMessages = () => {
                   )}
                 </div>
               </div>
-              )}
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+            )}
+    </ShellPage>
   );
 };
 

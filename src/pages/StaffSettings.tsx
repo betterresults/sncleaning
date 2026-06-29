@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +8,7 @@ import { Lock, User, Eye, EyeOff, Camera, Building2, Upload, Loader2 } from 'luc
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const StaffSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -108,14 +105,6 @@ const StaffSettings = () => {
 
     loadProfile();
   }, [user?.id, initialLoadDone]);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,44 +293,13 @@ const StaffSettings = () => {
     }
   };
 
-  const getNavigationItems = () => {
-    if (userRole === 'sales_agent') return salesAgentNavigation;
-    return adminNavigation;
-  };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading settings...</div>
-      </div>
-    );
+    return <ShellLoading message="Loading settings…" />;
   }
 
-  // Allow admins and sales agents
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={getNavigationItems()}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
-              <div className="w-full px-1 sm:px-0 max-w-2xl mx-auto">
-                <h1 className="text-2xl font-bold text-[#185166] mb-6">My Profile</h1>
-                
+    <ShellPage width="narrow" title="My Profile">
                 {/* Profile Photo Section */}
                 <Card className="mb-6">
                   <CardHeader>
@@ -585,12 +543,7 @@ const StaffSettings = () => {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+    </ShellPage>
   );
 };
 

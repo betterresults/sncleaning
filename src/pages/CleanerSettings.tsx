@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { cleanerNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +13,7 @@ import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
 import { isCapacitor } from '@/utils/capacitor';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerSettings = () => {
   const { user, userRole, customerId, cleanerId, loading, signOut } = useAuth();
@@ -49,6 +46,17 @@ const CleanerSettings = () => {
   const isMobile = useIsMobile();
   const isMobileView = isCapacitor() || isMobile;
 
+  const handleSignOut = async () => {
+    setLoggingOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   // Fetch profile data on load
   useEffect(() => {
     const fetchProfile = async () => {
@@ -79,25 +87,6 @@ const CleanerSettings = () => {
 
     fetchProfile();
   }, [user?.id]);
-
-  const handleSignOut = async () => {
-    setLoggingOut(true);
-    try {
-      await signOut();
-      if (isMobileView) {
-        navigate('/auth');
-      }
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to sign out. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoggingOut(false);
-    }
-  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -389,11 +378,7 @@ const CleanerSettings = () => {
   );
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading settings...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   // Allow users with role 'user' who have a cleanerId, or admins
@@ -536,28 +521,8 @@ const CleanerSettings = () => {
     );
   }
 
-  // Desktop view with sidebar
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50 pb-24">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={cleanerNavigation}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
-              <div className="w-full px-1 sm:px-0 max-w-2xl mx-auto">
+    <ShellPage width="narrow">
                 <h1 className="text-2xl font-bold text-[#185166] mb-6">Account Settings</h1>
                 
                 {/* Profile Photo */}
@@ -670,12 +635,7 @@ const CleanerSettings = () => {
                     </form>
                   </CardContent>
                 </Card>
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+              </ShellPage>
   );
 };
 

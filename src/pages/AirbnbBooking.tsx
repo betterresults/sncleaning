@@ -1,7 +1,12 @@
 import { AirbnbBookingForm } from '@/features/booking';
+import { ShellPage } from '@/layouts/shell';
 
 const AirbnbBooking = () => {
-  return <AirbnbBookingForm />;
+  return (
+    <ShellPage width="wide">
+      <AirbnbBookingForm />
+    </ShellPage>
+  );
 };
 
 export default AirbnbBooking;

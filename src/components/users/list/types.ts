@@ -8,6 +8,7 @@ export type AddressFilter = 'all' | 'with-addresses' | 'no-addresses';
 
 export interface ModernUsersTableProps {
   userType?: UsersTableUserType;
+  openCustomerId?: number;
 }
 
 export interface NewUserFormData {

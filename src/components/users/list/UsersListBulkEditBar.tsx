@@ -58,42 +58,46 @@ export function UsersListBulkEditBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 p-3 bg-muted rounded-lg">
-      <span className="text-sm font-medium">{selectedCount} selected:</span>
-      <Select value={bulkType} onValueChange={onBulkTypeChange}>
-        <SelectTrigger className="w-32">
-          <SelectValue placeholder="Type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="no-change">Type: No change</SelectItem>
-          <SelectItem value="client">Client</SelectItem>
-          <SelectItem value="business">Business</SelectItem>
-          <SelectItem value="empty">Clear Type</SelectItem>
-        </SelectContent>
-      </Select>
-      <Select value={bulkSource} onValueChange={onBulkSourceChange}>
-        <SelectTrigger className="w-40">
-          <SelectValue placeholder="Source" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="no-change">Source: No change</SelectItem>
-          <SelectItem value="Facebook ads">Facebook Ads</SelectItem>
-          <SelectItem value="Google ads">Google Ads</SelectItem>
-          <SelectItem value="Organic">Organic</SelectItem>
-          <SelectItem value="Referral">Referral</SelectItem>
-          <SelectItem value="Website">Website</SelectItem>
-          <SelectItem value="empty">Clear Source</SelectItem>
-        </SelectContent>
-      </Select>
-      <Button onClick={onApply} disabled={bulkUpdating} size="sm">
-        {bulkUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
-      </Button>
-      <Button variant="outline" size="sm" onClick={onClear}>
-        Clear
-      </Button>
-      <Button variant="outline" size="sm" onClick={exportCsv}>
-        Export CSV
-      </Button>
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-500/10 bg-blue-500/[0.06] px-2.5 py-2">
+      <span className="whitespace-nowrap text-sm font-semibold text-[#007aff]">
+        {selectedCount} selected
+      </span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <Select value={bulkType} onValueChange={onBulkTypeChange}>
+          <SelectTrigger className="h-8 min-w-32 bg-white text-xs">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="no-change">Type: no change</SelectItem>
+            <SelectItem value="client">Client</SelectItem>
+            <SelectItem value="business">Business</SelectItem>
+            <SelectItem value="empty">Clear type</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={bulkSource} onValueChange={onBulkSourceChange}>
+          <SelectTrigger className="h-8 min-w-32 bg-white text-xs">
+            <SelectValue placeholder="Source" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="no-change">Source: no change</SelectItem>
+            <SelectItem value="Facebook ads">Facebook Ads</SelectItem>
+            <SelectItem value="Google ads">Google Ads</SelectItem>
+            <SelectItem value="Organic">Organic</SelectItem>
+            <SelectItem value="Referral">Referral</SelectItem>
+            <SelectItem value="Website">Website</SelectItem>
+            <SelectItem value="empty">Clear source</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={onApply} disabled={bulkUpdating} size="sm">
+          {bulkUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+        </Button>
+        <Button variant="outline" size="sm" onClick={onClear}>
+          Clear
+        </Button>
+        <Button variant="outline" size="sm" onClick={exportCsv}>
+          Export CSV
+        </Button>
+      </div>
     </div>
   );
 }

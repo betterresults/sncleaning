@@ -14,7 +14,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCustomerPaymentMethods } from '@/hooks/useCustomerPaymentMethods';
@@ -22,13 +21,12 @@ import {
   applyUsersListFilters,
   createEmptyNewUserForm,
   getAddButtonText,
-  getTypeTitle,
   getUniqueCustomerTypes,
   UsersListAddUserForm,
   UsersListBulkEditBar,
   UsersListDialogs,
   UsersListFilters,
-  UsersListLoading,
+  UsersListLoadingRows,
   UsersTableRow,
   type AddressFilter,
   type ModernUsersTableProps,
@@ -37,7 +35,7 @@ import {
   type UsersTableRowHandlers,
 } from '@/components/users/list';
 
-const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
+const ModernUsersTable = ({ userType = 'all', openCustomerId }: ModernUsersTableProps) => {
   const { data: users = [], isLoading: loading, error: usersError } = useUsersList(userType);
   const invalidateUsersList = useInvalidateUsersList();
   const refreshUsers = () => invalidateUsersList();
@@ -105,6 +103,16 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const handleFilterChange = () => {
     runFilters(searchTerm);
   };
+
+  useEffect(() => {
+    if (!openCustomerId || loading) return;
+    const user = users.find(
+      (u) => u.business_id === openCustomerId || Number(u.id) === openCustomerId,
+    );
+    if (user) {
+      setCustomerDetailView(user);
+    }
+  }, [openCustomerId, loading, users]);
 
   const handleAddUser = async () => {
     if (!newUserData.first_name || !newUserData.last_name || !newUserData.email) {
@@ -549,146 +557,143 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
   const showBulkEdit = isCustomerView && selectedBusinessIds.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-w-0 flex-col gap-3">
       {userType === 'all' && (
-        <>
+        <div className="flex flex-col gap-4 border-b border-black/[0.06] pb-4">
           <BulkAccountCreationUtility />
           <BulkLinkRecordsUtility />
           <DeleteUserByEmail />
-        </>
+        </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>
-              {getTypeTitle(userType)} ({filteredUsers.length})
-            </span>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setShowAddUserForm(!showAddUserForm)}
-                size="sm"
-                variant={showAddUserForm ? 'outline' : 'default'}
-              >
-                {showAddUserForm ? (
-                  <>
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    {getAddButtonText(userType)}
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardTitle>
+      <UsersListFilters
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        userType={userType}
+        customerTypeFilter={customerTypeFilter}
+        onCustomerTypeFilterChange={setCustomerTypeFilter}
+        addressFilter={addressFilter}
+        onAddressFilterChange={setAddressFilter}
+        uniqueCustomerTypes={uniqueCustomerTypes}
+        resultCount={
+          <span
+            className="inline-flex h-6 min-w-8 items-center justify-center rounded-full bg-black/[0.05] px-2 text-xs font-semibold tabular-nums text-muted-foreground"
+            aria-live="polite"
+          >
+            {loading ? '—' : filteredUsers.length}
+          </span>
+        }
+        actions={
+          <Button
+            onClick={() => setShowAddUserForm(!showAddUserForm)}
+            size="sm"
+            variant={showAddUserForm ? 'ghost' : 'outline'}
+          >
+            {showAddUserForm ? (
+              <>
+                <X className="h-4 w-4" />
+                Cancel
+              </>
+            ) : (
+              <>
+                <UserPlus className="h-4 w-4" />
+                <span className="hidden sm:inline">{getAddButtonText(userType)}</span>
+              </>
+            )}
+          </Button>
+        }
+      />
 
-          {showAddUserForm && (
-            <UsersListAddUserForm
-              userType={userType}
-              newUserData={newUserData}
-              onNewUserDataChange={setNewUserData}
-              addingUser={addingUser}
-              onSubmit={handleAddUser}
-              onCancel={() => setShowAddUserForm(false)}
-            />
-          )}
+      {showAddUserForm && (
+        <UsersListAddUserForm
+          userType={userType}
+          newUserData={newUserData}
+          onNewUserDataChange={setNewUserData}
+          addingUser={addingUser}
+          onSubmit={handleAddUser}
+          onCancel={() => setShowAddUserForm(false)}
+        />
+      )}
 
-          <UsersListFilters
-            searchTerm={searchTerm}
-            onSearchChange={handleSearch}
-            userType={userType}
-            customerTypeFilter={customerTypeFilter}
-            onCustomerTypeFilterChange={setCustomerTypeFilter}
-            addressFilter={addressFilter}
-            onAddressFilterChange={setAddressFilter}
-            uniqueCustomerTypes={uniqueCustomerTypes}
-          />
+      {showBulkEdit && (
+        <UsersListBulkEditBar
+          selectedCount={selectedBusinessIds.length}
+          bulkType={bulkType}
+          onBulkTypeChange={setBulkType}
+          bulkSource={bulkSource}
+          onBulkSourceChange={setBulkSource}
+          bulkUpdating={bulkUpdating}
+          onApply={applyBulkUpdate}
+          onClear={clearBulkSelection}
+          selectedUsers={filteredUsers.filter((u) => selectedIds.has(u.id))}
+        />
+      )}
 
-          {showBulkEdit && (
-            <UsersListBulkEditBar
-              selectedCount={selectedBusinessIds.length}
-              bulkType={bulkType}
-              onBulkTypeChange={setBulkType}
-              bulkSource={bulkSource}
-              onBulkSourceChange={setBulkSource}
-              bulkUpdating={bulkUpdating}
-              onApply={applyBulkUpdate}
-              onClear={clearBulkSelection}
-              selectedUsers={filteredUsers.filter((u) => selectedIds.has(u.id))}
-            />
-          )}
-        </CardHeader>
-
-        <CardContent>
-          {loading ? (
-            <UsersListLoading />
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {isCustomerView && (
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={
-                            filteredUsers.length > 0 && filteredUsers.every((u) => isSelected(u.id))
-                          }
-                          onCheckedChange={toggleSelectAll}
-                        />
-                      </TableHead>
-                    )}
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Email</TableHead>
-                    {isCustomerView ? (
-                      <>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Payment Methods</TableHead>
-                        <TableHead>Addresses</TableHead>
-                      </>
-                    ) : (
-                      <TableHead>Role</TableHead>
-                    )}
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={isCustomerView ? 6 : 4}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        {searchTerm ? 'No users found matching your search.' : 'No users found.'}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <UsersTableRow
-                        key={user.id}
-                        user={user}
-                        isCustomerView={isCustomerView}
-                        isEditing={editingUser === user.id}
-                        editData={editData}
-                        onEditDataChange={setEditData}
-                        showPassword={showPassword}
-                        updating={updating}
-                        resetLoading={resetLoading}
-                        isSelected={isSelected(user.id)}
-                        paymentData={paymentData}
-                        handlers={rowHandlers}
-                      />
-                    ))
+      <div className="-mx-0.5 min-w-0 overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {isCustomerView && (
+                <TableHead className="w-12">
+                  {!loading && (
+                    <Checkbox
+                      checked={
+                        filteredUsers.length > 0 && filteredUsers.every((u) => isSelected(u.id))
+                      }
+                      onCheckedChange={toggleSelectAll}
+                    />
                   )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
+                </TableHead>
+              )}
+              <TableHead>Customer</TableHead>
+              <TableHead>Email</TableHead>
+              {isCustomerView ? (
+                <>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Payment Methods</TableHead>
+                  <TableHead>Addresses</TableHead>
+                </>
+              ) : (
+                <TableHead>Role</TableHead>
+              )}
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody aria-busy={loading}>
+            {loading ? (
+              <UsersListLoadingRows userType={userType} />
+            ) : filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={isCustomerView ? 7 : 4}
+                  className="text-center py-8 text-muted-foreground"
+                >
+                  {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((user) => (
+                <UsersTableRow
+                  key={user.id}
+                  user={user}
+                  isCustomerView={isCustomerView}
+                  isEditing={editingUser === user.id}
+                  editData={editData}
+                  onEditDataChange={setEditData}
+                  showPassword={showPassword}
+                  updating={updating}
+                  resetLoading={resetLoading}
+                  isSelected={isSelected(user.id)}
+                  paymentData={paymentData}
+                  handlers={rowHandlers}
+                />
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-        <UsersListDialogs
+      <UsersListDialogs
           userType={userType}
           newUserData={newUserData}
           onNewUserDataChange={setNewUserData}
@@ -721,8 +726,7 @@ const ModernUsersTable = ({ userType = 'all' }: ModernUsersTableProps) => {
           onAssignSourcesDialogOpenChange={setAssignSourcesDialogOpen}
           selectedAgentForSources={selectedAgentForSources}
           onRefreshUsers={refreshUsers}
-        />
-      </Card>
+      />
     </div>
   );
 };

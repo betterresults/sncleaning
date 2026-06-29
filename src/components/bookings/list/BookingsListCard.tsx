@@ -51,12 +51,8 @@ export function BookingsListCard({
 
   return (
           <div
-            key={booking.id} 
-            className={`rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgb(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-200 border-none overflow-hidden ${
-              booking.same_day
-                ? 'bg-gradient-to-br from-orange-50 to-red-50'
-                : 'bg-card'
-            }`}
+            key={booking.id}
+            className={`booking-list-card${booking.same_day ? ' booking-list-card--urgent' : ''}`}
           >
             {/* Desktop Layout - 5 Equal Columns */}
             <div className="hidden lg:block">
@@ -224,12 +220,12 @@ export function BookingsListCard({
             </div>
 
             {/* Mobile & Tablet Layout */}
-            <div className="lg:hidden p-4 space-y-3 overflow-hidden">
+            <div className="lg:hidden p-3 sm:p-4 space-y-3 overflow-hidden">
               {/* Row 1: Time, Customer, Actions */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Time Box - Larger, more prominent */}
-                  <div className="bg-primary/10 rounded-xl px-3 py-2.5 min-w-[80px] flex-shrink-0">
+                  <div className="bg-primary/10 rounded-xl px-2.5 py-2 sm:px-3 sm:py-2.5 min-w-[72px] sm:min-w-[80px] flex-shrink-0">
                     <div className="text-center">
                       <div className="text-xs text-muted-foreground font-semibold uppercase">{bookingWeekday}</div>
                       <div className="text-sm text-foreground font-semibold">{bookingDate}</div>

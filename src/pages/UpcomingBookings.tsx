@@ -1,66 +1,23 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import UpcomingBookings from '@/components/dashboard/UpcomingBookings';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const UpcomingBookingsPage = () => {
-  const { user, userRole, cleanerId, loading, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  const { loading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const openBookingId = Number.parseInt(searchParams.get('bookingId') || '', 10);
+  const bookingId = Number.isFinite(openBookingId) ? openBookingId : undefined;
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
+    return <ShellLoading message="Loading bookings…" />;
   }
 
-  // Redirect cleaners to their dashboard
-
-  // Allow admin and sales_agent
-
-  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
-
-  // No date filter means show ALL future bookings
-  const noDateFilter = undefined;
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-gray-50">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={navigation}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-2 sm:p-4 lg:p-6 space-y-2 sm:space-y-4 max-w-full overflow-x-hidden">
-              <div className="max-w-7xl mx-auto">
-                <UpcomingBookings 
-                  dashboardDateFilter={noDateFilter}
-                />
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+    <ShellPage width="wide">
+      <UpcomingBookings dashboardDateFilter={undefined} openBookingId={bookingId} />
+    </ShellPage>
   );
 };
 

@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Send, Search, Phone, ArrowLeft, MessageCircle, Check, CheckCheck, Plus, User, UserSearch, Calendar, MapPin, Clock, ExternalLink, Mail, Bell, AlertCircle } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 import {
   Dialog,
   DialogContent,
@@ -150,14 +147,6 @@ const AdminSMSMessages = () => {
   const [showCustomerLookup, setShowCustomerLookup] = useState(false);
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupResult, setLookupResult] = useState<CustomerLookupResult | null>(null);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
   
   // Lookup customer and their bookings by phone number
   const lookupCustomerByPhone = async (phoneNumber: string) => {
@@ -574,26 +563,8 @@ const AdminSMSMessages = () => {
     return phone.slice(-2);
   };
 
-  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
-
   return (
-    <SidebarProvider>
-      <div className="h-screen flex flex-col w-full bg-gray-50 overflow-hidden">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full overflow-hidden">
-          <UnifiedSidebar 
-            navigationItems={navigation}
-            user={user}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1 overflow-hidden">
-            <main className="h-full p-4 max-w-full overflow-hidden flex flex-col">
-              <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
+    <ShellPage width="wide">
                 {/* Unread Messages Alert Banner */}
                 {(() => {
                   const totalUnread = threads.reduce((sum, t) => sum + t.unread_count, 0);
@@ -1210,12 +1181,7 @@ const AdminSMSMessages = () => {
                     )}
                   </Card>
                 </div>
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+              </ShellPage>
   );
 };
 

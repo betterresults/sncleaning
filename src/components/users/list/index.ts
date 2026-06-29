@@ -4,6 +4,6 @@ export { RoleBadge, CustomerTypeBadge, getTypeTitle, getAddButtonText } from './
 export { UsersListAddUserForm } from './UsersListAddUserForm';
 export { UsersListFilters } from './UsersListFilters';
 export { UsersListBulkEditBar } from './UsersListBulkEditBar';
-export { UsersListLoading } from './UsersListStates';
+export { UsersListLoading, UsersListLoadingRows } from './UsersListStates';
 export { UsersTableRow } from './UsersTableRow';
 export { UsersListDialogs } from './UsersListDialogs';

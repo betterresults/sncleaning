@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format, subDays } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { PerformanceChartSkeleton } from './PerformanceChartSkeleton';
 
 interface ChartData {
   date: string;
@@ -12,6 +14,7 @@ interface ChartData {
 const PerformanceChart = () => {
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchChartData();
@@ -21,7 +24,6 @@ const PerformanceChart = () => {
     try {
       setLoading(true);
 
-      // Get last 7 days data
       const last7Days = subDays(new Date(), 7);
 
       const { data: bookingsData, error } = await supabase
@@ -32,7 +34,6 @@ const PerformanceChart = () => {
 
       if (error) throw error;
 
-      // Group by date
       const dataByDate: { [key: string]: { bookings: number; revenue: number } } = {};
 
       bookingsData?.forEach((booking) => {
@@ -44,11 +45,10 @@ const PerformanceChart = () => {
         dataByDate[date].revenue += Number(booking.total_cost) || 0;
       });
 
-      // Convert to array
       const chartArray: ChartData[] = Object.entries(dataByDate).map(([date, data]) => ({
         date,
         bookings: data.bookings,
-        revenue: Math.round(data.revenue)
+        revenue: Math.round(data.revenue),
       }));
 
       setChartData(chartArray);
@@ -59,85 +59,99 @@ const PerformanceChart = () => {
     }
   };
 
+  const chartHeight = isMobile ? 240 : 280;
+
   if (loading) {
-    return (
-      <div className="h-[300px] flex items-center justify-center">
-        <div className="animate-pulse text-gray-400">Loading chart...</div>
-      </div>
-    );
+    return <PerformanceChartSkeleton height={chartHeight} />;
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-gray-500">
-        <p>Няма данни за последните 7 дни</p>
+      <div className="shell-empty flex items-center justify-center" style={{ height: chartHeight }}>
+        No data for the last 7 days
       </div>
     );
   }
 
   return (
-    <div className="h-[300px] w-full">
+    <div className="w-full min-w-0" style={{ height: chartHeight }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <BarChart
+          data={chartData}
+          margin={
+            isMobile
+              ? { top: 8, right: 4, left: -18, bottom: 0 }
+              : { top: 10, right: 10, left: 0, bottom: 0 }
+          }
+        >
           <defs>
             <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9}/>
-              <stop offset="100%" stopColor="#60a5fa" stopOpacity={0.7}/>
+              <stop offset="0%" stopColor="#007aff" stopOpacity={0.9} />
+              <stop offset="100%" stopColor="#007aff" stopOpacity={0.55} />
             </linearGradient>
             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity={0.9}/>
-              <stop offset="100%" stopColor="#34d399" stopOpacity={0.7}/>
+              <stop offset="0%" stopColor="#34c759" stopOpacity={0.9} />
+              <stop offset="100%" stopColor="#34c759" stopOpacity={0.55} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-          <XAxis 
-            dataKey="date" 
-            tick={{ fill: '#6b7280', fontSize: 12, fontWeight: 500 }}
-            stroke="#e5e7eb"
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" vertical={false} />
+          <XAxis
+            dataKey="date"
+            tick={{ fill: 'rgba(28,28,32,0.5)', fontSize: isMobile ? 10 : 12, fontWeight: 500 }}
+            stroke="transparent"
             axisLine={false}
+            interval={isMobile ? 'preserveStartEnd' : 0}
+            angle={isMobile ? -35 : 0}
+            textAnchor={isMobile ? 'end' : 'middle'}
+            height={isMobile ? 48 : 30}
           />
-          <YAxis 
+          <YAxis
             yAxisId="left"
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            stroke="#e5e7eb"
+            tick={{ fill: 'rgba(28,28,32,0.45)', fontSize: isMobile ? 10 : 12 }}
+            stroke="transparent"
             axisLine={false}
+            width={isMobile ? 28 : 40}
           />
-          <YAxis 
-            yAxisId="right"
-            orientation="right"
-            tick={{ fill: '#6b7280', fontSize: 12 }}
-            stroke="#e5e7eb"
-            axisLine={false}
-          />
-          <Tooltip 
-            contentStyle={{ 
-              backgroundColor: '#ffffff', 
-              border: '1px solid #e5e7eb',
+          {!isMobile && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fill: 'rgba(28,28,32,0.45)', fontSize: 12 }}
+              stroke="transparent"
+              axisLine={false}
+            />
+          )}
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'rgba(255,255,255,0.96)',
+              border: '0.5px solid rgba(0,0,0,0.08)',
               borderRadius: '12px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-              padding: '12px'
+              boxShadow: '0 4px 16px rgba(0,40,100,0.1)',
+              padding: '10px 12px',
+              fontSize: '13px',
             }}
-            cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+            cursor={{ fill: 'rgba(0, 122, 255, 0.06)' }}
           />
-          <Legend 
-            wrapperStyle={{ paddingTop: '20px' }}
+          <Legend
+            wrapperStyle={{ paddingTop: isMobile ? 8 : 20, fontSize: isMobile ? 11 : 12 }}
             iconType="circle"
+            iconSize={isMobile ? 8 : 10}
           />
-          <Bar 
+          <Bar
             yAxisId="left"
-            dataKey="bookings" 
-            fill="url(#colorBookings)" 
+            dataKey="bookings"
+            fill="url(#colorBookings)"
             name="Bookings"
-            radius={[8, 8, 0, 0]}
-            maxBarSize={40}
+            radius={[6, 6, 0, 0]}
+            maxBarSize={isMobile ? 28 : 40}
           />
-          <Bar 
-            yAxisId="right"
-            dataKey="revenue" 
-            fill="url(#colorRevenue)" 
+          <Bar
+            yAxisId={isMobile ? 'left' : 'right'}
+            dataKey="revenue"
+            fill="url(#colorRevenue)"
             name="Revenue (£)"
-            radius={[8, 8, 0, 0]}
-            maxBarSize={40}
+            radius={[6, 6, 0, 0]}
+            maxBarSize={isMobile ? 28 : 40}
           />
         </BarChart>
       </ResponsiveContainer>

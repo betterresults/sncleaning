@@ -3,10 +3,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation, salesAgentNavigation } from '@/lib/navigationItems';
 import { supabase } from '@/integrations/supabase/client';
 import { Folder, Image, Search, Calendar, MapPin, User, ChevronRight, ArrowLeft, Download, Eye, Share2, Copy, Check } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -14,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 interface PhotoFolder {
   key: string;
@@ -56,16 +53,6 @@ const PhotoManagement = () => {
   // Customer/Cleaner name caches
   const [customerNames, setCustomerNames] = useState<Record<number, string>>({});
   const [cleanerNames, setCleanerNames] = useState<Record<number, string>>({});
-
-  const navigation = userRole === 'sales_agent' ? salesAgentNavigation : adminNavigation;
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   // Fetch all photos and group them
   useEffect(() => {
@@ -320,24 +307,8 @@ const PhotoManagement = () => {
   const selectedFolderLabel = folders.find(f => f.key === selectedFolder)?.label || selectedFolder;
 
   return (
-    <SidebarProvider>
-        <div className="min-h-screen flex flex-col w-full bg-gray-50">
-          <UnifiedHeader 
-            title=""
-            user={user}
-            userRole={userRole}
-            onSignOut={handleSignOut}
-          />
-          <div className="flex flex-1 w-full">
-            <UnifiedSidebar 
-              navigationItems={navigation}
-              user={user}
-              userRole={userRole}
-              onSignOut={handleSignOut}
-            />
-            <SidebarInset className="flex-1 flex flex-col p-0 m-0 overflow-x-hidden">
-              <main className="flex-1 bg-gray-50 m-0 px-4 md:px-6 py-4 md:py-6 space-y-6 w-full">
-                <Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
+    <ShellPage width="wide">
+<Card className="rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border-0">
                   <CardHeader className="pb-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="flex items-center gap-3">
@@ -482,64 +453,7 @@ const PhotoManagement = () => {
                     )}
                   </CardContent>
                 </Card>
-              </main>
-            </SidebarInset>
-          </div>
-        </div>
-        
-        {/* Photo viewer dialog */}
-        <Dialog open={!!selectedPhoto} onOpenChange={() => { setSelectedPhoto(null); setPhotoUrl(null); }}>
-          <DialogContent className="max-w-4xl max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Image className="h-5 w-5" />
-                {selectedPhoto?.photo_type} Photo
-              </DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[70vh]">
-              {photoUrl ? (
-                <img src={photoUrl} alt="Cleaning photo" className="w-full rounded-lg" />
-              ) : (
-                <div className="flex items-center justify-center h-64">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              )}
-              {selectedPhoto && (
-                <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex gap-2">
-                    <span className="text-muted-foreground">Type:</span>
-                    <span className="capitalize">{selectedPhoto.photo_type}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-muted-foreground">Booking:</span>
-                    <span>#{selectedPhoto.booking_id}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-muted-foreground">Date:</span>
-                    <span>{format(parseISO(selectedPhoto.booking_date), 'dd MMM yyyy')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="text-muted-foreground">Postcode:</span>
-                    <span>{selectedPhoto.postcode}</span>
-                  </div>
-                  {selectedPhoto.caption && (
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground">Caption:</span>
-                      <span>{selectedPhoto.caption}</span>
-                    </div>
-                  )}
-                  {selectedPhoto.damage_details && (
-                    <div className="flex gap-2">
-                      <span className="text-muted-foreground">Damage:</span>
-                      <span className="text-red-600">{selectedPhoto.damage_details}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      </SidebarProvider>
+    </ShellPage>
   );
 };
 
@@ -568,7 +482,7 @@ const PhotoThumbnail = ({
   }, [photo.file_path]);
 
   return (
-    <div className="relative group rounded-xl overflow-hidden border border-border bg-muted aspect-square">
+    <div className="relative aspect-square rounded-lg overflow-hidden border border-border group">
       {loading ? (
         <div className="flex items-center justify-center h-full">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>

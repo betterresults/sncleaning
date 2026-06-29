@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { UnifiedSidebar } from '@/components/UnifiedSidebar';
-import { UnifiedHeader } from '@/components/UnifiedHeader';
-import { adminNavigation } from '@/lib/navigationItems';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +14,7 @@ import { ArrowLeft, ChevronDown, User, Calendar, MapPin, DollarSign, Clock, Cred
 import { format } from 'date-fns';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { Badge } from '@/components/ui/badge';
+import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 interface PastBooking {
   id: number;
@@ -65,14 +62,6 @@ const AdminAddCleanerPayment = () => {
   const [paymentDate, setPaymentDate] = useState('');
 
   const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(true);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
 
   useEffect(() => {
     fetchBookings();
@@ -202,34 +191,11 @@ const AdminAddCleanerPayment = () => {
   const selectedCleaner = linkedCleaners.find(c => c.id === selectedCleanerId);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-base">Loading...</div>
-      </div>
-    );
+    return <ShellLoading />;
   }
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-background">
-        <UnifiedHeader 
-          title=""
-          user={user}
-          userRole={userRole}
-          onSignOut={handleSignOut}
-        />
-        <div className="flex flex-1 w-full">
-          <UnifiedSidebar 
-            navigationItems={adminNavigation}
-            user={user}
-            userRole={userRole}
-            customerId={customerId}
-            cleanerId={cleanerId}
-            onSignOut={handleSignOut}
-          />
-          <SidebarInset className="flex-1">
-            <main className="flex-1 p-4 md:p-6 space-y-6 max-w-full overflow-x-hidden">
-              <div className="max-w-4xl mx-auto space-y-6">
+    <ShellPage width="narrow">
                 {/* Header */}
                 <div className="flex items-center gap-4">
                   <Button
@@ -576,12 +542,7 @@ const AdminAddCleanerPayment = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </div>
-    </SidebarProvider>
+              </ShellPage>
   );
 };
 

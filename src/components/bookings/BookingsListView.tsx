@@ -24,6 +24,9 @@ const BookingsListView = ({
   dashboardDateFilter,
   initialCleanerFilter,
   filterBySubmissionDate = false,
+  showPagination = true,
+  maxItems,
+  openBookingId,
 }: BookingsListViewProps) => {
   const listParams = useMemo(
     () => ({ dashboardDateFilter, filterBySubmissionDate }),
@@ -99,6 +102,15 @@ const BookingsListView = ({
       setFilters((prev) => ({ ...prev, cleanerId: initialCleanerFilter }));
     }
   }, [initialCleanerFilter, filters.cleanerId]);
+
+  useEffect(() => {
+    if (!openBookingId || loading) return;
+    const booking = bookings.find((b) => b.id === openBookingId);
+    if (booking) {
+      setSelectedBookingForEdit(booking);
+      setEditDialogOpen(true);
+    }
+  }, [openBookingId, loading, bookings]);
 
   const handleEdit = (bookingId: number) => {
     const booking = bookings.find((b) => b.id === bookingId);
@@ -217,7 +229,14 @@ const BookingsListView = ({
     onRefresh: refreshBookings,
   };
 
-  if (loading) return <BookingsListLoading />;
+  if (loading) {
+    return (
+      <BookingsListLoading
+        count={maxItems ?? 5}
+        showPagination={showPagination}
+      />
+    );
+  }
   if (error) return <BookingsListError message={error} />;
   if (bookings.length === 0 && filteredBookings.length === 0) return <BookingsListEmpty />;
 
@@ -226,11 +245,14 @@ const BookingsListView = ({
   const totalPages = Math.ceil(displayBookings.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const displayedBookings = displayBookings.slice(startIndex, endIndex);
+  let displayedBookings = displayBookings.slice(startIndex, endIndex);
+  if (maxItems != null) {
+    displayedBookings = displayedBookings.slice(0, maxItems);
+  }
   const showFilters = !dashboardDateFilter;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4 min-w-0">
       {showFilters && (
         <UpcomingBookingsFilters
           filters={filters}
@@ -252,14 +274,16 @@ const BookingsListView = ({
         />
       ))}
 
-      <BookingsListPagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        startIndex={startIndex}
-        endIndex={endIndex}
-        totalItems={displayBookings.length}
-        onPageChange={setCurrentPage}
-      />
+      {showPagination && (
+        <BookingsListPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalItems={displayBookings.length}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       <BookingsListDialogs
         editDialogOpen={editDialogOpen}

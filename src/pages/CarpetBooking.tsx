@@ -1,7 +1,12 @@
 import { CarpetCleaningForm } from '@/features/booking';
+import { ShellPage } from '@/layouts/shell';
 
 const CarpetBooking = () => {
-  return <CarpetCleaningForm />;
+  return (
+    <ShellPage width="wide">
+      <CarpetCleaningForm />
+    </ShellPage>
+  );
 };
 
 export default CarpetBooking;
