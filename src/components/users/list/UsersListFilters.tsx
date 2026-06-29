@@ -39,7 +39,7 @@ export function UsersListFilters({
   actions,
 }: UsersListFiltersProps) {
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-black/[0.06] pb-3 md:flex-nowrap">
+    <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-shell-divider pb-3 md:flex-nowrap">
       <div className="relative min-w-0 flex-1 basis-full md:max-w-xs md:basis-auto">
         <Search
           className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -49,7 +49,7 @@ export function UsersListFilters({
           placeholder="Search…"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="h-8 border-transparent bg-black/[0.04] pl-10 pr-3 text-sm shadow-none focus-visible:border-blue-500/30 focus-visible:bg-white focus-visible:ring-0"
+          className="h-8 border-transparent bg-black/[0.04] pl-10 pr-3 text-sm shadow-none focus-visible:border-shell-brand/30 focus-visible:bg-white focus-visible:ring-0"
         />
       </div>
 

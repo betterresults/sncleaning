@@ -4,6 +4,7 @@ import { useUnreadSMSCount } from '@/hooks/useUnreadSMSCount';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { ShellIconButton, ShellIconBadge } from '@/layouts/shell/ShellIconButton';
 
 const SMSNotificationBadge = () => {
   const { count, loading } = useUnreadSMSCount();
@@ -11,7 +12,6 @@ const SMSNotificationBadge = () => {
   const { userRole } = useAuth();
   const prevCountRef = useRef<number | undefined>(undefined);
 
-  // Show toast when new message arrives
   useEffect(() => {
     if (!loading && prevCountRef.current !== undefined && count > prevCountRef.current) {
       toast.info('📱 New SMS message received!', {
@@ -26,28 +26,17 @@ const SMSNotificationBadge = () => {
     prevCountRef.current = count;
   }, [count, loading, navigate]);
 
-  // Only show for admins
   if (userRole !== 'admin') return null;
 
-  const handleClick = () => {
-    navigate('/admin-sms-messages');
-  };
-
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="shell-icon-btn shell-icon-btn--badge"
+    <ShellIconButton
+      onClick={() => navigate('/admin-sms-messages')}
       title={count > 0 ? `${count} unanswered message${count !== 1 ? 's' : ''}` : 'SMS Messages'}
       aria-label={count > 0 ? `${count} unanswered SMS messages` : 'SMS Messages'}
+      badge={count > 0 ? <ShellIconBadge>{count > 99 ? '99+' : count}</ShellIconBadge> : undefined}
     >
       <MessageSquare size={18} />
-      {count > 0 && (
-        <span className="shell-icon-badge" aria-hidden>
-          {count > 99 ? '99+' : count}
-        </span>
-      )}
-    </button>
+    </ShellIconButton>
   );
 };
 

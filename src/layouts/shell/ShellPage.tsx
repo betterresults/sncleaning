@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 type ShellPageWidth = 'default' | 'narrow' | 'wide' | 'full';
 
@@ -12,10 +13,10 @@ interface ShellPageProps {
 }
 
 const widthClass: Record<ShellPageWidth, string> = {
-  default: 'shell-page--default',
-  narrow: 'shell-page--narrow',
-  wide: 'shell-page--wide',
-  full: 'shell-page--full',
+  default: 'max-w-shell-default',
+  narrow: 'max-w-shell-narrow',
+  wide: 'max-w-shell-wide',
+  full: 'max-w-none',
 };
 
 /**
@@ -30,11 +31,17 @@ export function ShellPage({
   className = '',
 }: ShellPageProps) {
   return (
-    <div className={`shell-page ${widthClass[width]} ${className}`.trim()}>
+    <div className={cn('flex w-full min-w-0 flex-col gap-0', widthClass[width], className)}>
       {(title || description) && (
-        <header className="shell-page-header">
-          {title && <h1 className="shell-page-title">{title}</h1>}
-          {description && <p className="shell-page-description">{description}</p>}
+        <header className="flex flex-col gap-1.5">
+          {title && (
+            <h1 className="m-0 text-2xl font-bold leading-tight tracking-tight text-shell-text">
+              {title}
+            </h1>
+          )}
+          {description && (
+            <p className="m-0 text-[0.9375rem] leading-snug text-shell-muted">{description}</p>
+          )}
         </header>
       )}
       {children}

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { format, subDays } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ShellEmpty } from '@/layouts/shell';
 import { PerformanceChartSkeleton } from './PerformanceChartSkeleton';
 
 interface ChartData {
@@ -67,9 +68,9 @@ const PerformanceChart = () => {
 
   if (chartData.length === 0) {
     return (
-      <div className="shell-empty flex items-center justify-center" style={{ height: chartHeight }}>
+      <ShellEmpty className="flex items-center justify-center" style={{ height: chartHeight }}>
         No data for the last 7 days
-      </div>
+      </ShellEmpty>
     );
   }
 

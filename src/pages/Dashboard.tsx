@@ -1,7 +1,12 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { ShellPage, ShellSectionHeader } from '@/layouts/shell';
+import {
+  ShellPage,
+  ShellSectionHeader,
+  ShellDivideBlock,
+  ShellSplitCell,
+} from '@/layouts/shell';
 import DashboardStats from '@/components/admin/DashboardStats';
 import BookingsListView from '@/components/bookings/BookingsListView';
 import RecentActivity from '@/components/dashboard/RecentActivity';
@@ -39,7 +44,7 @@ const Dashboard = () => {
     <ShellPage width="full">
       {userRole === 'admin' && <DashboardStats />}
 
-      <div className="shell-divide-block">
+      <ShellDivideBlock>
         <ShellSectionHeader
           title="Today's Bookings"
           description="Scheduled for today"
@@ -55,34 +60,34 @@ const Dashboard = () => {
           showPagination={false}
           maxItems={5}
         />
-      </div>
+      </ShellDivideBlock>
 
-      <div className="shell-divide-block">
+      <ShellDivideBlock>
         <ShellSectionHeader
           title="Next 7 Days"
           description="Upcoming scheduled bookings"
         />
         <BookingsListView dashboardDateFilter={next7DaysRange} />
-      </div>
+      </ShellDivideBlock>
 
       {userRole === 'admin' && (
-        <div className="shell-divide-block shell-split-grid">
-          <div className="shell-split-cell">
+        <ShellDivideBlock split>
+          <ShellSplitCell>
             <ShellSectionHeader
               title="Recent Activity"
               description="Latest completed jobs"
             />
             <RecentActivity />
-          </div>
+          </ShellSplitCell>
 
-          <div className="shell-split-cell">
+          <ShellSplitCell>
             <ShellSectionHeader
               title="Performance"
               description="Last 7 days"
             />
             <PerformanceChart />
-          </div>
-        </div>
+          </ShellSplitCell>
+        </ShellDivideBlock>
       )}
     </ShellPage>
   );

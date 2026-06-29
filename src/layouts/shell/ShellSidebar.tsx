@@ -1,6 +1,7 @@
 import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, PanelLeftClose, PanelLeft, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ShellNav } from './ShellNav';
 import { getShellDisplayName, getShellSettingsPath } from './useShellNav';
 import type { ShellNavigationItem, ShellUser } from './types';
@@ -37,13 +38,31 @@ function ShellSidebarBodyComponent({
   }, [navigate, userRole, customerId, cleanerId, onNavigate]);
 
   return (
-    <div className="shell-sidebar-inner">
-      <div className="shell-brand-row">
-        {!collapsed && <span className="shell-brand-name">SN Cleaning</span>}
+    <div
+      className={cn(
+        'flex h-full min-h-0 flex-col overflow-hidden px-4 pb-[max(18px,env(safe-area-inset-bottom))] pt-[max(22px,env(safe-area-inset-top))]',
+        collapsed ? 'px-2.5' : 'px-4',
+      )}
+    >
+      <div
+        className={cn(
+          'flex min-h-8 items-center justify-between gap-2 px-1 pb-5',
+          collapsed && 'justify-center px-0 pb-1.5',
+        )}
+      >
+        {!collapsed && (
+          <span className="max-w-[180px] overflow-hidden whitespace-nowrap text-xl font-bold tracking-tight text-shell-text transition-[opacity,max-width] duration-shell-sidebar ease-shell-sidebar">
+            SN Cleaning
+          </span>
+        )}
         {onToggleCollapse && (
           <button
             type="button"
-            className={`shell-collapse-btn${collapsed ? ' shell-collapse-btn--collapsed' : ''}`}
+            className={cn(
+              'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[10px] border-none bg-shell-brand/10 text-shell-brand transition-[background,color] duration-[180ms] hover:bg-shell-brand/[0.18] hover:text-[#0066d6]',
+              collapsed ? 'h-auto w-full rounded-xl px-2 py-[11px] hover:bg-shell-brand/20' : 'h-8 w-8',
+              '[&_svg]:h-[18px] [&_svg]:w-[18px] [&_svg]:shrink-0',
+            )}
             data-tooltip={collapsed ? 'Expand sidebar' : undefined}
             onClick={onToggleCollapse}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -57,16 +76,31 @@ function ShellSidebarBodyComponent({
 
       <button
         type="button"
-        className={`shell-user${collapsed ? ' shell-user--collapsed' : ''}`}
+        className={cn(
+          'mt-3 flex w-full shrink-0 cursor-pointer items-center gap-[11px] rounded-[14px] border-none bg-transparent p-2.5 text-left transition-colors hover:bg-white/25',
+          collapsed && 'justify-center px-2',
+        )}
         data-tooltip={collapsed ? displayName : undefined}
         onClick={handleUserClick}
       >
-        <div className="shell-user-avatar">{initials || <User size={16} />}</div>
-        <div className="shell-user-text min-w-0 flex-1">
-          <div className="shell-user-name truncate">{displayName}</div>
-          <div className="shell-user-email truncate">{email}</div>
+        <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7eb8ff] to-shell-brand text-sm font-semibold text-white shadow-[0_2px_10px_rgba(0,122,255,0.25)]">
+          {initials || <User size={16} />}
         </div>
-        <ChevronDown size={16} className="shell-user-chevron" />
+        <div
+          className={cn(
+            'min-w-0 max-w-[160px] flex-1 transition-[opacity,max-width] duration-shell-sidebar ease-shell-sidebar',
+            collapsed && 'hidden',
+          )}
+        >
+          <div className="truncate text-sm font-semibold leading-tight tracking-tight text-shell-text">
+            {displayName}
+          </div>
+          <div className="truncate text-[11px] leading-snug text-shell-muted">{email}</div>
+        </div>
+        <ChevronDown
+          size={16}
+          className={cn('ml-auto shrink-0 opacity-35 transition-opacity', collapsed && 'hidden')}
+        />
       </button>
     </div>
   );
@@ -74,7 +108,7 @@ function ShellSidebarBodyComponent({
 
 function sidebarBodyPropsEqual(
   prev: ShellSidebarBodyProps,
-  next: ShellSidebarBodyProps
+  next: ShellSidebarBodyProps,
 ): boolean {
   return (
     prev.collapsed === next.collapsed &&
@@ -98,7 +132,13 @@ interface ShellSidebarProps extends ShellSidebarBodyProps {
 function ShellSidebarComponent({ collapsed, onToggleCollapse, ...props }: ShellSidebarProps) {
   return (
     <aside
-      className={`shell-sidebar${collapsed ? ' shell-sidebar--collapsed' : ''}`}
+      data-sidebar-collapsed={collapsed || undefined}
+      className={cn(
+        'sticky isolate hidden shrink-0 flex-col overflow-visible border-r border-white/45 bg-white/[0.22] shadow-[inset_-1px_0_0_rgba(255,255,255,0.25)] backdrop-blur-[20px] backdrop-saturate-[160%] transition-[width] duration-shell-sidebar ease-shell-sidebar motion-reduce:transition-none',
+        'md:flex md:top-0 md:h-[100dvh] md:max-h-[100dvh] md:min-h-[100dvh] md:contain-[layout_style]',
+        collapsed ? 'w-shell-sidebar-collapsed' : 'w-shell-sidebar',
+        '[@media(prefers-reduced-transparency:reduce)]:bg-white/[0.94] [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none',
+      )}
       aria-label="Sidebar"
       aria-expanded={!collapsed}
     >
@@ -120,13 +160,30 @@ interface ShellDrawerProps extends ShellSidebarProps {
   onClose: () => void;
 }
 
-export function ShellDrawer({ open, onClose, collapsed: _c, onToggleCollapse: _t, ...props }: ShellDrawerProps) {
+export function ShellDrawer({
+  open,
+  onClose,
+  collapsed: _c,
+  onToggleCollapse: _t,
+  ...props
+}: ShellDrawerProps) {
   if (!open) return null;
 
   return (
     <>
-      <button type="button" className="shell-drawer-backdrop" aria-label="Close menu" onClick={onClose} />
-      <aside className="shell-drawer" aria-label="Navigation menu">
+      <button
+        type="button"
+        className="fixed inset-0 z-50 animate-shell-fade cursor-pointer border-none bg-[rgba(20,20,40,0.25)] motion-reduce:animate-none"
+        aria-label="Close menu"
+        onClick={onClose}
+      />
+      <aside
+        className={cn(
+          'fixed bottom-0 left-0 top-0 z-[51] w-[min(280px,88vw)] animate-shell-slide border-r border-white/45 bg-white/[0.94] contain-[layout_style_paint] backdrop-blur-[20px] backdrop-saturate-[160%] motion-reduce:animate-none',
+          '[@media(prefers-reduced-transparency:reduce)]:bg-white/[0.94] [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none',
+        )}
+        aria-label="Navigation menu"
+      >
         <ShellSidebarBody {...props} onNavigate={onClose} />
       </aside>
     </>
