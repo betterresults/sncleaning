@@ -13,9 +13,18 @@ interface ChatListProps {
   onSelectChat: (chat: ChatWithLastMessage) => void;
   onCreateChat: () => void;
   loading: boolean;
+  /** Flat list inside ShellPane — no card chrome or duplicate header */
+  embedded?: boolean;
 }
 
-const ChatList = ({ chats, activeChat, onSelectChat, onCreateChat, loading }: ChatListProps) => {
+const ChatList = ({
+  chats,
+  activeChat,
+  onSelectChat,
+  onCreateChat,
+  loading,
+  embedded = false,
+}: ChatListProps) => {
   const { userRole, customerId, cleanerId } = useAuth();
 
   const getChatDisplayName = (chat: ChatWithLastMessage) => {
@@ -55,17 +64,23 @@ const ChatList = ({ chats, activeChat, onSelectChat, onCreateChat, loading }: Ch
   }
 
   return (
-    <div className="flex flex-col h-full bg-card border-r border-border">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground">Messages</h2>
-        <Button onClick={onCreateChat} size="sm" variant="outline">
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
+    <div
+      className={
+        embedded
+          ? 'flex h-full min-h-0 flex-col'
+          : 'flex h-full flex-col border-r border-border bg-card'
+      }
+    >
+      {!embedded && (
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <h2 className="text-lg font-semibold text-foreground">Messages</h2>
+          <Button onClick={onCreateChat} size="sm" variant="outline">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
-      {/* Chat List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         {chats.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-4 text-center">
             <MessageCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -77,12 +92,14 @@ const ChatList = ({ chats, activeChat, onSelectChat, onCreateChat, loading }: Ch
             </Button>
           </div>
         ) : (
-          <div className="p-2">
+          <div className={embedded ? undefined : 'p-2'}>
             {chats.map((chat) => (
               <div
                 key={chat.id}
                 onClick={() => onSelectChat(chat)}
-                className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`flex cursor-pointer items-center space-x-3 p-3 transition-colors ${
+                  embedded ? '!rounded-none' : 'rounded-lg'
+                } ${
                   activeChat?.id === chat.id
                     ? 'bg-accent text-accent-foreground'
                     : 'hover:bg-accent/50'
