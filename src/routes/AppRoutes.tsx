@@ -48,6 +48,7 @@ import BookingConfirmation from '@/pages/BookingConfirmation';
 import PaymentFailed from '@/pages/PaymentFailed';
 import AdminAddBooking from '@/pages/AdminAddBooking';
 import CleanerSettings from '@/pages/CleanerSettings';
+import CleanerAvailability from '@/pages/CleanerAvailability';
 import CleanerChecklist from '@/pages/CleanerChecklist';
 import AdminSettings from '@/pages/AdminSettings';
 import StaffSettings from '@/pages/StaffSettings';
@@ -180,6 +181,7 @@ export function AppRoutes() {
         {shellRoute('/cleaner-bookings', <CleanerBookingsPage />)}
         {shellRoute('/cleaner-upcoming-bookings', <CleanerUpcomingBookingsPage />)}
         {shellRoute('/cleaner-completed-bookings', <CleanerCompletedBookingsPage />)}
+        {shellRoute('/cleaner-availability', <CleanerAvailability />)}
         {shellRoute('/cleaner-settings', <CleanerSettings />)}
         {shellRoute('/cleaner-messages', <CleanerMessages />)}
         {shellRoute('/cleaner-available-bookings', <CleanerAvailableBookings />)}

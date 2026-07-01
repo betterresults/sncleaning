@@ -815,6 +815,35 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaner_service_types: {
+        Row: {
+          cleaner_id: number
+          created_at: string
+          id: string
+          service_type_key: string
+        }
+        Insert: {
+          cleaner_id: number
+          created_at?: string
+          id?: string
+          service_type_key: string
+        }
+        Update: {
+          cleaner_id?: number
+          created_at?: string
+          id?: string
+          service_type_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_service_types_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_tracking: {
         Row: {
           booking_id: number
@@ -868,6 +897,47 @@ export type Database = {
           },
           {
             foreignKeyName: "cleaner_tracking_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_working_hours: {
+        Row: {
+          cleaner_id: number
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          cleaner_id: number
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          cleaner_id?: number
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_working_hours_cleaner_id_fkey"
             columns: ["cleaner_id"]
             isOneToOne: false
             referencedRelation: "cleaners"

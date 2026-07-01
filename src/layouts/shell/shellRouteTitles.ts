@@ -54,6 +54,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/cleaner-available-bookings': 'Available Bookings',
   '/cleaner-past-bookings': 'Completed Bookings',
   '/cleaner-earnings': 'My Earnings',
+  '/cleaner-availability': 'My Availability',
   '/customer-dashboard': 'Dashboard',
   '/customer-completed-bookings': 'Completed Bookings',
   '/customer-settings': 'Settings',

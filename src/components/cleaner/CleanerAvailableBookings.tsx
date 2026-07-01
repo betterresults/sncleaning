@@ -8,14 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { CalendarDays, Clock, MapPin, User, Banknote, UserPlus } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, Banknote, UserPlus, AlertTriangle } from 'lucide-react';
 import { Booking } from './types';
 import { formatAdditionalDetails } from '@/utils/bookingFormatters';
+import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
+import { useCleanerServiceTypes, cleanerOffersService, normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { data: serviceTypes = [] } = useServiceTypes();
+  const { data: myServiceTypeKeys = [] } = useCleanerServiceTypes(cleanerId ?? null);
 
   console.log('CleanerAvailableBookings - cleanerId:', cleanerId);
 
@@ -39,12 +43,25 @@ const CleanerAvailableBookings = () => {
     return data;
   };
 
-  const { data: bookings = [], isLoading, error, refetch } = useQuery({
+  const { data: rawBookings = [], isLoading, error, refetch } = useQuery({
     queryKey: ['available-bookings'],
     queryFn: fetchAvailableBookings,
     refetchInterval: 10000, // Refetch every 10 seconds to keep data fresh
     staleTime: 5000, // Consider data stale after 5 seconds
   });
+
+  // Soft filter: every job stays visible, but jobs outside this cleaner's configured
+  // services (if any are configured) are flagged and pushed to the bottom.
+  const bookings = [...rawBookings]
+    .map((booking) => {
+      const normalizedServiceType = normalizeServiceTypeKey(booking.service_type, serviceTypes);
+      return {
+        ...booking,
+        normalizedServiceType,
+        matchesMyServices: cleanerOffersService(myServiceTypeKeys, normalizedServiceType),
+      };
+    })
+    .sort((a, b) => Number(b.matchesMyServices) - Number(a.matchesMyServices));
 
   // Real-time subscription for bookings changes
   useEffect(() => {
@@ -157,13 +174,21 @@ const CleanerAvailableBookings = () => {
       ) : (
         <div className="grid gap-4">
           {bookings.map((booking) => (
-            <Card key={booking.id} className="hover:shadow-md transition-shadow">
+            <Card key={booking.id} className={`hover:shadow-md transition-shadow ${!booking.matchesMyServices ? 'opacity-70' : ''}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg">
-                      {booking.first_name} {booking.last_name}
-                    </CardTitle>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CardTitle className="text-lg">
+                        {booking.first_name} {booking.last_name}
+                      </CardTitle>
+                      {!booking.matchesMyServices && (
+                        <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50 gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Not in your services{booking.normalizedServiceType ? ` (${getServiceTypeLabel(booking.normalizedServiceType, serviceTypes)})` : ''}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <div className="flex items-center">
                         <CalendarDays className="h-4 w-4 mr-1" />

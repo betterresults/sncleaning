@@ -20,8 +20,9 @@ import { EmailNotificationConfirmDialog } from '@/components/notifications/Email
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingFormatters';
-import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
+import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 
 interface EditBookingDialogProps {
@@ -37,6 +38,7 @@ interface Cleaner {
   last_name: string;
   hourly_rate: number;
   presentage_rate: number;
+  offersService: boolean;
 }
 
 interface SalesAgent {
@@ -196,8 +198,12 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     }
   }, [booking, open]);
 
+  // Normalize legacy service_type values (some rows store a display label instead
+  // of the canonical company_settings key) so cleaner-service matching still works.
+  const normalizedBookingServiceType = normalizeServiceTypeKey(formData.formName, serviceTypes || []);
+
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, normalizedBookingServiceType);
   
   useEffect(() => {
     if (linkedCleaners.length > 0) {
@@ -206,7 +212,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         first_name: c.first_name,
         last_name: c.last_name,
         hourly_rate: c.hourly_rate || 0,
-        presentage_rate: c.presentage_rate || 0
+        presentage_rate: c.presentage_rate || 0,
+        offersService: c.offersService,
       })));
     }
   }, [linkedCleaners]);
@@ -985,7 +992,14 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                           <SelectItem value="none">No cleaner assigned</SelectItem>
                           {cleaners.map((cleaner) => (
                             <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                              {cleaner.first_name} {cleaner.last_name}
+                              <span className="flex items-center gap-2">
+                                {cleaner.first_name} {cleaner.last_name}
+                                {!cleaner.offersService && normalizedBookingServiceType && (
+                                  <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                                    Doesn't offer {getServiceTypeLabel(normalizedBookingServiceType, serviceTypes || [])}
+                                  </Badge>
+                                )}
+                              </span>
                             </SelectItem>
                           ))}
                         </SelectContent>

@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, Plus, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
+import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import { 
   fetchAdditionalCleaners, 
   addBookingCleaner, 
@@ -28,6 +30,7 @@ interface Cleaner {
   full_name: string;
   presentage_rate: number;
   hourly_rate: number;
+  offersService: boolean;
 }
 
 interface AssignCleanerDialogProps {
@@ -48,6 +51,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [bookingTotalCost, setBookingTotalCost] = useState<number>(0);
   const [bookingTotalHours, setBookingTotalHours] = useState<number>(0);
+  const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
+  const { data: serviceTypes = [] } = useServiceTypes();
   const [primaryCleanerHours, setPrimaryCleanerHours] = useState<number>(0);
   const [calculatedCleanerPay, setCalculatedCleanerPay] = useState<number | null>(null);
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
@@ -98,6 +103,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       setBookingTotalCost(data.total_cost || 0);
       const hours = data.total_hours || data.cleaning_time || 0;
       setBookingTotalHours(hours);
+      setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
       
       // Determine payment method based on existing data
       if (data.cleaner_rate != null && data.cleaner_rate > 0) {
@@ -115,16 +121,19 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   };
 
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(open);
+  const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(open, bookingServiceType);
   
   // Sync linked cleaners to local state
   useEffect(() => {
     if (linkedCleaners.length > 0) {
       setCleaners(linkedCleaners.map(c => ({
-        ...c,
+        id: c.id,
+        first_name: c.first_name,
+        last_name: c.last_name,
         full_name: c.full_name || `${c.first_name} ${c.last_name}`,
         presentage_rate: c.presentage_rate || 0,
-        hourly_rate: c.hourly_rate || 0
+        hourly_rate: c.hourly_rate || 0,
+        offersService: c.offersService,
       })));
     }
   }, [linkedCleaners]);
@@ -394,9 +403,16 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Unnamed';
                   return (
                     <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{displayName}</span>
-                        <span className="text-xs text-muted-foreground ml-4">
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className="flex items-center gap-2">
+                          {displayName}
+                          {!cleaner.offersService && bookingServiceType && (
+                            <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                              Doesn't offer {getServiceTypeLabel(bookingServiceType, serviceTypes)}
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-4 shrink-0">
                           {cleaner.presentage_rate || 0}% • £{cleaner.hourly_rate || 0}/hr
                         </span>
                       </div>
@@ -543,7 +559,14 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                       <SelectContent>
                         {availableCleanersForAdditional.map((cleaner) => (
                           <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                            {cleaner.full_name}
+                            <span className="flex items-center gap-2">
+                              {cleaner.full_name}
+                              {!cleaner.offersService && bookingServiceType && (
+                                <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                                  Doesn't offer service
+                                </Badge>
+                              )}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>

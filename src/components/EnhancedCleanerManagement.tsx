@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,9 +25,13 @@ import {
   User,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { CleanerAccountActions } from './admin/CleanerAccountActions';
+import { useQueryClient } from '@tanstack/react-query';
+import { useServiceTypes } from '@/hooks/useCompanySettings';
+import { useAllCleanerServiceTypes, allCleanerServiceTypesQueryKey } from '@/hooks/useCleanerServiceTypes';
 
 interface CleanerData {
   id: number;
@@ -55,6 +60,7 @@ const EnhancedCleanerManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCleaner, setEditingCleaner] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<CleanerData>>({});
+  const [editServiceTypeKeys, setEditServiceTypeKeys] = useState<string[]>([]);
   
   // Add new cleaner state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -73,10 +79,35 @@ const EnhancedCleanerManagement = () => {
     DBS: 'No',
     DBS_date: ''
   });
+  const [newServiceTypeKeys, setNewServiceTypeKeys] = useState<string[]>([]);
   const [addingCleaner, setAddingCleaner] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: serviceTypes = [] } = useServiceTypes();
+  const { data: cleanerServiceTypeMap = new Map<number, string[]>() } = useAllCleanerServiceTypes();
+
+  const toggleServiceTypeKey = (keys: string[], setKeys: (keys: string[]) => void, key: string) => {
+    setKeys(keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]);
+  };
+
+  const saveCleanerServiceTypes = async (cleanerId: number, serviceTypeKeys: string[]) => {
+    const { error: deleteError } = await supabase
+      .from('cleaner_service_types')
+      .delete()
+      .eq('cleaner_id', cleanerId);
+    if (deleteError) throw deleteError;
+
+    if (serviceTypeKeys.length > 0) {
+      const { error: insertError } = await supabase
+        .from('cleaner_service_types')
+        .insert(serviceTypeKeys.map((key) => ({ cleaner_id: cleanerId, service_type_key: key })));
+      if (insertError) throw insertError;
+    }
+
+    queryClient.invalidateQueries({ queryKey: allCleanerServiceTypesQueryKey });
+  };
 
   const fetchCleaners = async () => {
     try {
@@ -151,6 +182,7 @@ const EnhancedCleanerManagement = () => {
       DBS: cleaner.DBS,
       DBS_date: cleaner.DBS_date
     });
+    setEditServiceTypeKeys(cleanerServiceTypeMap.get(cleaner.id) || []);
   };
 
   const updateCleaner = async (cleanerId: number) => {
@@ -162,6 +194,8 @@ const EnhancedCleanerManagement = () => {
 
       if (error) throw error;
 
+      await saveCleanerServiceTypes(cleanerId, editServiceTypeKeys);
+
       toast({
         title: 'Success',
         description: 'Cleaner updated successfully!',
@@ -169,6 +203,7 @@ const EnhancedCleanerManagement = () => {
 
       setEditingCleaner(null);
       setEditData({});
+      setEditServiceTypeKeys([]);
       fetchCleaners();
     } catch (error: any) {
       console.error('Error updating cleaner:', error);
@@ -239,6 +274,10 @@ const EnhancedCleanerManagement = () => {
 
       if (cleanerError) throw cleanerError;
 
+      if (newServiceTypeKeys.length > 0) {
+        await saveCleanerServiceTypes(cleanerData.id, newServiceTypeKeys);
+      }
+
       // Create user account if password provided
       if (newCleanerData.password) {
         try {
@@ -286,6 +325,7 @@ const EnhancedCleanerManagement = () => {
         DBS: 'No',
         DBS_date: ''
       });
+      setNewServiceTypeKeys([]);
       fetchCleaners();
     } catch (error: any) {
       console.error('Error creating cleaner:', error);
@@ -417,6 +457,36 @@ const EnhancedCleanerManagement = () => {
                           className="mt-1"
                         />
                       </div>
+                      <div className="md:col-span-2 lg:col-span-3">
+                        <Label className="text-xs font-medium text-muted-foreground">Notes (optional)</Label>
+                        <Input
+                          value={editData.services || ''}
+                          onChange={(e) => setEditData({ ...editData, services: e.target.value })}
+                          placeholder="Free-text notes, e.g. own equipment, prefers weekends..."
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+                        Services offered
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {editServiceTypeKeys.length === 0
+                          ? 'No services selected — this cleaner is treated as offering every service.'
+                          : 'This cleaner will only be flagged as a match for the selected services below.'}
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        {serviceTypes.map((st) => (
+                          <label key={st.key} className="flex items-center gap-2 text-sm bg-white/60 border rounded-md px-2 py-1.5 cursor-pointer">
+                            <Checkbox
+                              checked={editServiceTypeKeys.includes(st.key)}
+                              onCheckedChange={() => toggleServiceTypeKey(editServiceTypeKeys, setEditServiceTypeKeys, st.key)}
+                            />
+                            {st.label}
+                          </label>
+                        ))}
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button 
@@ -427,7 +497,7 @@ const EnhancedCleanerManagement = () => {
                         Save
                       </Button>
                       <Button 
-                        onClick={() => setEditingCleaner(null)}
+                        onClick={() => { setEditingCleaner(null); setEditServiceTypeKeys([]); }}
                         variant="outline"
                         size="sm"
                       >
@@ -480,9 +550,28 @@ const EnhancedCleanerManagement = () => {
                         </div>
                       </div>
                       
+                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
+                        <span className="text-muted-foreground font-medium">Services:</span>
+                        {(cleanerServiceTypeMap.get(cleaner.id) || []).length === 0 ? (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Sparkles className="h-3 w-3" />
+                            All services
+                          </Badge>
+                        ) : (
+                          (cleanerServiceTypeMap.get(cleaner.id) || []).map((key) => {
+                            const st = serviceTypes.find((s) => s.key === key);
+                            return (
+                              <Badge key={key} variant="outline" className="text-xs">
+                                {st?.label || key}
+                              </Badge>
+                            );
+                          })
+                        )}
+                      </div>
+
                       {cleaner.services && (
                         <div className="text-sm text-muted-foreground">
-                          <strong>Services:</strong> {cleaner.services}
+                          <strong>Notes:</strong> {cleaner.services}
                         </div>
                       )}
                     </div>
@@ -634,12 +723,30 @@ const EnhancedCleanerManagement = () => {
             </div>
 
             <div>
-              <Label htmlFor="services">Services</Label>
+              <Label className="mb-2 block">Services offered</Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Leave all unchecked to treat this cleaner as offering every service (default).
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {serviceTypes.map((st) => (
+                  <label key={st.key} className="flex items-center gap-2 text-sm border rounded-md px-2 py-1.5 cursor-pointer">
+                    <Checkbox
+                      checked={newServiceTypeKeys.includes(st.key)}
+                      onCheckedChange={() => toggleServiceTypeKey(newServiceTypeKeys, setNewServiceTypeKeys, st.key)}
+                    />
+                    {st.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="services">Notes (optional)</Label>
               <Input
                 id="services"
                 value={newCleanerData.services}
                 onChange={(e) => setNewCleanerData({ ...newCleanerData, services: e.target.value })}
-                placeholder="Regular cleaning, deep cleaning, end of tenancy..."
+                placeholder="Free-text notes, e.g. own equipment, prefers weekends..."
               />
             </div>
 

@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
+import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { Badge } from '@/components/ui/badge';
 
 interface Cleaner {
   id: number;
@@ -15,6 +18,7 @@ interface Cleaner {
   full_name: string;
   presentage_rate: number;
   hourly_rate: number;
+  offersService: boolean;
 }
 
 interface AssignCleanerToPastBookingDialogProps {
@@ -39,10 +43,12 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
   const [isHourlyService, setIsHourlyService] = useState<boolean>(false);
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
   const [customPercentageRate, setCustomPercentageRate] = useState<string>('');
+  const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
+  const { data: serviceTypes = [] } = useServiceTypes();
   const { toast } = useToast();
   
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType);
 
   useEffect(() => {
     if (open && bookingId) {
@@ -59,7 +65,8 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
         last_name: c.last_name,
         full_name: c.full_name || `${c.first_name} ${c.last_name}`,
         presentage_rate: c.presentage_rate || 0,
-        hourly_rate: c.hourly_rate || 0
+        hourly_rate: c.hourly_rate || 0,
+        offersService: c.offersService,
       })));
     }
   }, [linkedCleaners]);
@@ -85,6 +92,7 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
       const serviceType = data.service_type?.toLowerCase() || '';
       const isHourly = serviceType.includes('domestic') || serviceType.includes('standard');
       setIsHourlyService(isHourly);
+      setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
       
       if (data.cleaner) {
         setSelectedCleaner(data.cleaner.toString());
@@ -229,9 +237,16 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Unnamed';
                   return (
                     <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{displayName}</span>
-                        <span className="text-xs text-muted-foreground ml-4">
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className="flex items-center gap-2">
+                          {displayName}
+                          {!cleaner.offersService && bookingServiceType && (
+                            <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                              Doesn't offer {getServiceTypeLabel(bookingServiceType, serviceTypes)}
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-4 shrink-0">
                           {cleaner.presentage_rate || 0}% • £{cleaner.hourly_rate || 0}/hr
                         </span>
                       </div>

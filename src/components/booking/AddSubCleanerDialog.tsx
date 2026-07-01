@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
+import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { Badge } from '@/components/ui/badge';
 import { addBookingCleaner, recalculatePrimaryCleanerPay } from '@/hooks/useBookingCleaners';
 
 interface Cleaner {
@@ -16,6 +19,7 @@ interface Cleaner {
   first_name: string;
   last_name: string;
   full_name: string;
+  offersService: boolean;
 }
 
 interface AddSubCleanerDialogProps {
@@ -34,11 +38,13 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
   const [percentageRate, setPercentageRate] = useState<string>('');
   const [fixedAmount, setFixedAmount] = useState<string>('');
   const [bookingTotalCost, setBookingTotalCost] = useState<number>(0);
+  const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { data: serviceTypes = [] } = useServiceTypes();
   
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType);
 
   useEffect(() => {
     if (open) {
@@ -53,7 +59,8 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
         id: c.id,
         first_name: c.first_name,
         last_name: c.last_name,
-        full_name: c.full_name || `${c.first_name} ${c.last_name}`
+        full_name: c.full_name || `${c.first_name} ${c.last_name}`,
+        offersService: c.offersService,
       })));
     }
   }, [linkedCleaners]);
@@ -62,7 +69,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost')
+        .select('total_cost, service_type')
         .eq('id', bookingId)
         .single();
 
@@ -72,6 +79,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
       }
 
       setBookingTotalCost(data.total_cost || 0);
+      setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
     } catch (error) {
       console.error('Error fetching booking details:', error);
     }
@@ -196,7 +204,14 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
               <SelectContent>
                 {cleaners.map((cleaner) => (
                   <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                    {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
+                    <span className="flex items-center gap-2">
+                      {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
+                      {!cleaner.offersService && bookingServiceType && (
+                        <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                          Doesn't offer {getServiceTypeLabel(bookingServiceType, serviceTypes)}
+                        </Badge>
+                      )}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
