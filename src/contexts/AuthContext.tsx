@@ -109,6 +109,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // `loading` may already be `false` from a previous unauthenticated render (e.g. sitting
+          // on the login page). Without re-arming it here, consumers like Auth.tsx would briefly see
+          // `!loading && user` true while `userRole` is still null — and getRoleHomePath's fallback
+          // for an indeterminate role is '/customer-dashboard', so every login (including admins)
+          // would flash-redirect there before the real role home path took over.
+          setLoading(true);
           // Use setTimeout to defer the async operation and prevent deadlock
           setTimeout(async () => {
             if (mounted) {

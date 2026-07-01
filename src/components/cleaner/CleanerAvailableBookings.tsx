@@ -15,6 +15,8 @@ import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings
 import { useCleanerServiceTypes, cleanerOffersService, normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import { useCleanerCoverageAreas, usePostcodePrefixIndex, cleanerCoversArea } from '@/hooks/useCoverageAreas';
 import { matchPostcodeToBorough } from '@/lib/postcodeCoverage';
+import { useCleanerWorkingHours } from '@/hooks/useCleanerWorkingHours';
+import { computeBookingTimeWindow, cleanerCoversTime, describeTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
@@ -24,6 +26,7 @@ const CleanerAvailableBookings = () => {
   const { data: myServiceTypeKeys = [] } = useCleanerServiceTypes(cleanerId ?? null);
   const { data: myAreaIds = [] } = useCleanerCoverageAreas(cleanerId ?? null);
   const { data: prefixIndex = [] } = usePostcodePrefixIndex();
+  const { data: myWorkingHours = [] } = useCleanerWorkingHours(cleanerId ?? null);
 
   console.log('CleanerAvailableBookings - cleanerId:', cleanerId);
 
@@ -63,17 +66,21 @@ const CleanerAvailableBookings = () => {
       const areaName = resolvedArea
         ? resolvedArea.boroughName === 'General' ? resolvedArea.regionName : resolvedArea.boroughName
         : null;
+      const timeWindow = computeBookingTimeWindow(booking.date_time, booking.total_hours, booking.end_date_time);
       return {
         ...booking,
         normalizedServiceType,
         matchesMyServices: cleanerOffersService(myServiceTypeKeys, normalizedServiceType),
         matchesMyArea: cleanerCoversArea(myAreaIds, resolvedArea?.boroughId ?? null),
+        matchesMyTime: cleanerCoversTime(myWorkingHours, timeWindow),
+        timeWindow,
         areaName,
       };
     })
     .sort(
       (a, b) =>
-        Number(b.matchesMyServices) + Number(b.matchesMyArea) - (Number(a.matchesMyServices) + Number(a.matchesMyArea))
+        Number(b.matchesMyServices) + Number(b.matchesMyArea) + Number(b.matchesMyTime) -
+        (Number(a.matchesMyServices) + Number(a.matchesMyArea) + Number(a.matchesMyTime))
     );
 
   // Real-time subscription for bookings changes
@@ -142,6 +149,15 @@ const CleanerAvailableBookings = () => {
 
 
   const handleAssignBooking = (bookingId: number) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (booking && !booking.matchesMyTime) {
+      toast({
+        title: "Outside your working hours",
+        description: `This job${booking.timeWindow ? ` runs ${describeTimeWindow(booking.timeWindow)}` : ''}, which is outside the hours you've set on your availability page.`,
+        variant: "destructive",
+      });
+      return;
+    }
     console.log('Assigning booking:', bookingId, 'to cleaner:', cleanerId);
     assignBookingMutation.mutate(bookingId);
   };
@@ -187,7 +203,7 @@ const CleanerAvailableBookings = () => {
       ) : (
         <div className="grid gap-4">
           {bookings.map((booking) => (
-            <Card key={booking.id} className={`hover:shadow-md transition-shadow ${!booking.matchesMyServices || !booking.matchesMyArea ? 'opacity-70' : ''}`}>
+            <Card key={booking.id} className={`hover:shadow-md transition-shadow ${!booking.matchesMyServices || !booking.matchesMyArea || !booking.matchesMyTime ? 'opacity-70' : ''}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -205,6 +221,12 @@ const CleanerAvailableBookings = () => {
                         <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50 gap-1">
                           <AlertTriangle className="h-3 w-3" />
                           Outside your area{booking.areaName ? ` (${booking.areaName})` : ''}
+                        </Badge>
+                      )}
+                      {!booking.matchesMyTime && (
+                        <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50 gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Outside your working hours
                         </Badge>
                       )}
                     </div>
@@ -293,11 +315,16 @@ const CleanerAvailableBookings = () => {
                 <div className="flex justify-end pt-4">
                   <Button
                     onClick={() => handleAssignBooking(booking.id)}
-                    disabled={assignBookingMutation.isPending}
+                    disabled={assignBookingMutation.isPending || !booking.matchesMyTime}
+                    title={!booking.matchesMyTime ? "This job is outside the working hours you've set" : undefined}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
-                    {assignBookingMutation.isPending ? 'Getting Job...' : 'Get Job'}
+                    {assignBookingMutation.isPending
+                      ? 'Getting Job...'
+                      : !booking.matchesMyTime
+                        ? 'Outside your hours'
+                        : 'Get Job'}
                   </Button>
                 </div>
               </CardContent>

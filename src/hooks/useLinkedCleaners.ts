@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { cleanerOffersService } from '@/hooks/useCleanerServiceTypes';
 import { cleanerCoversArea } from '@/hooks/useCoverageAreas';
+import {
+  cleanerCoversTime,
+  type BookingTimeWindow,
+  type WorkingHourBlock,
+} from '@/lib/cleanerAvailabilityMatch';
 
 export interface LinkedCleaner {
   id: number;
@@ -18,6 +23,10 @@ export interface LinkedCleaner {
   coverageAreaIds: string[];
   /** Whether this cleaner covers the `boroughId` passed into the hook (always true if none was passed/resolved). */
   coversArea: boolean;
+  /** Configured weekly working-hour blocks for this cleaner. Empty = no restriction configured (always available). */
+  workingHours: WorkingHourBlock[];
+  /** Whether this cleaner's working hours cover the `bookingTimeWindow` passed into the hook (always true if none was passed). Unlike service/area, this is enforced as a hard block in assignment UIs. */
+  coversTime: boolean;
 }
 
 /**
@@ -29,11 +38,17 @@ export interface LinkedCleaner {
  * booking's postcode resolved to a coverage borough) to compute `coversArea`.
  * Cleaners are sorted so those matching both signals come first. Both are soft
  * signals only — nothing is filtered out.
+ *
+ * Pass `bookingTimeWindow` (the booking's day-of-week + start/end minutes) to
+ * compute `coversTime`. Unlike service/area, callers should treat `coversTime`
+ * as a hard block — a cleaner whose working hours don't cover the job's time
+ * range shouldn't be assignable to it.
  */
 export const useLinkedCleaners = (
   enabled: boolean = true,
   serviceType?: string | null,
-  boroughId?: string | null
+  boroughId?: string | null,
+  bookingTimeWindow?: BookingTimeWindow | null
 ) => {
   const [cleaners, setCleaners] = useState<LinkedCleaner[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,87 +59,46 @@ export const useLinkedCleaners = (
       setLoading(true);
       setError(null);
 
-      // First get all cleaner IDs that are linked to profiles
-      const { data: linkedProfiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('cleaner_id')
-        .not('cleaner_id', 'is', null);
+      // Uses a SECURITY DEFINER RPC (rather than querying profiles/cleaners/etc.
+      // directly) so this hook works the same for every caller — admins and sales
+      // agents get real pay rates, everyone else (customers booking their own job)
+      // still gets the full cleaner list with rates omitted. Direct table queries
+      // are locked down by RLS to admins/sales agents/the cleaner's own row, which
+      // silently returned zero cleaners for customers.
+      const { data, error: rpcError } = await supabase.rpc('get_assignable_cleaners');
 
-      if (profileError) {
-        console.error('Error fetching linked profiles:', profileError);
-        throw profileError;
+      if (rpcError) {
+        console.error('Error fetching assignable cleaners:', rpcError);
+        throw rpcError;
       }
 
-      const linkedCleanerIds = linkedProfiles?.map(p => p.cleaner_id).filter(Boolean) || [];
-
-      if (linkedCleanerIds.length === 0) {
-        setCleaners([]);
-        return;
-      }
-
-      // Now fetch cleaners that are in the linked list
-      const { data: cleanersData, error: cleanersError } = await supabase
-        .from('cleaners')
-        .select('id, first_name, last_name, full_name, hourly_rate, presentage_rate')
-        .in('id', linkedCleanerIds)
-        .order('first_name');
-
-      if (cleanersError) {
-        console.error('Error fetching cleaners:', cleanersError);
-        throw cleanersError;
-      }
-
-      const [{ data: serviceRows, error: serviceError }, { data: areaRows, error: areaError }] = await Promise.all([
-        supabase
-          .from('cleaner_service_types')
-          .select('cleaner_id, service_type_key')
-          .in('cleaner_id', linkedCleanerIds),
-        supabase
-          .from('cleaner_coverage_areas')
-          .select('cleaner_id, borough_id')
-          .in('cleaner_id', linkedCleanerIds),
-      ]);
-
-      if (serviceError) {
-        console.error('Error fetching cleaner service types:', serviceError);
-        throw serviceError;
-      }
-      if (areaError) {
-        console.error('Error fetching cleaner coverage areas:', areaError);
-        throw areaError;
-      }
-
-      const serviceMap = new Map<number, string[]>();
-      (serviceRows || []).forEach((row) => {
-        const existing = serviceMap.get(row.cleaner_id) || [];
-        existing.push(row.service_type_key);
-        serviceMap.set(row.cleaner_id, existing);
-      });
-
-      const areaMap = new Map<number, string[]>();
-      (areaRows || []).forEach((row) => {
-        const existing = areaMap.get(row.cleaner_id) || [];
-        existing.push(row.borough_id);
-        areaMap.set(row.cleaner_id, existing);
-      });
-
-      const enriched: LinkedCleaner[] = (cleanersData || []).map((c) => {
-        const serviceTypeKeys = serviceMap.get(c.id) || [];
-        const coverageAreaIds = areaMap.get(c.id) || [];
+      const enriched: LinkedCleaner[] = (data || []).map((c) => {
+        const serviceTypeKeys = c.service_type_keys || [];
+        const coverageAreaIds = c.coverage_area_ids || [];
+        const workingHours = (c.working_hours || []) as WorkingHourBlock[];
         return {
-          ...c,
+          id: c.id,
+          first_name: c.first_name,
+          last_name: c.last_name,
+          full_name: c.full_name,
+          hourly_rate: c.hourly_rate,
+          presentage_rate: c.presentage_rate,
           serviceTypeKeys,
           offersService: cleanerOffersService(serviceTypeKeys, serviceType),
           coverageAreaIds,
           coversArea: cleanerCoversArea(coverageAreaIds, boroughId),
+          workingHours,
+          coversTime: cleanerCoversTime(workingHours, bookingTimeWindow ?? null),
         };
       });
 
-      // Soft filter: keep everyone, just surface the best-matching cleaners first
-      // (both service + area match, then a partial match, then neither).
+      // Soft filter for service/area: keep everyone, just surface the best-matching
+      // cleaners first. Time is weighted the same way for sorting purposes, but
+      // callers should still treat coversTime as a hard block on selection.
       enriched.sort(
         (a, b) =>
-          Number(b.offersService) + Number(b.coversArea) - (Number(a.offersService) + Number(a.coversArea))
+          Number(b.offersService) + Number(b.coversArea) + Number(b.coversTime) -
+          (Number(a.offersService) + Number(a.coversArea) + Number(a.coversTime))
       );
 
       setCleaners(enriched);
@@ -141,7 +115,7 @@ export const useLinkedCleaners = (
       fetchCleaners();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, serviceType, boroughId]);
+  }, [enabled, serviceType, boroughId, bookingTimeWindow?.dayOfWeek, bookingTimeWindow?.startMinutes, bookingTimeWindow?.endMinutes]);
 
   return { cleaners, loading, error, refetch: fetchCleaners };
 };

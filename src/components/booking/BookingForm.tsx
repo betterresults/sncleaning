@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import { LinenUsageItem } from '@/hooks/useLinenProducts';
 import { EmailNotificationConfirmDialog } from '@/components/notifications/EmailNotificationConfirmDialog';
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
+import { computeBookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 
 interface BookingFormProps {
   onBookingCreated: () => void;
@@ -112,6 +113,11 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     linenManagement: false,
     linenUsed: []
   });
+
+  const bookingTimeWindow = useMemo(
+    () => computeBookingTimeWindow(formData.dateTime, formData.hoursRequired),
+    [formData.dateTime, formData.hoursRequired]
+  );
 
   const handleInputChange = (field: keyof BookingData, value: string | number | boolean) => {
     setFormData(prev => ({
@@ -608,7 +614,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <CleanerSelector onCleanerSelect={handleCleanerSelect} />
+          <CleanerSelector onCleanerSelect={handleCleanerSelect} bookingTimeWindow={bookingTimeWindow} />
           
           {formData.cleanerId && (
             <div className="space-y-4 p-4 bg-gray-50 rounded-lg">

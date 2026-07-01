@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Clock, CalendarClock, AlertTriangle, Eraser, Check, Sparkles, Wrench, MapPin } from 'lucide-react';
+import { Clock, CalendarClock, AlertTriangle, Eraser, Check, Sparkles, Wrench, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DAYS_OF_WEEK,
@@ -15,7 +15,12 @@ import {
   type WeeklyBlockInput,
 } from '@/hooks/useCleanerWorkingHours';
 import { useBusinessHoursRange } from '@/hooks/useSchedulingRules';
-import { useCleanerUpcomingBookings, type CleanerUpcomingBooking } from '@/hooks/useCleanerUpcomingBookings';
+import {
+  useCleanerUpcomingBookings,
+  useCleanerBookingsForWeek,
+  type CleanerUpcomingBooking,
+} from '@/hooks/useCleanerUpcomingBookings';
+import BookingDetailsSheet from './BookingDetailsSheet';
 import { useServiceTypes } from '@/hooks/useCompanySettings';
 import { useCleanerServiceTypes, useSaveCleanerServiceTypes } from '@/hooks/useCleanerServiceTypes';
 import {
@@ -72,21 +77,74 @@ const formatHourLabel = (hour: number) => {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+const ROW_HEIGHT_PX = 32; // matches the `h-8` cell height used for each hour row
+
+// All week/date math here is deliberately UTC-anchored rather than using the viewer's local
+// timezone: `bookings.date_time` is written as naive London wall-clock time with a hardcoded
+// "+00:00" suffix (see NewBookingForm), so calendar dates must be derived/compared the same
+// way everywhere, regardless of what timezone the cleaner's or admin's device is set to.
+const startOfWeekUTC = (date: Date): Date => {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  start.setUTCDate(start.getUTCDate() - start.getUTCDay());
+  return start;
+};
+
+const addDaysUTC = (date: Date, days: number): Date => {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+};
+
+const isSameUTCDate = (a: Date, b: Date): boolean =>
+  a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && a.getUTCDate() === b.getUTCDate();
+
+const formatDateNumber = (date: Date) => date.getUTCDate();
+
+const formatWeekRangeLabel = (weekStart: Date): string => {
+  const weekEnd = addDaysUTC(weekStart, 6);
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', timeZone: 'UTC' };
+  const startLabel = weekStart.toLocaleDateString(undefined, opts);
+  const endLabel = weekEnd.toLocaleDateString(undefined, {
+    ...opts,
+    year: weekStart.getUTCFullYear() === weekEnd.getUTCFullYear() ? undefined : 'numeric',
+  });
+  const year = weekEnd.getUTCFullYear();
+  return `${startLabel} – ${endLabel}, ${year}`;
+};
+
+interface BookingBlock {
+  id: number;
+  dayOfWeek: number;
+  topPx: number;
+  heightPx: number;
+  label: string;
+  timeLabel: string;
+  outsideHours: boolean;
+}
+
 interface AvailabilityGridProps {
   cleanerId: number;
   openHours: OpenHoursByDay;
   startHour: number;
   endHour: number;
+  weekDates: Date[];
+  bookingBlocksByDay: Map<number, BookingBlock[]>;
+  today: Date;
   onToggleCell: (day: number, hour: number) => void;
   onToggleDay: (day: number) => void;
+  onSelectBooking: (bookingId: number) => void;
 }
 
 const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
   openHours,
   startHour,
   endHour,
+  weekDates,
+  bookingBlocksByDay,
+  today,
   onToggleCell,
   onToggleDay,
+  onSelectBooking,
 }) => {
   const hours = useMemo(() => {
     const arr: number[] = [];
@@ -99,14 +157,22 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
       <div className="min-w-[720px]">
         <div className="grid grid-cols-[70px_repeat(7,1fr)] border-b border-border bg-muted/40">
           <div />
-          {DAYS_OF_WEEK.map((day) => {
+          {DAYS_OF_WEEK.map((day, index) => {
             const set = openHours.get(day.value) ?? new Set<number>();
             const totalHours = hours.length;
             const openCount = hours.filter((h) => set.has(h)).length;
             const isFullyOpen = openCount === totalHours;
+            const date = weekDates[index];
+            const isToday = date ? isSameUTCDate(date, today) : false;
 
             return (
-              <div key={day.value} className="flex flex-col items-center gap-1 border-l border-border px-2 py-2">
+              <div
+                key={day.value}
+                className={cn(
+                  'flex flex-col items-center gap-1 border-l border-border px-2 py-2',
+                  isToday && 'bg-primary/5'
+                )}
+              >
                 <button
                   type="button"
                   onClick={() => onToggleDay(day.value)}
@@ -119,6 +185,14 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
                   <Check className="h-3.5 w-3.5" />
                 </button>
                 <p className="text-xs font-semibold uppercase text-foreground">{day.short}</p>
+                <p
+                  className={cn(
+                    'flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold',
+                    isToday ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                  )}
+                >
+                  {date ? formatDateNumber(date) : ''}
+                </p>
                 <p className={cn('text-[11px]', openCount > 0 ? 'text-emerald-600' : 'text-muted-foreground')}>
                   {openCount > 0 ? `${openCount}h open` : 'Off'}
                 </p>
@@ -127,38 +201,71 @@ const AvailabilityGrid: React.FC<AvailabilityGridProps> = ({
           })}
         </div>
 
-        {hours.map((hour) => (
-          <div key={hour} className="grid grid-cols-[70px_repeat(7,1fr)] border-b border-border last:border-b-0">
-            <div className="flex items-center justify-end px-2 py-1.5 text-[11px] text-muted-foreground">
-              {formatHourLabel(hour)}
+        <div className="relative">
+          {hours.map((hour) => (
+            <div key={hour} className="grid grid-cols-[70px_repeat(7,1fr)] border-b border-border last:border-b-0">
+              <div className="flex items-center justify-end px-2 py-1.5 text-[11px] text-muted-foreground">
+                {formatHourLabel(hour)}
+              </div>
+              {DAYS_OF_WEEK.map((day) => {
+                const isOpen = openHours.get(day.value)?.has(hour) ?? false;
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => onToggleCell(day.value, hour)}
+                    className={cn(
+                      'h-8 border-l border-border transition-colors',
+                      isOpen ? 'bg-emerald-200 hover:bg-emerald-300' : 'bg-background hover:bg-muted'
+                    )}
+                    aria-label={`${day.label} ${formatHourLabel(hour)}`}
+                  />
+                );
+              })}
             </div>
-            {DAYS_OF_WEEK.map((day) => {
-              const isOpen = openHours.get(day.value)?.has(hour) ?? false;
-              return (
-                <button
-                  key={day.value}
-                  type="button"
-                  onClick={() => onToggleCell(day.value, hour)}
-                  className={cn(
-                    'h-8 border-l border-border transition-colors',
-                    isOpen ? 'bg-emerald-200 hover:bg-emerald-300' : 'bg-background hover:bg-muted'
-                  )}
-                  aria-label={`${day.label} ${formatHourLabel(hour)}`}
-                />
-              );
-            })}
+          ))}
+
+          {/* Booking blocks overlay — purely visual, sits on top of the toggleable cells and
+              doesn't intercept clicks except on the blocks themselves. */}
+          <div className="pointer-events-none absolute inset-0 grid grid-cols-[70px_repeat(7,1fr)]">
+            <div />
+            {DAYS_OF_WEEK.map((day) => (
+              <div key={day.value} className="relative border-l border-transparent">
+                {(bookingBlocksByDay.get(day.value) ?? []).map((block) => (
+                  <button
+                    key={block.id}
+                    type="button"
+                    onClick={() => onSelectBooking(block.id)}
+                    title={`${block.timeLabel} · ${block.label}${block.outsideHours ? ' (outside set hours)' : ''} — click for details`}
+                    className={cn(
+                      'pointer-events-auto absolute inset-x-0.5 overflow-hidden rounded-md px-1.5 py-0.5 text-left text-[10px] font-medium leading-tight text-white shadow-sm transition-transform hover:scale-[1.02] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1',
+                      block.outsideHours ? 'bg-amber-500/90 hover:bg-amber-500' : 'bg-sky-500/90 hover:bg-sky-500'
+                    )}
+                    style={{ top: block.topPx, height: Math.max(block.heightPx, 16) }}
+                  >
+                    <p className="truncate">{block.timeLabel}</p>
+                    <p className="truncate opacity-90">{block.label}</p>
+                  </button>
+                ))}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
 };
 
+// `date_time`/`end_date_time` are written as naive London wall-clock time with a hardcoded
+// "+00:00" suffix (see NewBookingForm's dateTimeStr construction), not real UTC. Formatting
+// with the viewer's local timezone (the `toLocaleDateString`/`toLocaleTimeString` default)
+// would shift the displayed — and compared — time by the viewer's device offset instead of
+// showing the business's actual London clock, so we pin formatting to `timeZone: 'UTC'`.
 const formatBookingDay = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  new Date(dateStr).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 const formatBookingTime = (dateStr: string) =>
-  new Date(dateStr).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  new Date(dateStr).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 
 const getBookingEnd = (booking: CleanerUpcomingBooking): Date | null => {
   if (booking.end_date_time) return new Date(booking.end_date_time);
@@ -171,9 +278,10 @@ const getBookingEnd = (booking: CleanerUpcomingBooking): Date | null => {
 interface UpcomingBookingsPanelProps {
   bookings: CleanerUpcomingBooking[];
   savedBlocksByDay: Map<number, CleanerWorkingHour[]>;
+  onSelectBooking: (bookingId: number) => void;
 }
 
-const UpcomingBookingsPanel: React.FC<UpcomingBookingsPanelProps> = ({ bookings, savedBlocksByDay }) => {
+const UpcomingBookingsPanel: React.FC<UpcomingBookingsPanelProps> = ({ bookings, savedBlocksByDay, onSelectBooking }) => {
   if (bookings.length === 0) {
     return <p className="text-sm text-muted-foreground">No upcoming jobs booked in the next 2 weeks.</p>;
   }
@@ -183,8 +291,9 @@ const UpcomingBookingsPanel: React.FC<UpcomingBookingsPanelProps> = ({ bookings,
       {bookings.map((booking) => {
         const start = new Date(booking.date_time);
         const end = getBookingEnd(booking);
-        const startMinutes = start.getHours() * 60 + start.getMinutes();
-        const endMinutes = end ? end.getHours() * 60 + end.getMinutes() : startMinutes;
+        // Use UTC getters, not local ones — see formatBookingTime comment above.
+        const startMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
+        const endMinutes = end ? end.getUTCHours() * 60 + end.getUTCMinutes() : startMinutes;
 
         const dayBlocks = savedBlocksByDay.get(booking.day_of_week) || [];
         const isCovered = dayBlocks.some(
@@ -195,9 +304,11 @@ const UpcomingBookingsPanel: React.FC<UpcomingBookingsPanelProps> = ({ bookings,
         const service = booking.service_type || booking.cleaning_type || 'Cleaning';
 
         return (
-          <div
+          <button
             key={booking.id}
-            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3"
+            type="button"
+            onClick={() => onSelectBooking(booking.id)}
+            className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-muted/40"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-sky-700">
@@ -220,7 +331,7 @@ const UpcomingBookingsPanel: React.FC<UpcomingBookingsPanelProps> = ({ bookings,
                 Outside set hours
               </span>
             )}
-          </div>
+          </button>
         );
       })}
     </div>
@@ -415,6 +526,20 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
   const [openHours, setOpenHours] = useState<OpenHoursByDay>(emptyOpenHours);
   const [isDirty, setIsDirty] = useState(false);
 
+  const today = useMemo(() => new Date(), []);
+  const currentWeekStart = useMemo(() => startOfWeekUTC(today), [today]);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const weekStart = useMemo(() => addDaysUTC(currentWeekStart, weekOffset * 7), [currentWeekStart, weekOffset]);
+  const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDaysUTC(weekStart, i)), [weekStart]);
+
+  const { data: weekBookings = [], isLoading: isLoadingWeekBookings } = useCleanerBookingsForWeek(cleanerId, weekStart);
+
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
+  const selectedBooking = useMemo(
+    () => weekBookings.find((b) => b.id === selectedBookingId) ?? upcomingBookings.find((b) => b.id === selectedBookingId) ?? null,
+    [weekBookings, upcomingBookings, selectedBookingId]
+  );
+
   useEffect(() => {
     if (isLoading || isDirty) return;
     setOpenHours(buildOpenHoursFromBlocks(workingHours));
@@ -431,6 +556,47 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
     () => [...openHours.values()].reduce((sum, set) => sum + set.size, 0),
     [openHours]
   );
+
+  const bookingBlocksByDay = useMemo(() => {
+    const map = new Map<number, BookingBlock[]>();
+    DAYS_OF_WEEK.forEach((day) => map.set(day.value, []));
+
+    const gridStartMinutes = startHour * 60;
+    const gridEndMinutes = endHour * 60;
+
+    weekBookings.forEach((booking) => {
+      const start = new Date(booking.date_time);
+      const end = getBookingEnd(booking);
+      const startMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
+      const endMinutes = end ? end.getUTCHours() * 60 + end.getUTCMinutes() : startMinutes + 60;
+
+      // Clip to the visible hour range so a job starting before/ending after the grid's
+      // configured business hours still renders (rather than disappearing or overflowing).
+      const clippedStart = Math.max(startMinutes, gridStartMinutes);
+      const clippedEnd = Math.min(Math.max(endMinutes, clippedStart + 15), gridEndMinutes);
+      if (clippedStart >= gridEndMinutes || clippedEnd <= gridStartMinutes) return;
+
+      const dayBlocks = savedBlocksByDay.get(booking.day_of_week) || [];
+      const isCovered = dayBlocks.some(
+        (block) => timeToMinutes(block.start_time) <= startMinutes && timeToMinutes(block.end_time) >= endMinutes
+      );
+
+      const customerName = [booking.first_name, booking.last_name].filter(Boolean).join(' ') || 'Customer';
+      const service = booking.service_type || booking.cleaning_type || 'Cleaning';
+
+      map.get(booking.day_of_week)?.push({
+        id: booking.id,
+        dayOfWeek: booking.day_of_week,
+        topPx: ((clippedStart - gridStartMinutes) / 60) * ROW_HEIGHT_PX,
+        heightPx: ((clippedEnd - clippedStart) / 60) * ROW_HEIGHT_PX,
+        label: `${service} · ${customerName}`,
+        timeLabel: `${formatBookingTime(booking.date_time)}${end ? ` – ${formatBookingTime(end.toISOString())}` : ''}`,
+        outsideHours: !isCovered,
+      });
+    });
+
+    return map;
+  }, [weekBookings, savedBlocksByDay, startHour, endHour]);
 
   const mutateHours = (updater: (next: OpenHoursByDay) => void) => {
     setOpenHours((prev) => {
@@ -513,7 +679,8 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
         <div>
           <h2 className="text-lg font-semibold text-foreground">My Availability</h2>
           <p className="text-sm text-muted-foreground">
-            Tap the hours you're free to work, every week — bookings will only land in open slots.
+            Tap the hours you're free to work — this repeats every week. Browse weeks below to see your booked jobs
+            as blocks on the grid.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -533,23 +700,42 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
       <MyAreasPanel cleanerId={cleanerId} />
 
       {ready && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-muted-foreground">Presets:</span>
-          {AVAILABILITY_PRESETS.map((preset) => (
-            <Button key={preset.id} variant="outline" size="sm" onClick={() => handleApplyPreset(preset)}>
-              {preset.label}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Presets:</span>
+            {AVAILABILITY_PRESETS.map((preset) => (
+              <Button key={preset.id} variant="outline" size="sm" onClick={() => handleApplyPreset(preset)}>
+                {preset.label}
+              </Button>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearWeek}
+              className="gap-1.5 text-muted-foreground hover:text-destructive"
+            >
+              <Eraser className="h-3.5 w-3.5" />
+              Clear week
             </Button>
-          ))}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearWeek}
-            className="gap-1.5 text-muted-foreground hover:text-destructive"
-          >
-            <Eraser className="h-3.5 w-3.5" />
-            Clear week
-          </Button>
-          {isDirty && <span className="text-xs text-amber-600">Unsaved changes — click Save changes to apply</span>}
+            {isDirty && <span className="text-xs text-amber-600">Unsaved changes — click Save changes to apply</span>}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((w) => w - 1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="min-w-[150px] text-center text-sm font-medium text-foreground">
+              {formatWeekRangeLabel(weekStart)}
+            </span>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset((w) => w + 1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            {weekOffset !== 0 && (
+              <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>
+                Today
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -559,11 +745,18 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
           openHours={openHours}
           startHour={startHour}
           endHour={endHour}
+          weekDates={weekDates}
+          bookingBlocksByDay={bookingBlocksByDay}
+          today={today}
           onToggleCell={handleToggleCell}
           onToggleDay={handleToggleDay}
+          onSelectBooking={setSelectedBookingId}
         />
       ) : (
         <p className="text-sm text-muted-foreground">Loading...</p>
+      )}
+      {ready && isLoadingWeekBookings && (
+        <p className="text-xs text-muted-foreground">Loading bookings for this week...</p>
       )}
 
       <Card className="p-4">
@@ -576,9 +769,19 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
         {isLoadingBookings ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : (
-          <UpcomingBookingsPanel bookings={upcomingBookings} savedBlocksByDay={savedBlocksByDay} />
+          <UpcomingBookingsPanel
+            bookings={upcomingBookings}
+            savedBlocksByDay={savedBlocksByDay}
+            onSelectBooking={setSelectedBookingId}
+          />
         )}
       </Card>
+
+      <BookingDetailsSheet
+        open={!!selectedBookingId}
+        onOpenChange={(open) => !open && setSelectedBookingId(null)}
+        booking={selectedBooking}
+      />
     </div>
   );
 };

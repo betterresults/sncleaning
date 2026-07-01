@@ -12,6 +12,7 @@ import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { computeBookingTimeWindow, describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 import { Badge } from '@/components/ui/badge';
 import { addBookingCleaner, recalculatePrimaryCleanerPay } from '@/hooks/useBookingCleaners';
 
@@ -22,6 +23,7 @@ interface Cleaner {
   full_name: string;
   offersService: boolean;
   coversArea: boolean;
+  coversTime: boolean;
 }
 
 interface AddSubCleanerDialogProps {
@@ -43,12 +45,13 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
   const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
   const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
   const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
+  const [bookingTimeWindow, setBookingTimeWindow] = useState<BookingTimeWindow | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { data: serviceTypes = [] } = useServiceTypes();
   
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId, bookingTimeWindow);
 
   useEffect(() => {
     if (open) {
@@ -66,6 +69,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
         full_name: c.full_name || `${c.first_name} ${c.last_name}`,
         offersService: c.offersService,
         coversArea: c.coversArea,
+        coversTime: c.coversTime,
       })));
     }
   }, [linkedCleaners]);
@@ -74,7 +78,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost, service_type, postcode')
+        .select('total_cost, service_type, postcode, date_time, end_date_time, total_hours, cleaning_time')
         .eq('id', bookingId)
         .single();
 
@@ -85,6 +89,9 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
 
       setBookingTotalCost(data.total_cost || 0);
       setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
+      setBookingTimeWindow(
+        computeBookingTimeWindow(data.date_time, data.total_hours || data.cleaning_time || 0, data.end_date_time)
+      );
 
       const resolvedArea = await resolvePostcodeToBorough(data.postcode);
       setBookingBoroughId(resolvedArea?.boroughId ?? null);
@@ -114,6 +121,16 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
       toast({
         title: "Error",
         description: "Please select a cleaner",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const chosenCleaner = cleaners.find((c) => c.id.toString() === selectedCleaner);
+    if (chosenCleaner && !chosenCleaner.coversTime) {
+      toast({
+        title: "Outside working hours",
+        description: `${chosenCleaner.full_name} isn't scheduled to work${bookingTimeWindow ? ` ${describeTimeWindow(bookingTimeWindow)}` : ' this time'}.`,
         variant: "destructive",
       });
       return;
@@ -212,7 +229,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
               </SelectTrigger>
               <SelectContent>
                 {cleaners.map((cleaner) => (
-                  <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                  <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!cleaner.coversTime}>
                     <span className="flex items-center gap-2">
                       {cleaner.full_name || `${cleaner.first_name} ${cleaner.last_name}`}
                       {!cleaner.offersService && bookingServiceType && (
@@ -223,6 +240,11 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
                       {!cleaner.coversArea && bookingAreaName && (
                         <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                           Outside {bookingAreaName}
+                        </Badge>
+                      )}
+                      {!cleaner.coversTime && (
+                        <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
+                          Outside working hours
                         </Badge>
                       )}
                     </span>

@@ -3148,6 +3148,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_assignable_cleaners: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: number
+          first_name: string
+          last_name: string
+          full_name: string
+          hourly_rate: number | null
+          presentage_rate: number | null
+          service_type_keys: string[]
+          coverage_area_ids: string[]
+          working_hours: Json
+        }[]
+      }
       authorize: {
         Args: {
           requested_permission: Database["public"]["Enums"]["app_permission"]

@@ -15,6 +15,7 @@ import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { computeBookingTimeWindow, describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 import { 
   fetchAdditionalCleaners, 
   addBookingCleaner, 
@@ -33,6 +34,7 @@ interface Cleaner {
   hourly_rate: number;
   offersService: boolean;
   coversArea: boolean;
+  coversTime: boolean;
 }
 
 interface AssignCleanerDialogProps {
@@ -56,6 +58,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
   const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
   const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
+  const [bookingTimeWindow, setBookingTimeWindow] = useState<BookingTimeWindow | null>(null);
   const { data: serviceTypes = [] } = useServiceTypes();
   const [primaryCleanerHours, setPrimaryCleanerHours] = useState<number>(0);
   const [calculatedCleanerPay, setCalculatedCleanerPay] = useState<number | null>(null);
@@ -98,7 +101,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_rate, cleaner_percentage, postcode')
+        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_rate, cleaner_percentage, postcode, date_time, end_date_time')
         .eq('id', bookingId)
         .single();
 
@@ -108,6 +111,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       const hours = data.total_hours || data.cleaning_time || 0;
       setBookingTotalHours(hours);
       setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
+      setBookingTimeWindow(computeBookingTimeWindow(data.date_time, hours, data.end_date_time));
 
       const resolvedArea = await resolvePostcodeToBorough(data.postcode);
       setBookingBoroughId(resolvedArea?.boroughId ?? null);
@@ -129,7 +133,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   };
 
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId);
+  const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId, bookingTimeWindow);
   
   // Sync linked cleaners to local state
   useEffect(() => {
@@ -143,6 +147,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         hourly_rate: c.hourly_rate || 0,
         offersService: c.offersService,
         coversArea: c.coversArea,
+        coversTime: c.coversTime,
       })));
     }
   }, [linkedCleaners]);
@@ -225,7 +230,17 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
 
   const handleAddSubCleaner = async () => {
     if (!bookingId || !newCleanerId) return;
-    
+
+    const newCleaner = cleaners.find((c) => c.id.toString() === newCleanerId);
+    if (newCleaner && !newCleaner.coversTime) {
+      toast({
+        title: "Outside working hours",
+        description: `${newCleaner.full_name} isn't scheduled to work${bookingTimeWindow ? ` ${describeTimeWindow(bookingTimeWindow)}` : ' this time'}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAddingSubCleaner(true);
     try {
       const newSubCleanerHours = parseFloat(newHours) || 0;
@@ -283,6 +298,18 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
 
   const handleAssign = async () => {
     if (!bookingId || !selectedCleaner) return;
+
+    if (selectedCleaner !== 'unassigned') {
+      const cleaner = cleaners.find((c) => c.id.toString() === selectedCleaner);
+      if (cleaner && !cleaner.coversTime) {
+        toast({
+          title: "Outside working hours",
+          description: `${cleaner.full_name} isn't scheduled to work${bookingTimeWindow ? ` ${describeTimeWindow(bookingTimeWindow)}` : ' this time'}. Choose another cleaner or update their working hours first.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     setIsLoading(true);
 
@@ -411,7 +438,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 {cleaners.map((cleaner) => {
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Unnamed';
                   return (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!cleaner.coversTime}>
                       <div className="flex items-center justify-between w-full gap-2">
                         <span className="flex items-center gap-2">
                           {displayName}
@@ -423,6 +450,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                           {!cleaner.coversArea && bookingAreaName && (
                             <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                               Outside {bookingAreaName}
+                            </Badge>
+                          )}
+                          {!cleaner.coversTime && (
+                            <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
+                              Outside working hours
                             </Badge>
                           )}
                         </span>
@@ -572,7 +604,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                       </SelectTrigger>
                       <SelectContent>
                         {availableCleanersForAdditional.map((cleaner) => (
-                          <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
+                          <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!cleaner.coversTime}>
                             <span className="flex items-center gap-2">
                               {cleaner.full_name}
                               {!cleaner.offersService && bookingServiceType && (
@@ -583,6 +615,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                               {!cleaner.coversArea && bookingAreaName && (
                                 <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                                   Outside area
+                                </Badge>
+                              )}
+                              {!cleaner.coversTime && (
+                                <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
+                                  Outside hours
                                 </Badge>
                               )}
                             </span>
