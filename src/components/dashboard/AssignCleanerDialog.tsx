@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
 import { 
   fetchAdditionalCleaners, 
   addBookingCleaner, 
@@ -31,6 +32,7 @@ interface Cleaner {
   presentage_rate: number;
   hourly_rate: number;
   offersService: boolean;
+  coversArea: boolean;
 }
 
 interface AssignCleanerDialogProps {
@@ -52,6 +54,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [bookingTotalCost, setBookingTotalCost] = useState<number>(0);
   const [bookingTotalHours, setBookingTotalHours] = useState<number>(0);
   const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
+  const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
+  const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
   const { data: serviceTypes = [] } = useServiceTypes();
   const [primaryCleanerHours, setPrimaryCleanerHours] = useState<number>(0);
   const [calculatedCleanerPay, setCalculatedCleanerPay] = useState<number | null>(null);
@@ -94,7 +98,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_rate, cleaner_percentage')
+        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_rate, cleaner_percentage, postcode')
         .eq('id', bookingId)
         .single();
 
@@ -104,6 +108,10 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       const hours = data.total_hours || data.cleaning_time || 0;
       setBookingTotalHours(hours);
       setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
+
+      const resolvedArea = await resolvePostcodeToBorough(data.postcode);
+      setBookingBoroughId(resolvedArea?.boroughId ?? null);
+      setBookingAreaName(resolvedArea?.boroughName === 'General' ? resolvedArea.regionName : resolvedArea?.boroughName ?? null);
       
       // Determine payment method based on existing data
       if (data.cleaner_rate != null && data.cleaner_rate > 0) {
@@ -121,7 +129,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   };
 
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(open, bookingServiceType);
+  const { cleaners: linkedCleaners, loading: cleanersLoading } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId);
   
   // Sync linked cleaners to local state
   useEffect(() => {
@@ -134,6 +142,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         presentage_rate: c.presentage_rate || 0,
         hourly_rate: c.hourly_rate || 0,
         offersService: c.offersService,
+        coversArea: c.coversArea,
       })));
     }
   }, [linkedCleaners]);
@@ -411,6 +420,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                               Doesn't offer {getServiceTypeLabel(bookingServiceType, serviceTypes)}
                             </Badge>
                           )}
+                          {!cleaner.coversArea && bookingAreaName && (
+                            <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                              Outside {bookingAreaName}
+                            </Badge>
+                          )}
                         </span>
                         <span className="text-xs text-muted-foreground ml-4 shrink-0">
                           {cleaner.presentage_rate || 0}% • £{cleaner.hourly_rate || 0}/hr
@@ -564,6 +578,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                               {!cleaner.offersService && bookingServiceType && (
                                 <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                                   Doesn't offer service
+                                </Badge>
+                              )}
+                              {!cleaner.coversArea && bookingAreaName && (
+                                <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                                  Outside area
                                 </Badge>
                               )}
                             </span>

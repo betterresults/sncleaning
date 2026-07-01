@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, XCircle, MapPin, Loader2, Home, Sparkles, Key, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import CoverageMap from '@/components/CoverageMap';
+import { extractOutwardCode } from '@/lib/postcodeCoverage';
 
 interface CoverageResult {
   covered: boolean;
@@ -42,18 +43,6 @@ const CheckCoverage = () => {
     fetchMapboxToken();
   }, []);
 
-  const extractPrefix = (postcode: string): string => {
-    const clean = postcode.replace(/\s/g, '').toUpperCase();
-    // Check if it looks like a full postcode (ends with digit + 2 letters pattern for inward code)
-    const fullPostcodePattern = /^([A-Z]{1,2}\d{1,2}[A-Z]?)\d[A-Z]{2}$/;
-    const match = clean.match(fullPostcodePattern);
-    if (match) {
-      return match[1]; // Return the outward code
-    }
-    // Otherwise assume it's already just the outward code (prefix)
-    return clean;
-  };
-
   const checkCoverage = async () => {
     if (!postcode.trim()) return;
     
@@ -61,7 +50,7 @@ const CheckCoverage = () => {
     setSearched(true);
     
     try {
-      const prefix = extractPrefix(postcode);
+      const prefix = extractOutwardCode(postcode);
       
       let { data: postcodeData, error } = await supabase
         .from('postcode_prefixes')
@@ -130,7 +119,7 @@ const CheckCoverage = () => {
       console.error('Error checking coverage:', error);
       setResult({
         covered: false,
-        prefix: extractPrefix(postcode),
+        prefix: extractOutwardCode(postcode),
         services: {
           domestic_cleaning: false,
           airbnb_cleaning: false,

@@ -13,6 +13,8 @@ import { Booking } from './types';
 import { formatAdditionalDetails } from '@/utils/bookingFormatters';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { useCleanerServiceTypes, cleanerOffersService, normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { useCleanerCoverageAreas, usePostcodePrefixIndex, cleanerCoversArea } from '@/hooks/useCoverageAreas';
+import { matchPostcodeToBorough } from '@/lib/postcodeCoverage';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
@@ -20,6 +22,8 @@ const CleanerAvailableBookings = () => {
   const queryClient = useQueryClient();
   const { data: serviceTypes = [] } = useServiceTypes();
   const { data: myServiceTypeKeys = [] } = useCleanerServiceTypes(cleanerId ?? null);
+  const { data: myAreaIds = [] } = useCleanerCoverageAreas(cleanerId ?? null);
+  const { data: prefixIndex = [] } = usePostcodePrefixIndex();
 
   console.log('CleanerAvailableBookings - cleanerId:', cleanerId);
 
@@ -51,17 +55,26 @@ const CleanerAvailableBookings = () => {
   });
 
   // Soft filter: every job stays visible, but jobs outside this cleaner's configured
-  // services (if any are configured) are flagged and pushed to the bottom.
+  // services/areas (if any are configured) are flagged and pushed to the bottom.
   const bookings = [...rawBookings]
     .map((booking) => {
       const normalizedServiceType = normalizeServiceTypeKey(booking.service_type, serviceTypes);
+      const resolvedArea = matchPostcodeToBorough(booking.postcode, prefixIndex);
+      const areaName = resolvedArea
+        ? resolvedArea.boroughName === 'General' ? resolvedArea.regionName : resolvedArea.boroughName
+        : null;
       return {
         ...booking,
         normalizedServiceType,
         matchesMyServices: cleanerOffersService(myServiceTypeKeys, normalizedServiceType),
+        matchesMyArea: cleanerCoversArea(myAreaIds, resolvedArea?.boroughId ?? null),
+        areaName,
       };
     })
-    .sort((a, b) => Number(b.matchesMyServices) - Number(a.matchesMyServices));
+    .sort(
+      (a, b) =>
+        Number(b.matchesMyServices) + Number(b.matchesMyArea) - (Number(a.matchesMyServices) + Number(a.matchesMyArea))
+    );
 
   // Real-time subscription for bookings changes
   useEffect(() => {
@@ -174,7 +187,7 @@ const CleanerAvailableBookings = () => {
       ) : (
         <div className="grid gap-4">
           {bookings.map((booking) => (
-            <Card key={booking.id} className={`hover:shadow-md transition-shadow ${!booking.matchesMyServices ? 'opacity-70' : ''}`}>
+            <Card key={booking.id} className={`hover:shadow-md transition-shadow ${!booking.matchesMyServices || !booking.matchesMyArea ? 'opacity-70' : ''}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
@@ -186,6 +199,12 @@ const CleanerAvailableBookings = () => {
                         <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50 gap-1">
                           <AlertTriangle className="h-3 w-3" />
                           Not in your services{booking.normalizedServiceType ? ` (${getServiceTypeLabel(booking.normalizedServiceType, serviceTypes)})` : ''}
+                        </Badge>
+                      )}
+                      {!booking.matchesMyArea && (
+                        <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50 gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Outside your area{booking.areaName ? ` (${booking.areaName})` : ''}
                         </Badge>
                       )}
                     </div>

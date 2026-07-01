@@ -32,6 +32,51 @@ import { CleanerAccountActions } from './admin/CleanerAccountActions';
 import { useQueryClient } from '@tanstack/react-query';
 import { useServiceTypes } from '@/hooks/useCompanySettings';
 import { useAllCleanerServiceTypes, allCleanerServiceTypesQueryKey } from '@/hooks/useCleanerServiceTypes';
+import {
+  useCoverageAreaOptions,
+  useAllCleanerCoverageAreas,
+  allCleanerCoverageAreasQueryKey,
+} from '@/hooks/useCoverageAreas';
+
+interface AreaCoverageSelectorProps {
+  selectedIds: string[];
+  onToggle: (boroughId: string) => void;
+}
+
+const AreaCoverageSelector: React.FC<AreaCoverageSelectorProps> = ({ selectedIds, onToggle }) => {
+  const { data: areaOptions = [] } = useCoverageAreaOptions();
+  const [filter, setFilter] = useState('');
+
+  const visibleOptions = filter.trim()
+    ? areaOptions.filter((a) => a.label.toLowerCase().includes(filter.trim().toLowerCase()))
+    : areaOptions;
+
+  return (
+    <div className="space-y-2">
+      <Input
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        placeholder="Filter areas, e.g. Camden, Essex..."
+        className="h-8 max-w-xs text-sm"
+      />
+      <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto pr-1">
+        {visibleOptions.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No areas match "{filter}"</p>
+        ) : (
+          visibleOptions.map((area) => (
+            <label key={area.boroughId} className="flex items-center gap-2 text-sm bg-white/60 border rounded-md px-2 py-1.5 cursor-pointer">
+              <Checkbox
+                checked={selectedIds.includes(area.boroughId)}
+                onCheckedChange={() => onToggle(area.boroughId)}
+              />
+              {area.label}
+            </label>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 interface CleanerData {
   id: number;
@@ -61,6 +106,7 @@ const EnhancedCleanerManagement = () => {
   const [editingCleaner, setEditingCleaner] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<CleanerData>>({});
   const [editServiceTypeKeys, setEditServiceTypeKeys] = useState<string[]>([]);
+  const [editAreaIds, setEditAreaIds] = useState<string[]>([]);
   
   // Add new cleaner state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -80,6 +126,7 @@ const EnhancedCleanerManagement = () => {
     DBS_date: ''
   });
   const [newServiceTypeKeys, setNewServiceTypeKeys] = useState<string[]>([]);
+  const [newAreaIds, setNewAreaIds] = useState<string[]>([]);
   const [addingCleaner, setAddingCleaner] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -87,6 +134,8 @@ const EnhancedCleanerManagement = () => {
   const queryClient = useQueryClient();
   const { data: serviceTypes = [] } = useServiceTypes();
   const { data: cleanerServiceTypeMap = new Map<number, string[]>() } = useAllCleanerServiceTypes();
+  const { data: areaOptions = [] } = useCoverageAreaOptions();
+  const { data: cleanerCoverageAreaMap = new Map<number, string[]>() } = useAllCleanerCoverageAreas();
 
   const toggleServiceTypeKey = (keys: string[], setKeys: (keys: string[]) => void, key: string) => {
     setKeys(keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]);
@@ -107,6 +156,23 @@ const EnhancedCleanerManagement = () => {
     }
 
     queryClient.invalidateQueries({ queryKey: allCleanerServiceTypesQueryKey });
+  };
+
+  const saveCleanerCoverageAreas = async (cleanerId: number, boroughIds: string[]) => {
+    const { error: deleteError } = await supabase
+      .from('cleaner_coverage_areas')
+      .delete()
+      .eq('cleaner_id', cleanerId);
+    if (deleteError) throw deleteError;
+
+    if (boroughIds.length > 0) {
+      const { error: insertError } = await supabase
+        .from('cleaner_coverage_areas')
+        .insert(boroughIds.map((boroughId) => ({ cleaner_id: cleanerId, borough_id: boroughId })));
+      if (insertError) throw insertError;
+    }
+
+    queryClient.invalidateQueries({ queryKey: allCleanerCoverageAreasQueryKey });
   };
 
   const fetchCleaners = async () => {
@@ -183,6 +249,7 @@ const EnhancedCleanerManagement = () => {
       DBS_date: cleaner.DBS_date
     });
     setEditServiceTypeKeys(cleanerServiceTypeMap.get(cleaner.id) || []);
+    setEditAreaIds(cleanerCoverageAreaMap.get(cleaner.id) || []);
   };
 
   const updateCleaner = async (cleanerId: number) => {
@@ -195,6 +262,7 @@ const EnhancedCleanerManagement = () => {
       if (error) throw error;
 
       await saveCleanerServiceTypes(cleanerId, editServiceTypeKeys);
+      await saveCleanerCoverageAreas(cleanerId, editAreaIds);
 
       toast({
         title: 'Success',
@@ -204,6 +272,7 @@ const EnhancedCleanerManagement = () => {
       setEditingCleaner(null);
       setEditData({});
       setEditServiceTypeKeys([]);
+      setEditAreaIds([]);
       fetchCleaners();
     } catch (error: any) {
       console.error('Error updating cleaner:', error);
@@ -277,6 +346,9 @@ const EnhancedCleanerManagement = () => {
       if (newServiceTypeKeys.length > 0) {
         await saveCleanerServiceTypes(cleanerData.id, newServiceTypeKeys);
       }
+      if (newAreaIds.length > 0) {
+        await saveCleanerCoverageAreas(cleanerData.id, newAreaIds);
+      }
 
       // Create user account if password provided
       if (newCleanerData.password) {
@@ -326,6 +398,7 @@ const EnhancedCleanerManagement = () => {
         DBS_date: ''
       });
       setNewServiceTypeKeys([]);
+      setNewAreaIds([]);
       fetchCleaners();
     } catch (error: any) {
       console.error('Error creating cleaner:', error);
@@ -488,6 +561,20 @@ const EnhancedCleanerManagement = () => {
                         ))}
                       </div>
                     </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+                        Areas covered
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {editAreaIds.length === 0
+                          ? 'No areas selected — this cleaner is treated as covering every area.'
+                          : 'This cleaner will only be flagged as a match for bookings in the selected areas below.'}
+                      </p>
+                      <AreaCoverageSelector
+                        selectedIds={editAreaIds}
+                        onToggle={(boroughId) => toggleServiceTypeKey(editAreaIds, setEditAreaIds, boroughId)}
+                      />
+                    </div>
                     <div className="flex gap-2">
                       <Button 
                         onClick={() => updateCleaner(cleaner.id)}
@@ -497,7 +584,7 @@ const EnhancedCleanerManagement = () => {
                         Save
                       </Button>
                       <Button 
-                        onClick={() => { setEditingCleaner(null); setEditServiceTypeKeys([]); }}
+                        onClick={() => { setEditingCleaner(null); setEditServiceTypeKeys([]); setEditAreaIds([]); }}
                         variant="outline"
                         size="sm"
                       >
@@ -567,6 +654,40 @@ const EnhancedCleanerManagement = () => {
                             );
                           })
                         )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
+                        <span className="text-muted-foreground font-medium">Areas:</span>
+                        {(() => {
+                          const boroughIds = cleanerCoverageAreaMap.get(cleaner.id) || [];
+                          if (boroughIds.length === 0) {
+                            return (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <MapPin className="h-3 w-3" />
+                                All areas
+                              </Badge>
+                            );
+                          }
+                          const labels = boroughIds.map(
+                            (id) => areaOptions.find((a) => a.boroughId === id)?.label || 'Unknown'
+                          );
+                          const shown = labels.slice(0, 3);
+                          const remaining = labels.length - shown.length;
+                          return (
+                            <>
+                              {shown.map((label, i) => (
+                                <Badge key={boroughIds[i]} variant="outline" className="text-xs">
+                                  {label}
+                                </Badge>
+                              ))}
+                              {remaining > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{remaining} more
+                                </Badge>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
 
                       {cleaner.services && (
@@ -738,6 +859,17 @@ const EnhancedCleanerManagement = () => {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div>
+              <Label className="mb-2 block">Areas covered</Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Leave all unchecked to treat this cleaner as covering every area (default).
+              </p>
+              <AreaCoverageSelector
+                selectedIds={newAreaIds}
+                onToggle={(boroughId) => toggleServiceTypeKey(newAreaIds, setNewAreaIds, boroughId)}
+              />
             </div>
 
             <div>

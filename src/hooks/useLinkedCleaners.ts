@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { cleanerOffersService } from '@/hooks/useCleanerServiceTypes';
+import { cleanerCoversArea } from '@/hooks/useCoverageAreas';
 
 export interface LinkedCleaner {
   id: number;
@@ -13,6 +14,10 @@ export interface LinkedCleaner {
   serviceTypeKeys: string[];
   /** Whether this cleaner is qualified for the `serviceType` passed into the hook (always true if none was passed). */
   offersService: boolean;
+  /** Configured coverage borough_ids for this cleaner. Empty = no restriction configured (covers everywhere). */
+  coverageAreaIds: string[];
+  /** Whether this cleaner covers the `boroughId` passed into the hook (always true if none was passed/resolved). */
+  coversArea: boolean;
 }
 
 /**
@@ -20,10 +25,16 @@ export interface LinkedCleaner {
  * This ensures consistency with the Users page Cleaners tab.
  *
  * Pass `serviceType` (a company_settings service_type key, e.g. the booking's
- * service_type) to compute `offersService` per cleaner and to sort qualified
- * cleaners first. This is a soft signal only — nothing is filtered out.
+ * service_type) to compute `offersService` per cleaner, and `boroughId` (the
+ * booking's postcode resolved to a coverage borough) to compute `coversArea`.
+ * Cleaners are sorted so those matching both signals come first. Both are soft
+ * signals only — nothing is filtered out.
  */
-export const useLinkedCleaners = (enabled: boolean = true, serviceType?: string | null) => {
+export const useLinkedCleaners = (
+  enabled: boolean = true,
+  serviceType?: string | null,
+  boroughId?: string | null
+) => {
   const [cleaners, setCleaners] = useState<LinkedCleaner[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,14 +74,24 @@ export const useLinkedCleaners = (enabled: boolean = true, serviceType?: string 
         throw cleanersError;
       }
 
-      const { data: serviceRows, error: serviceError } = await supabase
-        .from('cleaner_service_types')
-        .select('cleaner_id, service_type_key')
-        .in('cleaner_id', linkedCleanerIds);
+      const [{ data: serviceRows, error: serviceError }, { data: areaRows, error: areaError }] = await Promise.all([
+        supabase
+          .from('cleaner_service_types')
+          .select('cleaner_id, service_type_key')
+          .in('cleaner_id', linkedCleanerIds),
+        supabase
+          .from('cleaner_coverage_areas')
+          .select('cleaner_id, borough_id')
+          .in('cleaner_id', linkedCleanerIds),
+      ]);
 
       if (serviceError) {
         console.error('Error fetching cleaner service types:', serviceError);
         throw serviceError;
+      }
+      if (areaError) {
+        console.error('Error fetching cleaner coverage areas:', areaError);
+        throw areaError;
       }
 
       const serviceMap = new Map<number, string[]>();
@@ -80,17 +101,31 @@ export const useLinkedCleaners = (enabled: boolean = true, serviceType?: string 
         serviceMap.set(row.cleaner_id, existing);
       });
 
+      const areaMap = new Map<number, string[]>();
+      (areaRows || []).forEach((row) => {
+        const existing = areaMap.get(row.cleaner_id) || [];
+        existing.push(row.borough_id);
+        areaMap.set(row.cleaner_id, existing);
+      });
+
       const enriched: LinkedCleaner[] = (cleanersData || []).map((c) => {
         const serviceTypeKeys = serviceMap.get(c.id) || [];
+        const coverageAreaIds = areaMap.get(c.id) || [];
         return {
           ...c,
           serviceTypeKeys,
           offersService: cleanerOffersService(serviceTypeKeys, serviceType),
+          coverageAreaIds,
+          coversArea: cleanerCoversArea(coverageAreaIds, boroughId),
         };
       });
 
-      // Soft filter: keep everyone, just surface qualified cleaners first.
-      enriched.sort((a, b) => Number(b.offersService) - Number(a.offersService));
+      // Soft filter: keep everyone, just surface the best-matching cleaners first
+      // (both service + area match, then a partial match, then neither).
+      enriched.sort(
+        (a, b) =>
+          Number(b.offersService) + Number(b.coversArea) - (Number(a.offersService) + Number(a.coversArea))
+      );
 
       setCleaners(enriched);
     } catch (err: any) {
@@ -106,7 +141,7 @@ export const useLinkedCleaners = (enabled: boolean = true, serviceType?: string 
       fetchCleaners();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, serviceType]);
+  }, [enabled, serviceType, boroughId]);
 
   return { cleaners, loading, error, refetch: fetchCleaners };
 };

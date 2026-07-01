@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
 import { Badge } from '@/components/ui/badge';
 
 interface Cleaner {
@@ -19,6 +20,7 @@ interface Cleaner {
   presentage_rate: number;
   hourly_rate: number;
   offersService: boolean;
+  coversArea: boolean;
 }
 
 interface AssignCleanerToPastBookingDialogProps {
@@ -44,11 +46,13 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
   const [customPercentageRate, setCustomPercentageRate] = useState<string>('');
   const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
+  const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
+  const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
   const { data: serviceTypes = [] } = useServiceTypes();
   const { toast } = useToast();
   
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId);
 
   useEffect(() => {
     if (open && bookingId) {
@@ -67,6 +71,7 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
         presentage_rate: c.presentage_rate || 0,
         hourly_rate: c.hourly_rate || 0,
         offersService: c.offersService,
+        coversArea: c.coversArea,
       })));
     }
   }, [linkedCleaners]);
@@ -77,7 +82,7 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
     try {
       const { data, error } = await supabase
         .from('past_bookings')
-        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_pay')
+        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_pay, postcode')
         .eq('id', bookingId)
         .single();
 
@@ -93,6 +98,10 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
       const isHourly = serviceType.includes('domestic') || serviceType.includes('standard');
       setIsHourlyService(isHourly);
       setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
+
+      const resolvedArea = await resolvePostcodeToBorough(data.postcode);
+      setBookingBoroughId(resolvedArea?.boroughId ?? null);
+      setBookingAreaName(resolvedArea?.boroughName === 'General' ? resolvedArea.regionName : resolvedArea?.boroughName ?? null);
       
       if (data.cleaner) {
         setSelectedCleaner(data.cleaner.toString());
@@ -243,6 +252,11 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
                           {!cleaner.offersService && bookingServiceType && (
                             <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                               Doesn't offer {getServiceTypeLabel(bookingServiceType, serviceTypes)}
+                            </Badge>
+                          )}
+                          {!cleaner.coversArea && bookingAreaName && (
+                            <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                              Outside {bookingAreaName}
                             </Badge>
                           )}
                         </span>

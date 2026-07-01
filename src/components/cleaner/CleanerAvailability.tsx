@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CalendarClock, AlertTriangle, Eraser, Check, Sparkles, Wrench } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Clock, CalendarClock, AlertTriangle, Eraser, Check, Sparkles, Wrench, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DAYS_OF_WEEK,
@@ -17,6 +18,11 @@ import { useBusinessHoursRange } from '@/hooks/useSchedulingRules';
 import { useCleanerUpcomingBookings, type CleanerUpcomingBooking } from '@/hooks/useCleanerUpcomingBookings';
 import { useServiceTypes } from '@/hooks/useCompanySettings';
 import { useCleanerServiceTypes, useSaveCleanerServiceTypes } from '@/hooks/useCleanerServiceTypes';
+import {
+  useCoverageAreaOptions,
+  useCleanerCoverageAreas,
+  useSaveCleanerCoverageAreas,
+} from '@/hooks/useCoverageAreas';
 
 type OpenHoursByDay = Map<number, Set<number>>;
 
@@ -300,6 +306,102 @@ const MyServicesPanel: React.FC<MyServicesPanelProps> = ({ cleanerId }) => {
   );
 };
 
+interface MyAreasPanelProps {
+  cleanerId: number;
+}
+
+const MyAreasPanel: React.FC<MyAreasPanelProps> = ({ cleanerId }) => {
+  const { data: areaOptions = [], isLoading: isLoadingAreaOptions } = useCoverageAreaOptions();
+  const { data: myAreaIds = [], isLoading: isLoadingMyAreas } = useCleanerCoverageAreas(cleanerId);
+  const saveAreas = useSaveCleanerCoverageAreas();
+  const [filter, setFilter] = useState('');
+
+  const isLoading = isLoadingAreaOptions || isLoadingMyAreas;
+  const coversEverywhere = myAreaIds.length === 0;
+
+  const visibleOptions = filter.trim()
+    ? areaOptions.filter((a) => a.label.toLowerCase().includes(filter.trim().toLowerCase()))
+    : areaOptions;
+
+  const handleToggle = (boroughId: string) => {
+    const next = myAreaIds.includes(boroughId)
+      ? myAreaIds.filter((id) => id !== boroughId)
+      : [...myAreaIds, boroughId];
+    saveAreas.mutate({ cleanerId, boroughIds: next });
+  };
+
+  return (
+    <Card className="p-4">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            Areas I cover
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Only jobs in the areas you select here will be shown as a good match for you — leave everything
+            unchecked to be considered for every area.
+          </p>
+        </div>
+        {!isLoading && (
+          <Badge
+            variant="outline"
+            className={cn(
+              'w-fit gap-1 text-xs',
+              coversEverywhere
+                ? 'border-sky-200 bg-sky-50 text-sky-700'
+                : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            )}
+          >
+            <Sparkles className="h-3 w-3" />
+            {coversEverywhere ? 'Open to all areas' : `${myAreaIds.length} area${myAreaIds.length === 1 ? '' : 's'} selected`}
+          </Badge>
+        )}
+      </div>
+
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      ) : (
+        <div className="space-y-2">
+          <Input
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filter areas, e.g. Camden, Essex..."
+            className="h-8 max-w-xs text-sm"
+          />
+          <div className="flex max-h-48 flex-wrap gap-2 overflow-y-auto pr-1">
+            {visibleOptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No areas match "{filter}"</p>
+            ) : (
+              visibleOptions.map((area) => {
+                const checked = myAreaIds.includes(area.boroughId);
+                return (
+                  <label
+                    key={area.boroughId}
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
+                      checked
+                        ? 'border-emerald-400 bg-emerald-50 text-emerald-800'
+                        : 'border-border bg-background text-foreground hover:bg-muted/60'
+                    )}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      disabled={saveAreas.isPending}
+                      onCheckedChange={() => handleToggle(area.boroughId)}
+                    />
+                    {area.label}
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+};
+
 interface CleanerAvailabilityProps {
   cleanerId: number | null;
 }
@@ -428,6 +530,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
       </div>
 
       <MyServicesPanel cleanerId={cleanerId} />
+      <MyAreasPanel cleanerId={cleanerId} />
 
       {ready && (
         <div className="flex flex-wrap items-center gap-2">

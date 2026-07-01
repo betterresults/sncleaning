@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
 import { Badge } from '@/components/ui/badge';
 import { addBookingCleaner, recalculatePrimaryCleanerPay } from '@/hooks/useBookingCleaners';
 
@@ -20,6 +21,7 @@ interface Cleaner {
   last_name: string;
   full_name: string;
   offersService: boolean;
+  coversArea: boolean;
 }
 
 interface AddSubCleanerDialogProps {
@@ -39,12 +41,14 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
   const [fixedAmount, setFixedAmount] = useState<string>('');
   const [bookingTotalCost, setBookingTotalCost] = useState<number>(0);
   const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
+  const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
+  const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { data: serviceTypes = [] } = useServiceTypes();
   
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId);
 
   useEffect(() => {
     if (open) {
@@ -61,6 +65,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
         last_name: c.last_name,
         full_name: c.full_name || `${c.first_name} ${c.last_name}`,
         offersService: c.offersService,
+        coversArea: c.coversArea,
       })));
     }
   }, [linkedCleaners]);
@@ -69,7 +74,7 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select('total_cost, service_type')
+        .select('total_cost, service_type, postcode')
         .eq('id', bookingId)
         .single();
 
@@ -80,6 +85,10 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
 
       setBookingTotalCost(data.total_cost || 0);
       setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
+
+      const resolvedArea = await resolvePostcodeToBorough(data.postcode);
+      setBookingBoroughId(resolvedArea?.boroughId ?? null);
+      setBookingAreaName(resolvedArea?.boroughName === 'General' ? resolvedArea.regionName : resolvedArea?.boroughName ?? null);
     } catch (error) {
       console.error('Error fetching booking details:', error);
     }
@@ -209,6 +218,11 @@ const AddSubCleanerDialog = ({ bookingId, onSubCleanerAdded, children }: AddSubC
                       {!cleaner.offersService && bookingServiceType && (
                         <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                           Doesn't offer {getServiceTypeLabel(bookingServiceType, serviceTypes)}
+                        </Badge>
+                      )}
+                      {!cleaner.coversArea && bookingAreaName && (
+                        <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                          Outside {bookingAreaName}
                         </Badge>
                       )}
                     </span>

@@ -23,6 +23,7 @@ import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingF
 import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
 import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 
 interface EditBookingDialogProps {
@@ -39,6 +40,7 @@ interface Cleaner {
   hourly_rate: number;
   presentage_rate: number;
   offersService: boolean;
+  coversArea: boolean;
 }
 
 interface SalesAgent {
@@ -55,6 +57,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const [selectedSalesAgent, setSelectedSalesAgent] = useState<string>('');
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
   const [subCleanersKey, setSubCleanersKey] = useState(0);
+  const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
+  const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
   
   const handleSubCleanerChange = () => {
     setSubCleanersKey(prev => prev + 1);
@@ -195,6 +199,13 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       });
       const isAirbnb = booking.service_type?.toLowerCase() === 'airbnb';
       setIsSameDayCleaning(isAirbnb && frequently === 'Same Day');
+
+      resolvePostcodeToBorough(booking.postcode).then((resolvedArea) => {
+        setBookingBoroughId(resolvedArea?.boroughId ?? null);
+        setBookingAreaName(
+          resolvedArea ? (resolvedArea.boroughName === 'General' ? resolvedArea.regionName : resolvedArea.boroughName) : null
+        );
+      });
     }
   }, [booking, open]);
 
@@ -203,7 +214,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const normalizedBookingServiceType = normalizeServiceTypeKey(formData.formName, serviceTypes || []);
 
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open, normalizedBookingServiceType);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, normalizedBookingServiceType, bookingBoroughId);
   
   useEffect(() => {
     if (linkedCleaners.length > 0) {
@@ -214,6 +225,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         hourly_rate: c.hourly_rate || 0,
         presentage_rate: c.presentage_rate || 0,
         offersService: c.offersService,
+        coversArea: c.coversArea,
       })));
     }
   }, [linkedCleaners]);
@@ -997,6 +1009,11 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                                 {!cleaner.offersService && normalizedBookingServiceType && (
                                   <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                                     Doesn't offer {getServiceTypeLabel(normalizedBookingServiceType, serviceTypes || [])}
+                                  </Badge>
+                                )}
+                                {!cleaner.coversArea && bookingAreaName && (
+                                  <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                                    Outside {bookingAreaName}
                                   </Badge>
                                 )}
                               </span>
