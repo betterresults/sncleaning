@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,8 +20,11 @@ import { EmailNotificationConfirmDialog } from '@/components/notifications/Email
 import { useBookingEmailPrompt } from '@/hooks/useBookingEmailPrompt';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingFormatters';
-import { useServiceTypes, useCleaningTypes, usePaymentMethods } from '@/hooks/useCompanySettings';
+import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { computeBookingTimeWindow, describeTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 
 interface EditBookingDialogProps {
@@ -37,6 +40,9 @@ interface Cleaner {
   last_name: string;
   hourly_rate: number;
   presentage_rate: number;
+  offersService: boolean;
+  coversArea: boolean;
+  coversTime: boolean;
 }
 
 interface SalesAgent {
@@ -53,6 +59,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const [selectedSalesAgent, setSelectedSalesAgent] = useState<string>('');
   const [isSameDayCleaning, setIsSameDayCleaning] = useState(false);
   const [subCleanersKey, setSubCleanersKey] = useState(0);
+  const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
+  const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
   
   const handleSubCleanerChange = () => {
     setSubCleanersKey(prev => prev + 1);
@@ -110,17 +118,14 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const formatDateTimeForInput = (dateTimeString: string) => {
     if (!dateTimeString) return '';
     try {
-      const date = new Date(dateTimeString);
-      if (isNaN(date.getTime())) return '';
-      
-      // Use local time instead of UTC to prevent timezone issues
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
+      // date_time is stored as "wall-clock time tagged as UTC" (see NewBookingForm's
+      // dateTimeStr comment) - e.g. a booking made for 9am is stored as
+      // "...T09:00:00+00:00" regardless of what timezone it was booked from. Extracting
+      // the digits directly (instead of `new Date(...)` + local getters) means this
+      // always shows the actual booked time, not that time shifted by the admin's
+      // browser timezone offset.
+      const match = dateTimeString.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+      return match ? `${match[1]}T${match[2]}` : '';
     } catch (error) {
       console.error('Error formatting date:', error);
       return '';
@@ -196,8 +201,36 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
     }
   }, [booking, open]);
 
+  // Postcode is live-editable in this dialog (see the "Postcode" field below), so
+  // re-resolve the coverage area whenever it changes rather than only once at load —
+  // otherwise editing the postcode wouldn't update which cleaners are flagged as
+  // "Outside {area}", unlike the time window which already recomputes from formData.
+  useEffect(() => {
+    if (!open) return;
+    const handle = setTimeout(() => {
+      resolvePostcodeToBorough(formData.postcode).then((resolvedArea) => {
+        setBookingBoroughId(resolvedArea?.boroughId ?? null);
+        setBookingAreaName(
+          resolvedArea ? (resolvedArea.boroughName === 'General' ? resolvedArea.regionName : resolvedArea.boroughName) : null
+        );
+      });
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [formData.postcode, open]);
+
+  // Normalize legacy service_type values (some rows store a display label instead
+  // of the canonical company_settings key) so cleaner-service matching still works.
+  const normalizedBookingServiceType = normalizeServiceTypeKey(formData.formName, serviceTypes || []);
+
+  // Date/time and hours are live-editable in this dialog, so the booking's time
+  // window is recomputed from formData rather than the original booking record.
+  const bookingTimeWindow = useMemo(
+    () => computeBookingTimeWindow(formData.dateTime, formData.totalHours),
+    [formData.dateTime, formData.totalHours]
+  );
+
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, normalizedBookingServiceType, bookingBoroughId, bookingTimeWindow);
   
   useEffect(() => {
     if (linkedCleaners.length > 0) {
@@ -206,7 +239,10 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         first_name: c.first_name,
         last_name: c.last_name,
         hourly_rate: c.hourly_rate || 0,
-        presentage_rate: c.presentage_rate || 0
+        presentage_rate: c.presentage_rate || 0,
+        offersService: c.offersService,
+        coversArea: c.coversArea,
+        coversTime: c.coversTime,
       })));
     }
   }, [linkedCleaners]);
@@ -257,7 +293,19 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       console.log('EditBookingDialog: Submission already in progress, ignoring');
       return;
     }
-    
+
+    if (formData.cleanerId) {
+      const assignedCleaner = cleaners.find((c) => c.id === formData.cleanerId);
+      if (assignedCleaner && !assignedCleaner.coversTime) {
+        toast({
+          title: "Outside working hours",
+          description: `${assignedCleaner.first_name} ${assignedCleaner.last_name} isn't scheduled to work${bookingTimeWindow ? ` ${describeTimeWindow(bookingTimeWindow)}` : ' at this date/time'}. Choose another cleaner, pick a different time, or update their working hours first.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -984,8 +1032,25 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                         <SelectContent>
                           <SelectItem value="none">No cleaner assigned</SelectItem>
                           {cleaners.map((cleaner) => (
-                            <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                              {cleaner.first_name} {cleaner.last_name}
+                            <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!cleaner.coversTime}>
+                              <span className="flex items-center gap-2">
+                                {cleaner.first_name} {cleaner.last_name}
+                                {!cleaner.offersService && normalizedBookingServiceType && (
+                                  <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                                    Doesn't offer {getServiceTypeLabel(normalizedBookingServiceType, serviceTypes || [])}
+                                  </Badge>
+                                )}
+                                {!cleaner.coversArea && bookingAreaName && (
+                                  <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                                    Outside {bookingAreaName}
+                                  </Badge>
+                                )}
+                                {!cleaner.coversTime && (
+                                  <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
+                                    Outside working hours
+                                  </Badge>
+                                )}
+                              </span>
                             </SelectItem>
                           ))}
                         </SelectContent>

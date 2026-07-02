@@ -815,6 +815,35 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaner_service_types: {
+        Row: {
+          cleaner_id: number
+          created_at: string
+          id: string
+          service_type_key: string
+        }
+        Insert: {
+          cleaner_id: number
+          created_at?: string
+          id?: string
+          service_type_key: string
+        }
+        Update: {
+          cleaner_id?: number
+          created_at?: string
+          id?: string
+          service_type_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_service_types_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_tracking: {
         Row: {
           booking_id: number
@@ -875,6 +904,47 @@ export type Database = {
           },
         ]
       }
+      cleaner_working_hours: {
+        Row: {
+          cleaner_id: number
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          cleaner_id: number
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          cleaner_id?: number
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_working_hours_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaners: {
         Row: {
           address: string | null
@@ -885,6 +955,7 @@ export type Database = {
           first_name: string | null
           frontly_id: number | null
           full_name: string | null
+          has_equipment: boolean
           hourly_rate: number | null
           id: number
           ID: string | null
@@ -907,6 +978,7 @@ export type Database = {
           first_name?: string | null
           frontly_id?: number | null
           full_name?: string | null
+          has_equipment?: boolean
           hourly_rate?: number | null
           id?: number
           ID?: string | null
@@ -929,6 +1001,7 @@ export type Database = {
           first_name?: string | null
           frontly_id?: number | null
           full_name?: string | null
+          has_equipment?: boolean
           hourly_rate?: number | null
           id?: number
           ID?: string | null
@@ -3093,6 +3166,21 @@ export type Database = {
         }[]
       }
       generate_recurring_bookings: { Args: never; Returns: undefined }
+      get_assignable_cleaners: {
+        Args: never
+        Returns: {
+          coverage_area_ids: string[]
+          first_name: string
+          full_name: string
+          has_equipment: boolean
+          hourly_rate: number
+          id: number
+          last_name: string
+          presentage_rate: number
+          service_type_keys: string[]
+          working_hours: Json
+        }[]
+      }
       get_current_user_role: { Args: never; Returns: string }
       get_user_cleaner_id: { Args: { _user_id: string }; Returns: number }
       get_user_customer_id: { Args: { _user_id: string }; Returns: number }

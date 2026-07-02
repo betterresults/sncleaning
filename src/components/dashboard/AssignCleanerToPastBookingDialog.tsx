@@ -7,6 +7,11 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
+import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { computeBookingTimeWindow, describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
+import { Badge } from '@/components/ui/badge';
 
 interface Cleaner {
   id: number;
@@ -15,6 +20,9 @@ interface Cleaner {
   full_name: string;
   presentage_rate: number;
   hourly_rate: number;
+  offersService: boolean;
+  coversArea: boolean;
+  coversTime: boolean;
 }
 
 interface AssignCleanerToPastBookingDialogProps {
@@ -39,10 +47,15 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
   const [isHourlyService, setIsHourlyService] = useState<boolean>(false);
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
   const [customPercentageRate, setCustomPercentageRate] = useState<string>('');
+  const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
+  const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
+  const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
+  const [bookingTimeWindow, setBookingTimeWindow] = useState<BookingTimeWindow | null>(null);
+  const { data: serviceTypes = [] } = useServiceTypes();
   const { toast } = useToast();
   
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners } = useLinkedCleaners(open);
+  const { cleaners: linkedCleaners } = useLinkedCleaners(open, bookingServiceType, bookingBoroughId, bookingTimeWindow);
 
   useEffect(() => {
     if (open && bookingId) {
@@ -59,7 +72,10 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
         last_name: c.last_name,
         full_name: c.full_name || `${c.first_name} ${c.last_name}`,
         presentage_rate: c.presentage_rate || 0,
-        hourly_rate: c.hourly_rate || 0
+        hourly_rate: c.hourly_rate || 0,
+        offersService: c.offersService,
+        coversArea: c.coversArea,
+        coversTime: c.coversTime,
       })));
     }
   }, [linkedCleaners]);
@@ -70,7 +86,7 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
     try {
       const { data, error } = await supabase
         .from('past_bookings')
-        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_pay')
+        .select('total_cost, cleaner, total_hours, cleaning_time, service_type, cleaner_pay, postcode, date_time')
         .eq('id', bookingId)
         .single();
 
@@ -80,11 +96,17 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
       setBookingTotalCost(totalCost);
       const hours = Number(data.total_hours || data.cleaning_time || 0);
       setBookingTotalHours(hours);
+      setBookingTimeWindow(computeBookingTimeWindow(data.date_time, hours));
       
       // Determine if this is an hourly service
       const serviceType = data.service_type?.toLowerCase() || '';
       const isHourly = serviceType.includes('domestic') || serviceType.includes('standard');
       setIsHourlyService(isHourly);
+      setBookingServiceType(normalizeServiceTypeKey(data.service_type, serviceTypes));
+
+      const resolvedArea = await resolvePostcodeToBorough(data.postcode);
+      setBookingBoroughId(resolvedArea?.boroughId ?? null);
+      setBookingAreaName(resolvedArea?.boroughName === 'General' ? resolvedArea.regionName : resolvedArea?.boroughName ?? null);
       
       if (data.cleaner) {
         setSelectedCleaner(data.cleaner.toString());
@@ -150,6 +172,18 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
 
   const handleSave = async () => {
     if (!bookingId) return;
+
+    if (selectedCleaner && selectedCleaner !== 'none') {
+      const cleaner = cleaners.find((c) => c.id.toString() === selectedCleaner);
+      if (cleaner && !cleaner.coversTime) {
+        toast({
+          title: "Outside working hours",
+          description: `${cleaner.full_name} isn't scheduled to work${bookingTimeWindow ? ` ${describeTimeWindow(bookingTimeWindow)}` : ' this time'}. Choose another cleaner or update their working hours first.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     setIsLoading(true);
 
@@ -228,10 +262,27 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
                 {cleaners.map((cleaner) => {
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Unnamed';
                   return (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{displayName}</span>
-                        <span className="text-xs text-muted-foreground ml-4">
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!cleaner.coversTime}>
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className="flex items-center gap-2">
+                          {displayName}
+                          {!cleaner.offersService && bookingServiceType && (
+                            <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                              Doesn't offer {getServiceTypeLabel(bookingServiceType, serviceTypes)}
+                            </Badge>
+                          )}
+                          {!cleaner.coversArea && bookingAreaName && (
+                            <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                              Outside {bookingAreaName}
+                            </Badge>
+                          )}
+                          {!cleaner.coversTime && (
+                            <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
+                              Outside working hours
+                            </Badge>
+                          )}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-4 shrink-0">
                           {cleaner.presentage_rate || 0}% • £{cleaner.hourly_rate || 0}/hr
                         </span>
                       </div>

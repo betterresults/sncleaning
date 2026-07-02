@@ -150,3 +150,34 @@ export const useTimeSurcharges = () => {
   const { data: rules } = useSchedulingRules('time_surcharge', true);
   return rules || [];
 };
+
+const DEFAULT_BUSINESS_START_HOUR = 7;
+const DEFAULT_BUSINESS_END_HOUR = 21;
+
+// Derives the business's overall bookable hour range (e.g. 7am-10pm) from the
+// admin-configured time slots / cutoff / overtime window, instead of hardcoding it.
+// Lives in Admin > Airbnb Settings > Scheduling, but these rules apply company-wide.
+export const useBusinessHoursRange = () => {
+  const { data: rules, isLoading } = useSchedulingRules(undefined, true);
+
+  const relevant = (rules || []).filter((r) =>
+    ['time_slot', 'cutoff_time', 'overtime_window'].includes(r.rule_type)
+  );
+
+  const starts = relevant.map((r) => r.start_time).filter((t): t is string => !!t);
+  const ends = relevant.map((r) => r.end_time).filter((t): t is string => !!t);
+
+  const toHour = (time: string, roundUp: boolean) => {
+    const [h, m] = time.split(':').map(Number);
+    return roundUp && m > 0 ? h + 1 : h;
+  };
+
+  const startHour = starts.length > 0 ? Math.min(...starts.map((t) => toHour(t, false))) : DEFAULT_BUSINESS_START_HOUR;
+  const endHour = ends.length > 0 ? Math.max(...ends.map((t) => toHour(t, true))) : DEFAULT_BUSINESS_END_HOUR;
+
+  return {
+    startHour: Math.min(startHour, endHour - 1),
+    endHour: Math.max(endHour, startHour + 1),
+    isLoading,
+  };
+};

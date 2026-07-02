@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,7 +29,8 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
     percentageRate: '70',
     services: '',
     dbsDate: '',
-    dbsStatus: 'No'
+    dbsStatus: 'No',
+    hasEquipment: true
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -56,6 +58,7 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
         services: formData.services,
         DBS_date: formData.dbsDate || null,
         DBS: formData.dbsStatus,
+        has_equipment: formData.hasEquipment,
         rating: 0,
         reviews: 0,
         years: 0,
@@ -96,7 +99,8 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
         percentageRate: '70',
         services: '',
         dbsDate: '',
-        dbsStatus: 'No'
+        dbsStatus: 'No',
+        hasEquipment: true
       });
     } catch (error) {
       console.error('Error creating cleaner:', error);
@@ -217,6 +221,19 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
               value={formData.services}
               onChange={(e) => handleInputChange('services', e.target.value)}
               placeholder="Regular cleaning, deep cleaning, end of tenancy..."
+            />
+          </div>
+
+          <div className="flex items-center justify-between border rounded-md px-3 py-2">
+            <div>
+              <Label className="mb-1 block">Has own equipment</Label>
+              <p className="text-xs text-gray-500">
+                On by default — toggle off if this cleaner does not bring their own vacuum/mop/supplies.
+              </p>
+            </div>
+            <Switch
+              checked={formData.hasEquipment}
+              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, hasEquipment: checked }))}
             />
           </div>
 

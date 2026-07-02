@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,9 +26,58 @@ import {
   User,
   Eye,
   EyeOff,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { CleanerAccountActions } from './admin/CleanerAccountActions';
+import { useQueryClient } from '@tanstack/react-query';
+import { useServiceTypes } from '@/hooks/useCompanySettings';
+import { useAllCleanerServiceTypes, allCleanerServiceTypesQueryKey } from '@/hooks/useCleanerServiceTypes';
+import {
+  useCoverageAreaOptions,
+  useAllCleanerCoverageAreas,
+  allCleanerCoverageAreasQueryKey,
+} from '@/hooks/useCoverageAreas';
+
+interface AreaCoverageSelectorProps {
+  selectedIds: string[];
+  onToggle: (boroughId: string) => void;
+}
+
+const AreaCoverageSelector: React.FC<AreaCoverageSelectorProps> = ({ selectedIds, onToggle }) => {
+  const { data: areaOptions = [] } = useCoverageAreaOptions();
+  const [filter, setFilter] = useState('');
+
+  const visibleOptions = filter.trim()
+    ? areaOptions.filter((a) => a.label.toLowerCase().includes(filter.trim().toLowerCase()))
+    : areaOptions;
+
+  return (
+    <div className="space-y-2">
+      <Input
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        placeholder="Filter areas, e.g. Camden, Essex..."
+        className="h-8 max-w-xs text-sm"
+      />
+      <div className="flex flex-wrap gap-3 max-h-40 overflow-y-auto pr-1">
+        {visibleOptions.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No areas match "{filter}"</p>
+        ) : (
+          visibleOptions.map((area) => (
+            <label key={area.boroughId} className="flex items-center gap-2 text-sm bg-white/60 border rounded-md px-2 py-1.5 cursor-pointer">
+              <Checkbox
+                checked={selectedIds.includes(area.boroughId)}
+                onCheckedChange={() => onToggle(area.boroughId)}
+              />
+              {area.label}
+            </label>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 interface CleanerData {
   id: number;
@@ -46,6 +97,7 @@ interface CleanerData {
   DBS: string;
   DBS_date: string;
   has_account?: boolean;
+  has_equipment?: boolean;
 }
 
 const EnhancedCleanerManagement = () => {
@@ -55,6 +107,8 @@ const EnhancedCleanerManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCleaner, setEditingCleaner] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<CleanerData>>({});
+  const [editServiceTypeKeys, setEditServiceTypeKeys] = useState<string[]>([]);
+  const [editAreaIds, setEditAreaIds] = useState<string[]>([]);
   
   // Add new cleaner state
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -71,12 +125,58 @@ const EnhancedCleanerManagement = () => {
     services: '',
     years: 0,
     DBS: 'No',
-    DBS_date: ''
+    DBS_date: '',
+    has_equipment: true
   });
+  const [newServiceTypeKeys, setNewServiceTypeKeys] = useState<string[]>([]);
+  const [newAreaIds, setNewAreaIds] = useState<string[]>([]);
   const [addingCleaner, setAddingCleaner] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: serviceTypes = [] } = useServiceTypes();
+  const { data: cleanerServiceTypeMap = new Map<number, string[]>() } = useAllCleanerServiceTypes();
+  const { data: areaOptions = [] } = useCoverageAreaOptions();
+  const { data: cleanerCoverageAreaMap = new Map<number, string[]>() } = useAllCleanerCoverageAreas();
+
+  const toggleServiceTypeKey = (keys: string[], setKeys: (keys: string[]) => void, key: string) => {
+    setKeys(keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]);
+  };
+
+  const saveCleanerServiceTypes = async (cleanerId: number, serviceTypeKeys: string[]) => {
+    const { error: deleteError } = await supabase
+      .from('cleaner_service_types')
+      .delete()
+      .eq('cleaner_id', cleanerId);
+    if (deleteError) throw deleteError;
+
+    if (serviceTypeKeys.length > 0) {
+      const { error: insertError } = await supabase
+        .from('cleaner_service_types')
+        .insert(serviceTypeKeys.map((key) => ({ cleaner_id: cleanerId, service_type_key: key })));
+      if (insertError) throw insertError;
+    }
+
+    queryClient.invalidateQueries({ queryKey: allCleanerServiceTypesQueryKey });
+  };
+
+  const saveCleanerCoverageAreas = async (cleanerId: number, boroughIds: string[]) => {
+    const { error: deleteError } = await supabase
+      .from('cleaner_coverage_areas')
+      .delete()
+      .eq('cleaner_id', cleanerId);
+    if (deleteError) throw deleteError;
+
+    if (boroughIds.length > 0) {
+      const { error: insertError } = await supabase
+        .from('cleaner_coverage_areas')
+        .insert(boroughIds.map((boroughId) => ({ cleaner_id: cleanerId, borough_id: boroughId })));
+      if (insertError) throw insertError;
+    }
+
+    queryClient.invalidateQueries({ queryKey: allCleanerCoverageAreasQueryKey });
+  };
 
   const fetchCleaners = async () => {
     try {
@@ -149,8 +249,11 @@ const EnhancedCleanerManagement = () => {
       services: cleaner.services,
       years: cleaner.years,
       DBS: cleaner.DBS,
-      DBS_date: cleaner.DBS_date
+      DBS_date: cleaner.DBS_date,
+      has_equipment: cleaner.has_equipment ?? true
     });
+    setEditServiceTypeKeys(cleanerServiceTypeMap.get(cleaner.id) || []);
+    setEditAreaIds(cleanerCoverageAreaMap.get(cleaner.id) || []);
   };
 
   const updateCleaner = async (cleanerId: number) => {
@@ -162,6 +265,9 @@ const EnhancedCleanerManagement = () => {
 
       if (error) throw error;
 
+      await saveCleanerServiceTypes(cleanerId, editServiceTypeKeys);
+      await saveCleanerCoverageAreas(cleanerId, editAreaIds);
+
       toast({
         title: 'Success',
         description: 'Cleaner updated successfully!',
@@ -169,6 +275,8 @@ const EnhancedCleanerManagement = () => {
 
       setEditingCleaner(null);
       setEditData({});
+      setEditServiceTypeKeys([]);
+      setEditAreaIds([]);
       fetchCleaners();
     } catch (error: any) {
       console.error('Error updating cleaner:', error);
@@ -229,6 +337,7 @@ const EnhancedCleanerManagement = () => {
           years: newCleanerData.years,
           DBS: newCleanerData.DBS,
           DBS_date: newCleanerData.DBS_date || null,
+          has_equipment: newCleanerData.has_equipment,
           full_name: `${newCleanerData.first_name} ${newCleanerData.last_name}`.trim(),
           rating: 0,
           reviews: 0,
@@ -238,6 +347,13 @@ const EnhancedCleanerManagement = () => {
         .single();
 
       if (cleanerError) throw cleanerError;
+
+      if (newServiceTypeKeys.length > 0) {
+        await saveCleanerServiceTypes(cleanerData.id, newServiceTypeKeys);
+      }
+      if (newAreaIds.length > 0) {
+        await saveCleanerCoverageAreas(cleanerData.id, newAreaIds);
+      }
 
       // Create user account if password provided
       if (newCleanerData.password) {
@@ -284,8 +400,11 @@ const EnhancedCleanerManagement = () => {
         services: '',
         years: 0,
         DBS: 'No',
-        DBS_date: ''
+        DBS_date: '',
+        has_equipment: true
       });
+      setNewServiceTypeKeys([]);
+      setNewAreaIds([]);
       fetchCleaners();
     } catch (error: any) {
       console.error('Error creating cleaner:', error);
@@ -417,6 +536,62 @@ const EnhancedCleanerManagement = () => {
                           className="mt-1"
                         />
                       </div>
+                      <div className="md:col-span-2 lg:col-span-3">
+                        <Label className="text-xs font-medium text-muted-foreground">Notes (optional)</Label>
+                        <Input
+                          value={editData.services || ''}
+                          onChange={(e) => setEditData({ ...editData, services: e.target.value })}
+                          placeholder="Free-text notes, e.g. own equipment, prefers weekends..."
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+                        Services offered
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {editServiceTypeKeys.length === 0
+                          ? 'No services selected — this cleaner is treated as offering every service.'
+                          : 'This cleaner will only be flagged as a match for the selected services below.'}
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        {serviceTypes.map((st) => (
+                          <label key={st.key} className="flex items-center gap-2 text-sm bg-white/60 border rounded-md px-2 py-1.5 cursor-pointer">
+                            <Checkbox
+                              checked={editServiceTypeKeys.includes(st.key)}
+                              onCheckedChange={() => toggleServiceTypeKey(editServiceTypeKeys, setEditServiceTypeKeys, st.key)}
+                            />
+                            {st.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+                        Areas covered
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {editAreaIds.length === 0
+                          ? 'No areas selected — this cleaner is treated as covering every area.'
+                          : 'This cleaner will only be flagged as a match for bookings in the selected areas below.'}
+                      </p>
+                      <AreaCoverageSelector
+                        selectedIds={editAreaIds}
+                        onToggle={(boroughId) => toggleServiceTypeKey(editAreaIds, setEditAreaIds, boroughId)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between bg-white/60 border rounded-md px-3 py-2">
+                      <div>
+                        <Label className="text-xs font-medium text-muted-foreground">Has own equipment</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Toggle off if this cleaner does not bring their own vacuum/mop/supplies.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={editData.has_equipment ?? true}
+                        onCheckedChange={(checked) => setEditData({ ...editData, has_equipment: checked })}
+                      />
                     </div>
                     <div className="flex gap-2">
                       <Button 
@@ -427,7 +602,7 @@ const EnhancedCleanerManagement = () => {
                         Save
                       </Button>
                       <Button 
-                        onClick={() => setEditingCleaner(null)}
+                        onClick={() => { setEditingCleaner(null); setEditServiceTypeKeys([]); setEditAreaIds([]); }}
                         variant="outline"
                         size="sm"
                       >
@@ -480,9 +655,75 @@ const EnhancedCleanerManagement = () => {
                         </div>
                       </div>
                       
+                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
+                        <span className="text-muted-foreground font-medium">Services:</span>
+                        {(cleanerServiceTypeMap.get(cleaner.id) || []).length === 0 ? (
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <Sparkles className="h-3 w-3" />
+                            All services
+                          </Badge>
+                        ) : (
+                          (cleanerServiceTypeMap.get(cleaner.id) || []).map((key) => {
+                            const st = serviceTypes.find((s) => s.key === key);
+                            return (
+                              <Badge key={key} variant="outline" className="text-xs">
+                                {st?.label || key}
+                              </Badge>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
+                        <span className="text-muted-foreground font-medium">Areas:</span>
+                        {(() => {
+                          const boroughIds = cleanerCoverageAreaMap.get(cleaner.id) || [];
+                          if (boroughIds.length === 0) {
+                            return (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <MapPin className="h-3 w-3" />
+                                All areas
+                              </Badge>
+                            );
+                          }
+                          const labels = boroughIds.map(
+                            (id) => areaOptions.find((a) => a.boroughId === id)?.label || 'Unknown'
+                          );
+                          const shown = labels.slice(0, 3);
+                          const remaining = labels.length - shown.length;
+                          return (
+                            <>
+                              {shown.map((label, i) => (
+                                <Badge key={boroughIds[i]} variant="outline" className="text-xs">
+                                  {label}
+                                </Badge>
+                              ))}
+                              {remaining > 0 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{remaining} more
+                                </Badge>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
+                        <span className="text-muted-foreground font-medium">Equipment:</span>
+                        {cleaner.has_equipment === false ? (
+                          <Badge variant="outline" className="text-xs text-amber-700 border-amber-300 bg-amber-50">
+                            No own equipment
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            Brings own equipment
+                          </Badge>
+                        )}
+                      </div>
+
                       {cleaner.services && (
                         <div className="text-sm text-muted-foreground">
-                          <strong>Services:</strong> {cleaner.services}
+                          <strong>Notes:</strong> {cleaner.services}
                         </div>
                       )}
                     </div>
@@ -634,12 +875,54 @@ const EnhancedCleanerManagement = () => {
             </div>
 
             <div>
-              <Label htmlFor="services">Services</Label>
+              <Label className="mb-2 block">Services offered</Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Leave all unchecked to treat this cleaner as offering every service (default).
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {serviceTypes.map((st) => (
+                  <label key={st.key} className="flex items-center gap-2 text-sm border rounded-md px-2 py-1.5 cursor-pointer">
+                    <Checkbox
+                      checked={newServiceTypeKeys.includes(st.key)}
+                      onCheckedChange={() => toggleServiceTypeKey(newServiceTypeKeys, setNewServiceTypeKeys, st.key)}
+                    />
+                    {st.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <Label className="mb-2 block">Areas covered</Label>
+              <p className="text-xs text-gray-500 mb-2">
+                Leave all unchecked to treat this cleaner as covering every area (default).
+              </p>
+              <AreaCoverageSelector
+                selectedIds={newAreaIds}
+                onToggle={(boroughId) => toggleServiceTypeKey(newAreaIds, setNewAreaIds, boroughId)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between border rounded-md px-3 py-2">
+              <div>
+                <Label className="mb-1 block">Has own equipment</Label>
+                <p className="text-xs text-gray-500">
+                  On by default — toggle off if this cleaner does not bring their own vacuum/mop/supplies.
+                </p>
+              </div>
+              <Switch
+                checked={newCleanerData.has_equipment}
+                onCheckedChange={(checked) => setNewCleanerData({ ...newCleanerData, has_equipment: checked })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="services">Notes (optional)</Label>
               <Input
                 id="services"
                 value={newCleanerData.services}
                 onChange={(e) => setNewCleanerData({ ...newCleanerData, services: e.target.value })}
-                placeholder="Regular cleaning, deep cleaning, end of tenancy..."
+                placeholder="Free-text notes, e.g. own equipment, prefers weekends..."
               />
             </div>
 

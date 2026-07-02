@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import LinenManagementSelector from './LinenManagementSelector';
 import { LinenUsageItem } from '@/hooks/useLinenProducts';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeBadgeColor, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
+import { computeBookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -299,6 +300,20 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
     }
     return `${hours}:${minutes}`;
   };
+
+  // Derive the job's day-of-week + time window (for matching against cleaner working hours)
+  // from the selected date/time and whichever duration field applies to this service type.
+  const bookingTimeWindow = useMemo(() => {
+    if (!formData.selectedDate) return null;
+    const durationHours = requiresHours
+      ? formData.totalHours
+      : requiresCleaningTime
+        ? parseFloat(formData.cleaningTime) || null
+        : null;
+    const time24h = convertTo24Hour(formData.selectedTime);
+    const dateTimeStr = `${format(formData.selectedDate, 'yyyy-MM-dd')}T${time24h}:00`;
+    return computeBookingTimeWindow(dateTimeStr, durationHours);
+  }, [formData.selectedDate, formData.selectedTime, formData.totalHours, formData.cleaningTime, requiresHours, requiresCleaningTime]);
 
   const handleCustomerSelect = (customer: any) => {
     if (customer) {
@@ -1727,7 +1742,12 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 p-6">
-            <CleanerSelector onCleanerSelect={handleCleanerSelect} />
+            <CleanerSelector
+              onCleanerSelect={handleCleanerSelect}
+              bookingTimeWindow={bookingTimeWindow}
+              serviceType={formData.serviceType || null}
+              postcode={formData.postcode || null}
+            />
             
             {formData.cleanerId && (
               <div className="space-y-6 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg border-2 border-cyan-200">

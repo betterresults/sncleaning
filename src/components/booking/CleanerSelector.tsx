@@ -4,8 +4,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import CreateCleanerDialog from './CreateCleanerDialog';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 
 interface Cleaner {
   id: number;
@@ -14,18 +18,52 @@ interface Cleaner {
   full_name: string;
   email: string;
   phone: number;
+  coversTime?: boolean;
+  offersService?: boolean;
+  coversArea?: boolean;
 }
 
 interface CleanerSelectorProps {
   onCleanerSelect: (cleaner: Cleaner | null) => void;
+  /** If provided, cleaners whose working hours don't cover this window are disabled in the dropdown. */
+  bookingTimeWindow?: BookingTimeWindow | null;
+  /**
+   * The booking's `company_settings` service_type key (e.g. "domestic", "end_of_tenancy").
+   * If provided, cleaners who haven't been configured to offer this service are disabled
+   * in the dropdown — unlike the admin assignment dialogs (which only badge this as a soft
+   * signal), a customer shouldn't be able to book a cleaner who doesn't do that kind of job.
+   */
+  serviceType?: string | null;
+  /**
+   * The booking's raw postcode. Resolved (debounced) to a coverage borough internally so
+   * cleaners who aren't configured to cover that area are disabled in the dropdown — same
+   * hard-block treatment as serviceType, since a cleaner outside the area literally can't
+   * be dispatched there.
+   */
+  postcode?: string | null;
 }
 
-const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
+const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, postcode }: CleanerSelectorProps) => {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedCleanerId, setSelectedCleanerId] = useState<string>('');
-  
+  const [boroughId, setBoroughId] = useState<string | null>(null);
+  const [areaName, setAreaName] = useState<string | null>(null);
+  const { data: serviceTypes = [] } = useServiceTypes();
+
+  // Resolve the postcode to a coverage borough, debounced so we're not hitting the
+  // DB on every keystroke while the customer is still typing.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      resolvePostcodeToBorough(postcode).then((resolved) => {
+        setBoroughId(resolved?.boroughId ?? null);
+        setAreaName(resolved ? (resolved.boroughName === 'General' ? resolved.regionName : resolved.boroughName) : null);
+      });
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [postcode]);
+
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners, loading } = useLinkedCleaners(true);
+  const { cleaners: linkedCleaners, loading } = useLinkedCleaners(true, serviceType, boroughId, bookingTimeWindow);
 
   // Sync linked cleaners to local state
   useEffect(() => {
@@ -36,10 +74,30 @@ const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
         last_name: c.last_name,
         full_name: c.full_name || `${c.first_name} ${c.last_name}`,
         email: '',
-        phone: 0
+        phone: 0,
+        coversTime: c.coversTime,
+        offersService: c.offersService,
+        coversArea: c.coversArea,
       })));
     }
   }, [linkedCleaners]);
+
+  const isAssignable = (cleaner: Cleaner) =>
+    cleaner.coversTime !== false && cleaner.offersService !== false && cleaner.coversArea !== false;
+
+  // If the booking's time window or service type changes (e.g. the date/time or
+  // service is edited after a cleaner was already selected) and the selected cleaner
+  // no longer qualifies, clear the selection so a job can't stay assigned to someone
+  // who isn't free or doesn't do that kind of work.
+  useEffect(() => {
+    if (!selectedCleanerId || selectedCleanerId === 'new') return;
+    const current = cleaners.find((c) => c.id.toString() === selectedCleanerId);
+    if (current && !isAssignable(current)) {
+      setSelectedCleanerId('');
+      onCleanerSelect(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleaners]);
 
   const handleCleanerSelect = (cleanerId: string) => {
     setSelectedCleanerId(cleanerId);
@@ -50,6 +108,10 @@ const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
     }
 
     const cleaner = cleaners.find(c => c.id.toString() === cleanerId);
+    if (cleaner && !isAssignable(cleaner)) {
+      // Defensive guard: disabled SelectItems already block this via the UI.
+      return;
+    }
     if (cleaner) {
       onCleanerSelect(cleaner);
     }
@@ -79,9 +141,29 @@ const CleanerSelector = ({ onCleanerSelect }: CleanerSelectorProps) => {
               ) : (
                 cleaners.map((cleaner) => {
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim();
+                  const coversTime = cleaner.coversTime !== false;
+                  const offersService = cleaner.offersService !== false;
+                  const coversArea = cleaner.coversArea !== false;
                   return (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()}>
-                      {displayName} {cleaner.email && `- ${cleaner.email}`}
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!coversTime || !offersService || !coversArea}>
+                      <span className="flex items-center gap-2">
+                        {displayName} {cleaner.email && `- ${cleaner.email}`}
+                        {!offersService && serviceType && (
+                          <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                            Doesn't offer {getServiceTypeLabel(serviceType, serviceTypes)}
+                          </Badge>
+                        )}
+                        {!coversArea && areaName && (
+                          <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                            Outside {areaName}
+                          </Badge>
+                        )}
+                        {!coversTime && (
+                          <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
+                            Outside working hours
+                          </Badge>
+                        )}
+                      </span>
                     </SelectItem>
                   );
                 })

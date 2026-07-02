@@ -33,6 +33,7 @@ const getPageNameFromPath = (pathname: string): string => {
     '/cleaner-available-bookings': 'Available Bookings',
     '/cleaner-past-bookings': 'Cleaner Past Bookings',
     '/cleaner-earnings': 'Cleaner Earnings',
+    '/cleaner-availability': 'Cleaner Availability',
     '/cleaner-settings': 'Cleaner Settings',
     '/admin-settings': 'Admin Settings',
     '/admin-payment-management': 'Payment Management',
