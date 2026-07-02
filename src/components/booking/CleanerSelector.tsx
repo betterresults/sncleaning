@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import CreateCleanerDialog from './CreateCleanerDialog';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
-import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { resolvePostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 
 interface Cleaner {
@@ -21,6 +21,7 @@ interface Cleaner {
   coversTime?: boolean;
   offersService?: boolean;
   coversArea?: boolean;
+  coverageAreaIds?: string[];
 }
 
 interface CleanerSelectorProps {
@@ -48,6 +49,7 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
   const [selectedCleanerId, setSelectedCleanerId] = useState<string>('');
   const [boroughId, setBoroughId] = useState<string | null>(null);
   const [areaName, setAreaName] = useState<string | null>(null);
+  const [areaUnverified, setAreaUnverified] = useState(false);
   const { data: serviceTypes = [] } = useServiceTypes();
 
   // Resolve the postcode to a coverage borough, debounced so we're not hitting the
@@ -57,6 +59,7 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
       resolvePostcodeToBorough(postcode).then((resolved) => {
         setBoroughId(resolved?.boroughId ?? null);
         setAreaName(resolved ? (resolved.boroughName === 'General' ? resolved.regionName : resolved.boroughName) : null);
+        setAreaUnverified(isAreaUnverified(postcode, resolved));
       });
     }, 400);
     return () => clearTimeout(handle);
@@ -78,6 +81,7 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
         coversTime: c.coversTime,
         offersService: c.offersService,
         coversArea: c.coversArea,
+        coverageAreaIds: c.coverageAreaIds,
       })));
     }
   }, [linkedCleaners]);
@@ -127,6 +131,11 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
     <div className="space-y-4">
       <div>
         <Label htmlFor="cleanerSelect">Select Cleaner</Label>
+        {areaUnverified && (
+          <p className="text-[11px] text-muted-foreground mb-1">
+            Area coverage couldn't be verified for this postcode — cleaners with restricted areas may still be shown.
+          </p>
+        )}
         <div className="flex gap-2">
           <Select value={selectedCleanerId} onValueChange={handleCleanerSelect}>
             <SelectTrigger className="flex-1">
@@ -156,6 +165,11 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
                         {!coversArea && areaName && (
                           <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                             Outside {areaName}
+                          </Badge>
+                        )}
+                        {areaUnverified && (cleaner.coverageAreaIds?.length ?? 0) > 0 && (
+                          <Badge variant="outline" className="text-[10px] text-slate-600 border-slate-300 bg-slate-50">
+                            Area not verified
                           </Badge>
                         )}
                         {!coversTime && (

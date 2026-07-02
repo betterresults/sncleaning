@@ -14,7 +14,7 @@ import { formatAdditionalDetails } from '@/utils/bookingFormatters';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { useCleanerServiceTypes, cleanerOffersService, normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import { useCleanerCoverageAreas, usePostcodePrefixIndex, cleanerCoversArea } from '@/hooks/useCoverageAreas';
-import { matchPostcodeToBorough } from '@/lib/postcodeCoverage';
+import { matchPostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { useCleanerWorkingHours } from '@/hooks/useCleanerWorkingHours';
 import { computeBookingTimeWindow, cleanerCoversTime, describeTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 
@@ -67,6 +67,10 @@ const CleanerAvailableBookings = () => {
         ? resolvedArea.boroughName === 'General' ? resolvedArea.regionName : resolvedArea.boroughName
         : null;
       const timeWindow = computeBookingTimeWindow(booking.date_time, booking.total_hours, booking.end_date_time);
+      // Only worth flagging as "unverified" if this cleaner actually has area restrictions
+      // configured — an unrestricted cleaner covers everywhere regardless of whether the
+      // postcode resolved, so there's nothing to warn them about.
+      const areaUnverified = myAreaIds.length > 0 && isAreaUnverified(booking.postcode, resolvedArea);
       return {
         ...booking,
         normalizedServiceType,
@@ -75,6 +79,7 @@ const CleanerAvailableBookings = () => {
         matchesMyTime: cleanerCoversTime(myWorkingHours, timeWindow),
         timeWindow,
         areaName,
+        areaUnverified,
       };
     })
     .sort(
@@ -221,6 +226,11 @@ const CleanerAvailableBookings = () => {
                         <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50 gap-1">
                           <AlertTriangle className="h-3 w-3" />
                           Outside your area{booking.areaName ? ` (${booking.areaName})` : ''}
+                        </Badge>
+                      )}
+                      {booking.areaUnverified && (
+                        <Badge variant="outline" className="text-[10px] text-slate-600 border-slate-300 bg-slate-50 gap-1">
+                          Area not verified for this postcode
                         </Badge>
                       )}
                       {!booking.matchesMyTime && (

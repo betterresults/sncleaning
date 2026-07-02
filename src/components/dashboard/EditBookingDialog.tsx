@@ -23,7 +23,7 @@ import { formatPropertyDetails, formatAdditionalDetails } from '@/utils/bookingF
 import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
-import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { resolvePostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { computeBookingTimeWindow, describeTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 
@@ -43,6 +43,7 @@ interface Cleaner {
   offersService: boolean;
   coversArea: boolean;
   coversTime: boolean;
+  coverageAreaIds: string[];
 }
 
 interface SalesAgent {
@@ -61,6 +62,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const [subCleanersKey, setSubCleanersKey] = useState(0);
   const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
   const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
+  const [bookingAreaUnverified, setBookingAreaUnverified] = useState(false);
   
   const handleSubCleanerChange = () => {
     setSubCleanersKey(prev => prev + 1);
@@ -213,6 +215,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         setBookingAreaName(
           resolvedArea ? (resolvedArea.boroughName === 'General' ? resolvedArea.regionName : resolvedArea.boroughName) : null
         );
+        setBookingAreaUnverified(isAreaUnverified(formData.postcode, resolvedArea));
       });
     }, 400);
     return () => clearTimeout(handle);
@@ -243,6 +246,7 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         offersService: c.offersService,
         coversArea: c.coversArea,
         coversTime: c.coversTime,
+        coverageAreaIds: c.coverageAreaIds,
       })));
     }
   }, [linkedCleaners]);
@@ -1022,6 +1026,11 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="cleanerId" className="text-sm font-medium">Assigned Cleaner</Label>
+                      {bookingAreaUnverified && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Area coverage couldn't be verified for this postcode — cleaners with restricted areas may still be shown.
+                        </p>
+                      )}
                       <Select 
                         value={formData.cleanerId?.toString() || 'none'} 
                         onValueChange={(value) => handleInputChange('cleanerId', value === 'none' ? null : parseInt(value))}
@@ -1043,6 +1052,11 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
                                 {!cleaner.coversArea && bookingAreaName && (
                                   <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                                     Outside {bookingAreaName}
+                                  </Badge>
+                                )}
+                                {bookingAreaUnverified && cleaner.coverageAreaIds.length > 0 && (
+                                  <Badge variant="outline" className="text-[10px] text-slate-600 border-slate-300 bg-slate-50">
+                                    Area not verified
                                   </Badge>
                                 )}
                                 {!cleaner.coversTime && (

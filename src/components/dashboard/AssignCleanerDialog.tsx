@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
-import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
+import { resolvePostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { computeBookingTimeWindow, describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 import { 
   fetchAdditionalCleaners, 
@@ -35,6 +35,7 @@ interface Cleaner {
   offersService: boolean;
   coversArea: boolean;
   coversTime: boolean;
+  coverageAreaIds: string[];
 }
 
 interface AssignCleanerDialogProps {
@@ -58,6 +59,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [bookingServiceType, setBookingServiceType] = useState<string | null>(null);
   const [bookingBoroughId, setBookingBoroughId] = useState<string | null>(null);
   const [bookingAreaName, setBookingAreaName] = useState<string | null>(null);
+  const [bookingAreaUnverified, setBookingAreaUnverified] = useState(false);
   const [bookingTimeWindow, setBookingTimeWindow] = useState<BookingTimeWindow | null>(null);
   const { data: serviceTypes = [] } = useServiceTypes();
   const [primaryCleanerHours, setPrimaryCleanerHours] = useState<number>(0);
@@ -116,6 +118,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       const resolvedArea = await resolvePostcodeToBorough(data.postcode);
       setBookingBoroughId(resolvedArea?.boroughId ?? null);
       setBookingAreaName(resolvedArea?.boroughName === 'General' ? resolvedArea.regionName : resolvedArea?.boroughName ?? null);
+      setBookingAreaUnverified(isAreaUnverified(data.postcode, resolvedArea));
       
       // Determine payment method based on existing data
       if (data.cleaner_rate != null && data.cleaner_rate > 0) {
@@ -148,6 +151,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         offersService: c.offersService,
         coversArea: c.coversArea,
         coversTime: c.coversTime,
+        coverageAreaIds: c.coverageAreaIds,
       })));
     }
   }, [linkedCleaners]);
@@ -427,6 +431,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
           {/* Main Cleaner Section */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Primary Cleaner</Label>
+            {bookingAreaUnverified && (
+              <p className="text-[11px] text-muted-foreground">
+                Area coverage couldn't be verified for this postcode — cleaners with restricted areas may still be shown.
+              </p>
+            )}
             <Select value={selectedCleaner} onValueChange={setSelectedCleaner}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a cleaner" />
@@ -450,6 +459,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                           {!cleaner.coversArea && bookingAreaName && (
                             <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                               Outside {bookingAreaName}
+                            </Badge>
+                          )}
+                          {bookingAreaUnverified && cleaner.coverageAreaIds.length > 0 && (
+                            <Badge variant="outline" className="text-[10px] text-slate-600 border-slate-300 bg-slate-50">
+                              Area not verified
                             </Badge>
                           )}
                           {!cleaner.coversTime && (
@@ -615,6 +629,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                               {!cleaner.coversArea && bookingAreaName && (
                                 <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                                   Outside area
+                                </Badge>
+                              )}
+                              {bookingAreaUnverified && cleaner.coverageAreaIds.length > 0 && (
+                                <Badge variant="outline" className="text-[10px] text-slate-600 border-slate-300 bg-slate-50">
+                                  Area not verified
                                 </Badge>
                               )}
                               {!cleaner.coversTime && (
