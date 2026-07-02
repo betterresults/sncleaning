@@ -88,3 +88,14 @@ export const matchPostcodeToBorough = (
 
   return null;
 };
+
+// True when a postcode was actually entered but couldn't be resolved to any configured
+// coverage borough (as opposed to no postcode being entered yet, or a normal resolution
+// succeeding). Coverage-area matching treats an unresolved postcode as a wildcard match
+// (nobody is penalized for a gap in our postcode data), but callers should still surface
+// this distinctly from "no restriction configured" so admins/customers know area coverage
+// genuinely couldn't be checked for this address, rather than silently assuming it's fine.
+export const isAreaUnverified = (
+  postcode: string | null | undefined,
+  resolved: ResolvedBorough | null
+): boolean => !!postcode && !!postcode.trim() && !resolved;
