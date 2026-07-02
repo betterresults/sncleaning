@@ -955,6 +955,7 @@ export type Database = {
           first_name: string | null
           frontly_id: number | null
           full_name: string | null
+          has_equipment: boolean
           hourly_rate: number | null
           id: number
           ID: string | null
@@ -977,6 +978,7 @@ export type Database = {
           first_name?: string | null
           frontly_id?: number | null
           full_name?: string | null
+          has_equipment?: boolean
           hourly_rate?: number | null
           id?: number
           ID?: string | null
@@ -999,6 +1001,7 @@ export type Database = {
           first_name?: string | null
           frontly_id?: number | null
           full_name?: string | null
+          has_equipment?: boolean
           hourly_rate?: number | null
           id?: number
           ID?: string | null
@@ -3148,20 +3151,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_assignable_cleaners: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: number
-          first_name: string
-          last_name: string
-          full_name: string
-          hourly_rate: number | null
-          presentage_rate: number | null
-          service_type_keys: string[]
-          coverage_area_ids: string[]
-          working_hours: Json
-        }[]
-      }
       authorize: {
         Args: {
           requested_permission: Database["public"]["Enums"]["app_permission"]
@@ -3177,6 +3166,21 @@ export type Database = {
         }[]
       }
       generate_recurring_bookings: { Args: never; Returns: undefined }
+      get_assignable_cleaners: {
+        Args: never
+        Returns: {
+          coverage_area_ids: string[]
+          first_name: string
+          full_name: string
+          has_equipment: boolean
+          hourly_rate: number
+          id: number
+          last_name: string
+          presentage_rate: number
+          service_type_keys: string[]
+          working_hours: Json
+        }[]
+      }
       get_current_user_role: { Args: never; Returns: string }
       get_user_cleaner_id: { Args: { _user_id: string }; Returns: number }
       get_user_customer_id: { Args: { _user_id: string }; Returns: number }

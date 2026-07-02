@@ -1746,6 +1746,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
               onCleanerSelect={handleCleanerSelect}
               bookingTimeWindow={bookingTimeWindow}
               serviceType={formData.serviceType || null}
+              postcode={formData.postcode || null}
             />
             
             {formData.cleanerId && (

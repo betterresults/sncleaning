@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -96,6 +97,7 @@ interface CleanerData {
   DBS: string;
   DBS_date: string;
   has_account?: boolean;
+  has_equipment?: boolean;
 }
 
 const EnhancedCleanerManagement = () => {
@@ -123,7 +125,8 @@ const EnhancedCleanerManagement = () => {
     services: '',
     years: 0,
     DBS: 'No',
-    DBS_date: ''
+    DBS_date: '',
+    has_equipment: true
   });
   const [newServiceTypeKeys, setNewServiceTypeKeys] = useState<string[]>([]);
   const [newAreaIds, setNewAreaIds] = useState<string[]>([]);
@@ -246,7 +249,8 @@ const EnhancedCleanerManagement = () => {
       services: cleaner.services,
       years: cleaner.years,
       DBS: cleaner.DBS,
-      DBS_date: cleaner.DBS_date
+      DBS_date: cleaner.DBS_date,
+      has_equipment: cleaner.has_equipment ?? true
     });
     setEditServiceTypeKeys(cleanerServiceTypeMap.get(cleaner.id) || []);
     setEditAreaIds(cleanerCoverageAreaMap.get(cleaner.id) || []);
@@ -333,6 +337,7 @@ const EnhancedCleanerManagement = () => {
           years: newCleanerData.years,
           DBS: newCleanerData.DBS,
           DBS_date: newCleanerData.DBS_date || null,
+          has_equipment: newCleanerData.has_equipment,
           full_name: `${newCleanerData.first_name} ${newCleanerData.last_name}`.trim(),
           rating: 0,
           reviews: 0,
@@ -395,7 +400,8 @@ const EnhancedCleanerManagement = () => {
         services: '',
         years: 0,
         DBS: 'No',
-        DBS_date: ''
+        DBS_date: '',
+        has_equipment: true
       });
       setNewServiceTypeKeys([]);
       setNewAreaIds([]);
@@ -575,6 +581,18 @@ const EnhancedCleanerManagement = () => {
                         onToggle={(boroughId) => toggleServiceTypeKey(editAreaIds, setEditAreaIds, boroughId)}
                       />
                     </div>
+                    <div className="flex items-center justify-between bg-white/60 border rounded-md px-3 py-2">
+                      <div>
+                        <Label className="text-xs font-medium text-muted-foreground">Has own equipment</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Toggle off if this cleaner does not bring their own vacuum/mop/supplies.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={editData.has_equipment ?? true}
+                        onCheckedChange={(checked) => setEditData({ ...editData, has_equipment: checked })}
+                      />
+                    </div>
                     <div className="flex gap-2">
                       <Button 
                         onClick={() => updateCleaner(cleaner.id)}
@@ -688,6 +706,19 @@ const EnhancedCleanerManagement = () => {
                             </>
                           );
                         })()}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
+                        <span className="text-muted-foreground font-medium">Equipment:</span>
+                        {cleaner.has_equipment === false ? (
+                          <Badge variant="outline" className="text-xs text-amber-700 border-amber-300 bg-amber-50">
+                            No own equipment
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            Brings own equipment
+                          </Badge>
+                        )}
                       </div>
 
                       {cleaner.services && (
@@ -869,6 +900,19 @@ const EnhancedCleanerManagement = () => {
               <AreaCoverageSelector
                 selectedIds={newAreaIds}
                 onToggle={(boroughId) => toggleServiceTypeKey(newAreaIds, setNewAreaIds, boroughId)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between border rounded-md px-3 py-2">
+              <div>
+                <Label className="mb-1 block">Has own equipment</Label>
+                <p className="text-xs text-gray-500">
+                  On by default — toggle off if this cleaner does not bring their own vacuum/mop/supplies.
+                </p>
+              </div>
+              <Switch
+                checked={newCleanerData.has_equipment}
+                onCheckedChange={(checked) => setNewCleanerData({ ...newCleanerData, has_equipment: checked })}
               />
             </div>
 

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import CreateCleanerDialog from './CreateCleanerDialog';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
+import { resolvePostcodeToBorough } from '@/lib/postcodeCoverage';
 import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings';
 
 interface Cleaner {
@@ -19,6 +20,7 @@ interface Cleaner {
   phone: number;
   coversTime?: boolean;
   offersService?: boolean;
+  coversArea?: boolean;
 }
 
 interface CleanerSelectorProps {
@@ -32,15 +34,36 @@ interface CleanerSelectorProps {
    * signal), a customer shouldn't be able to book a cleaner who doesn't do that kind of job.
    */
   serviceType?: string | null;
+  /**
+   * The booking's raw postcode. Resolved (debounced) to a coverage borough internally so
+   * cleaners who aren't configured to cover that area are disabled in the dropdown — same
+   * hard-block treatment as serviceType, since a cleaner outside the area literally can't
+   * be dispatched there.
+   */
+  postcode?: string | null;
 }
 
-const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType }: CleanerSelectorProps) => {
+const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, postcode }: CleanerSelectorProps) => {
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
   const [selectedCleanerId, setSelectedCleanerId] = useState<string>('');
+  const [boroughId, setBoroughId] = useState<string | null>(null);
+  const [areaName, setAreaName] = useState<string | null>(null);
   const { data: serviceTypes = [] } = useServiceTypes();
 
+  // Resolve the postcode to a coverage borough, debounced so we're not hitting the
+  // DB on every keystroke while the customer is still typing.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      resolvePostcodeToBorough(postcode).then((resolved) => {
+        setBoroughId(resolved?.boroughId ?? null);
+        setAreaName(resolved ? (resolved.boroughName === 'General' ? resolved.regionName : resolved.boroughName) : null);
+      });
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [postcode]);
+
   // Use the shared hook for fetching linked cleaners
-  const { cleaners: linkedCleaners, loading } = useLinkedCleaners(true, serviceType, null, bookingTimeWindow);
+  const { cleaners: linkedCleaners, loading } = useLinkedCleaners(true, serviceType, boroughId, bookingTimeWindow);
 
   // Sync linked cleaners to local state
   useEffect(() => {
@@ -54,11 +77,13 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType }: Cl
         phone: 0,
         coversTime: c.coversTime,
         offersService: c.offersService,
+        coversArea: c.coversArea,
       })));
     }
   }, [linkedCleaners]);
 
-  const isAssignable = (cleaner: Cleaner) => cleaner.coversTime !== false && cleaner.offersService !== false;
+  const isAssignable = (cleaner: Cleaner) =>
+    cleaner.coversTime !== false && cleaner.offersService !== false && cleaner.coversArea !== false;
 
   // If the booking's time window or service type changes (e.g. the date/time or
   // service is edited after a cleaner was already selected) and the selected cleaner
@@ -118,13 +143,19 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType }: Cl
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim();
                   const coversTime = cleaner.coversTime !== false;
                   const offersService = cleaner.offersService !== false;
+                  const coversArea = cleaner.coversArea !== false;
                   return (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!coversTime || !offersService}>
+                    <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!coversTime || !offersService || !coversArea}>
                       <span className="flex items-center gap-2">
                         {displayName} {cleaner.email && `- ${cleaner.email}`}
                         {!offersService && serviceType && (
                           <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
                             Doesn't offer {getServiceTypeLabel(serviceType, serviceTypes)}
+                          </Badge>
+                        )}
+                        {!coversArea && areaName && (
+                          <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 bg-amber-50">
+                            Outside {areaName}
                           </Badge>
                         )}
                         {!coversTime && (

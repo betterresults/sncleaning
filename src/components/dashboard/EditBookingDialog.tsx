@@ -118,17 +118,14 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
   const formatDateTimeForInput = (dateTimeString: string) => {
     if (!dateTimeString) return '';
     try {
-      const date = new Date(dateTimeString);
-      if (isNaN(date.getTime())) return '';
-      
-      // Use local time instead of UTC to prevent timezone issues
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
+      // date_time is stored as "wall-clock time tagged as UTC" (see NewBookingForm's
+      // dateTimeStr comment) - e.g. a booking made for 9am is stored as
+      // "...T09:00:00+00:00" regardless of what timezone it was booked from. Extracting
+      // the digits directly (instead of `new Date(...)` + local getters) means this
+      // always shows the actual booked time, not that time shifted by the admin's
+      // browser timezone offset.
+      const match = dateTimeString.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+      return match ? `${match[1]}T${match[2]}` : '';
     } catch (error) {
       console.error('Error formatting date:', error);
       return '';
@@ -201,15 +198,25 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
       });
       const isAirbnb = booking.service_type?.toLowerCase() === 'airbnb';
       setIsSameDayCleaning(isAirbnb && frequently === 'Same Day');
+    }
+  }, [booking, open]);
 
-      resolvePostcodeToBorough(booking.postcode).then((resolvedArea) => {
+  // Postcode is live-editable in this dialog (see the "Postcode" field below), so
+  // re-resolve the coverage area whenever it changes rather than only once at load —
+  // otherwise editing the postcode wouldn't update which cleaners are flagged as
+  // "Outside {area}", unlike the time window which already recomputes from formData.
+  useEffect(() => {
+    if (!open) return;
+    const handle = setTimeout(() => {
+      resolvePostcodeToBorough(formData.postcode).then((resolvedArea) => {
         setBookingBoroughId(resolvedArea?.boroughId ?? null);
         setBookingAreaName(
           resolvedArea ? (resolvedArea.boroughName === 'General' ? resolvedArea.regionName : resolvedArea.boroughName) : null
         );
       });
-    }
-  }, [booking, open]);
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [formData.postcode, open]);
 
   // Normalize legacy service_type values (some rows store a display label instead
   // of the canonical company_settings key) so cleaner-service matching still works.

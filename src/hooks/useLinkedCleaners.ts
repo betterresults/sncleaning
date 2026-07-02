@@ -27,6 +27,10 @@ export interface LinkedCleaner {
   workingHours: WorkingHourBlock[];
   /** Whether this cleaner's working hours cover the `bookingTimeWindow` passed into the hook (always true if none was passed). Unlike service/area, this is enforced as a hard block in assignment UIs. */
   coversTime: boolean;
+  /** Whether this cleaner brings their own cleaning equipment. A simple toggle for now (no equipment-type breakdown). */
+  hasEquipment: boolean;
+  /** Whether this cleaner meets the `requiresEquipment` flag passed into the hook (always true if not passed/false). Soft signal, same treatment as service/area. */
+  meetsEquipment: boolean;
 }
 
 /**
@@ -43,12 +47,17 @@ export interface LinkedCleaner {
  * compute `coversTime`. Unlike service/area, callers should treat `coversTime`
  * as a hard block — a cleaner whose working hours don't cover the job's time
  * range shouldn't be assignable to it.
+ *
+ * Pass `requiresEquipment` (true if the booking needs the cleaner to bring their
+ * own equipment) to compute `meetsEquipment`. Soft signal only, same as
+ * service/area — nothing is filtered out.
  */
 export const useLinkedCleaners = (
   enabled: boolean = true,
   serviceType?: string | null,
   boroughId?: string | null,
-  bookingTimeWindow?: BookingTimeWindow | null
+  bookingTimeWindow?: BookingTimeWindow | null,
+  requiresEquipment?: boolean | null
 ) => {
   const [cleaners, setCleaners] = useState<LinkedCleaner[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,16 +98,18 @@ export const useLinkedCleaners = (
           coversArea: cleanerCoversArea(coverageAreaIds, boroughId),
           workingHours,
           coversTime: cleanerCoversTime(workingHours, bookingTimeWindow ?? null),
+          hasEquipment: c.has_equipment ?? true,
+          meetsEquipment: !requiresEquipment || (c.has_equipment ?? true),
         };
       });
 
-      // Soft filter for service/area: keep everyone, just surface the best-matching
-      // cleaners first. Time is weighted the same way for sorting purposes, but
-      // callers should still treat coversTime as a hard block on selection.
+      // Soft filter for service/area/equipment: keep everyone, just surface the
+      // best-matching cleaners first. Time is weighted the same way for sorting
+      // purposes, but callers should still treat coversTime as a hard block on selection.
       enriched.sort(
         (a, b) =>
-          Number(b.offersService) + Number(b.coversArea) + Number(b.coversTime) -
-          (Number(a.offersService) + Number(a.coversArea) + Number(a.coversTime))
+          Number(b.offersService) + Number(b.coversArea) + Number(b.coversTime) + Number(b.meetsEquipment) -
+          (Number(a.offersService) + Number(a.coversArea) + Number(a.coversTime) + Number(a.meetsEquipment))
       );
 
       setCleaners(enriched);
@@ -115,7 +126,7 @@ export const useLinkedCleaners = (
       fetchCleaners();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, serviceType, boroughId, bookingTimeWindow?.dayOfWeek, bookingTimeWindow?.startMinutes, bookingTimeWindow?.endMinutes]);
+  }, [enabled, serviceType, boroughId, bookingTimeWindow?.dayOfWeek, bookingTimeWindow?.startMinutes, bookingTimeWindow?.endMinutes, requiresEquipment]);
 
   return { cleaners, loading, error, refetch: fetchCleaners };
 };
