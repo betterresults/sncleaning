@@ -30,8 +30,8 @@ export function useSMSConversations({ onSendError }: UseSMSConversationsOptions 
 
       if (error) throw error;
 
-      const grouped = (data || []).reduce(
-        (acc: Record<string, ConversationThread>, msg: SMSConversation) => {
+      const grouped = (data || []).reduce<Record<string, ConversationThread>>(
+        (acc, msg) => {
           const conversation: SMSConversation = {
             ...msg,
             direction: msg.direction as 'incoming' | 'outgoing',
