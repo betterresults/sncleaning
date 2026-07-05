@@ -7,6 +7,7 @@ import { ChatWithLastMessage } from '@/types/chat';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface BookingContact {
   id: string;
@@ -121,7 +122,7 @@ const CustomerContacts = ({
 
         bookingContacts.push({
           id: `booking-${booking.id}`,
-          name: `${booking.service_type || booking.cleaning_type || 'Cleaning'} - ${new Date(booking.date_time).toLocaleDateString()}`,
+          name: `${booking.service_type || booking.cleaning_type || 'Cleaning'} - ${formatUKLocaleDate(booking.date_time)}`,
           type: contactType,
           cleaner_id: cleanerId,
           bookings: [{
@@ -383,7 +384,7 @@ const CustomerContacts = ({
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                               <Calendar className="h-3 w-3" />
-                              <span>{new Date(booking.dateTime).toLocaleDateString()}</span>
+                              <span>{formatUKLocaleDate(booking.dateTime)}</span>
                               <MapPin className="h-3 w-3 ml-2" />
                               <span className="truncate">{booking.postcode}</span>
                             </div>

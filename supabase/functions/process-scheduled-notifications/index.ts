@@ -136,8 +136,10 @@ serve(async (req: Request) => {
           
           // Booking variables
           booking_id: bookingData.id?.toString() || '',
-          booking_date: bookingData.date_time ? new Date(bookingData.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'TBC',
-          booking_time: bookingData.time_only || (bookingData.date_time ? new Date(bookingData.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBC'),
+          // Pin to UTC — bookings.date_time stores London wall-clock digits under a
+          // hardcoded +00:00 suffix, so formatting in UTC preserves the intended UK time.
+          booking_date: bookingData.date_time ? new Date(bookingData.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'TBC',
+          booking_time: bookingData.time_only || (bookingData.date_time ? new Date(bookingData.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) : 'TBC'),
           service_type: bookingData.service_type || 'Cleaning Service',
           cleaning_type: bookingData.cleaning_type || '',
           address: bookingData.address || 'Address not specified',

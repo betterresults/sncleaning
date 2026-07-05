@@ -8,6 +8,7 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Calendar, DollarSign, Clock, User, CreditCard } from 'lucide-react';
 import { CollectPaymentMethodDialog } from './CollectPaymentMethodDialog';
 import SyncPaymentMethodsButton from './SyncPaymentMethodsButton';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Customer {
   id: number;
@@ -260,7 +261,7 @@ const CustomerPaymentsManager = () => {
                       <div>
                         <p className="font-medium">{booking.address}</p>
                         <p className="text-sm text-muted-foreground">
-                          {format(new Date(booking.date_time), 'MMM dd, yyyy HH:mm')} • 
+                          {formatUK(booking.date_time, 'MMM dd, yyyy HH:mm')} • 
                           {booking.payment_method || 'N/A'} • Status: {booking.payment_status || 'Unpaid'}
                         </p>
                       </div>

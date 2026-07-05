@@ -20,6 +20,7 @@ import { BookingsListActionsMenu } from './BookingsListActionsMenu';
 import { bookingListCardClass } from './bookingListCardClass';
 import type { Booking, BookingsListCardHandlers } from './types';
 import { getCleanerName, useBookingsListLabels } from './useBookingsListLabels';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface BookingsListCardProps {
   booking: Booking;
@@ -43,10 +44,10 @@ export function BookingsListCard({
   const bookingTime = isFlexibleTime
     ? '⏰ Flexible'
     : booking.date_time
-      ? format(new Date(booking.date_time), 'HH:mm')
+      ? formatUK(booking.date_time, 'HH:mm')
       : 'N/A';
-  const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
-  const bookingWeekday = booking.date_time ? format(new Date(booking.date_time), 'EEE') : '';
+  const bookingDate = booking.date_time ? formatUK(booking.date_time, 'dd MMM') : 'N/A';
+  const bookingWeekday = booking.date_time ? formatUK(booking.date_time, 'EEE') : '';
   const serviceBadgeColor = getServiceBadgeColor(booking.service_type);
   const serviceLabel = getServiceTypeLabel(booking.service_type);
 
@@ -62,8 +63,8 @@ export function BookingsListCard({
                   {/* Date/Time Box - Larger, more prominent */}
                   <div className="bg-primary/10 w-32 flex-shrink-0 flex items-center justify-center py-4">
                     <div className="text-center">
-                      <div className="text-lg font-bold text-foreground">{booking.date_time ? format(new Date(booking.date_time), 'EEEE') : ''}</div>
-                      <div className="text-base font-semibold text-foreground">{booking.date_time ? format(new Date(booking.date_time), 'd MMMM') : 'N/A'}</div>
+                      <div className="text-lg font-bold text-foreground">{booking.date_time ? formatUK(booking.date_time, 'EEEE') : ''}</div>
+                      <div className="text-base font-semibold text-foreground">{booking.date_time ? formatUK(booking.date_time, 'd MMMM') : 'N/A'}</div>
                       <div className={`text-2xl font-bold mt-1 ${isFlexibleTime ? 'text-orange-500' : 'text-primary'}`} title={isFlexibleTime ? 'Flexible arrival' : undefined}>
                         {bookingTime}
                       </div>

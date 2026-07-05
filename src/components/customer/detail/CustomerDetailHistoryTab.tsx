@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock } from 'lucide-react';
 import type { CustomerDetailHistoryTabProps } from './types';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 export function CustomerDetailHistoryTab({ bookings }: CustomerDetailHistoryTabProps) {
   return (
@@ -22,7 +23,7 @@ export function CustomerDetailHistoryTab({ bookings }: CustomerDetailHistoryTabP
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">
-                        {new Date(booking.date_time).toLocaleDateString()}
+                        {formatUKLocaleDate(booking.date_time)}
                       </span>
                       <Badge
                         variant={booking.payment_status === 'paid' ? 'default' : 'destructive'}

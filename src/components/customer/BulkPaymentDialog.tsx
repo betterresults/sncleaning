@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface UnpaidBooking {
   id: string;
@@ -82,7 +83,7 @@ export const BulkPaymentDialog: React.FC<BulkPaymentDialogProps> = ({
           bookings: selectedBookingData.map(booking => ({
             id: booking.id,
             amount: Math.round(booking.total_cost * 100), // Convert to cents
-            description: `${booking.cleaning_type} - ${format(new Date(booking.date_time), 'dd MMM yyyy')} at ${booking.address}`
+            description: `${booking.cleaning_type} - ${formatUK(booking.date_time, 'dd MMM yyyy')} at ${booking.address}`
           })),
           totalAmount: Math.round(totalAmount * 100)
         }
@@ -179,7 +180,7 @@ export const BulkPaymentDialog: React.FC<BulkPaymentDialogProps> = ({
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-4 w-4 text-muted-foreground" />
                                       <span className="font-medium">
-                                        {format(new Date(booking.date_time), 'dd MMM yyyy, HH:mm')}
+                                        {formatUK(booking.date_time, 'dd MMM yyyy, HH:mm')}
                                       </span>
                                       <Badge variant="destructive">{booking.payment_status}</Badge>
                                     </div>
@@ -227,7 +228,7 @@ export const BulkPaymentDialog: React.FC<BulkPaymentDialogProps> = ({
                                     <div className="flex items-center gap-2">
                                       <Calendar className="h-4 w-4 text-muted-foreground" />
                                       <span className="font-medium">
-                                        {format(new Date(booking.date_time), 'dd MMM yyyy')}
+                                        {formatUK(booking.date_time, 'dd MMM yyyy')}
                                       </span>
                                       <Badge variant="destructive">{booking.payment_status}</Badge>
                                     </div>

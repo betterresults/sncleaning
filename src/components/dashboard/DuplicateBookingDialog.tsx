@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -311,7 +312,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                 {booking.first_name} {booking.last_name} - {booking.cleaning_type || 'Cleaning Service'}
               </p>
               <p className="text-gray-500 text-sm">
-                {format(new Date(booking.date_time), 'EEEE, MMMM do, yyyy \'at\' HH:mm')}
+                {formatUK(booking.date_time, 'EEEE, MMMM do, yyyy \'at\' HH:mm')}
               </p>
             </div>
           )}

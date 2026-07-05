@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Calendar, Clock, MapPin, Loader2, Sparkles } from 'lucide-react';
 import WhatsNextSection from '@/components/landing/WhatsNextSection';
 import { trackMetaEvent } from '@/lib/metaCapi';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
@@ -463,18 +464,18 @@ const BookingConfirmation = () => {
               {booking.date_time ? (
                 <>
                   <p className="text-lg font-semibold text-gray-900">
-                    {new Date(booking.date_time).toLocaleDateString('en-GB', {
+                    {formatUKLocaleDate(booking.date_time, {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    })}
+                    }, 'en-GB')}
                   </p>
                   <p className="text-base text-gray-700">
-                    {new Date(booking.date_time).toLocaleTimeString('en-GB', {
+                    {formatUKLocaleTime(booking.date_time, {
                       hour: '2-digit',
                       minute: '2-digit'
-                    })}
+                    }, 'en-GB')}
                   </p>
                 </>
               ) : (

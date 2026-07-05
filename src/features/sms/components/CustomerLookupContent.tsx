@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { CustomerLookupResult } from '../types';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface CustomerLookupContentProps {
   lookupResult: CustomerLookupResult;
@@ -170,7 +171,7 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
                     {booking.date_time && (
                       <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        {format(new Date(booking.date_time), 'EEE, dd MMM yyyy HH:mm')}
+                        {formatUK(booking.date_time, 'EEE, dd MMM yyyy HH:mm')}
                       </p>
                     )}
 

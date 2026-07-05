@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface SubCleaner {
   cleaner_id: number;
@@ -97,7 +98,7 @@ export const ProfitTrackingTable = ({
               return (
                 <TableRow key={booking.id}>
                   <TableCell>
-                    {format(new Date(booking.date_time), 'MMM dd, yyyy')}
+                    {formatUK(booking.date_time, 'MMM dd, yyyy')}
                   </TableCell>
                   <TableCell>{customerName}</TableCell>
                   <TableCell>

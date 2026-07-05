@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MessageCircle, Building2, User, Clock, Users } from 'lucide-react';
 import { ChatWithLastMessage } from '@/types/chat';
 import { formatDistanceToNow } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface MessageListProps {
   chats: ChatWithLastMessage[];
@@ -29,7 +30,7 @@ const WhatsAppMessageList = ({ chats, activeChat, onSelectChat, onSwitchToContac
 
   const getChatSubtext = (chat: ChatWithLastMessage) => {
     if (chat.booking) {
-      return `${chat.booking.service_type} - ${new Date(chat.booking.date_time).toLocaleDateString()}`;
+      return `${chat.booking.service_type} - ${formatUKLocaleDate(chat.booking.date_time)}`;
     }
     return '';
   };

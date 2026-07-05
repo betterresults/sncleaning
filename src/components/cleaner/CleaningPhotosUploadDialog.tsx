@@ -12,6 +12,7 @@ import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as Imag
 import { compressImage } from '@/utils/imageCompression';
 import { isCapacitor, getPlatform } from '@/utils/capacitor';
 import { pickFilesNative } from '@/utils/nativeFilePicker';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -1112,7 +1113,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
             <span className="text-xs text-muted-foreground ml-2">• {UPLOADER_VERSION}</span>
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {booking.address} • {booking.postcode} • {new Date(booking.date_time).toLocaleDateString()}
+            {booking.address} • {booking.postcode} • {formatUKLocaleDate(booking.date_time)}
           </p>
           
         </DialogHeader>

@@ -10,6 +10,7 @@ import { Loader2, CreditCard, FileText, Users, Link2, Split } from 'lucide-react
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -128,7 +129,7 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
               email: booking.email,
               name: `${booking.first_name} ${booking.last_name || ''}`.trim(),
               amount: typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost,
-              description: `Cleaning Service - ${format(new Date(booking.date_time), 'dd MMM yyyy')}`,
+              description: `Cleaning Service - ${formatUK(booking.date_time, 'dd MMM yyyy')}`,
               booking_id: booking.id,
               collect_payment_method: true,
             }
@@ -142,12 +143,12 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
               body: {
                 recipient_email: booking.email,
                 recipient_name: `${booking.first_name} ${booking.last_name || ''}`.trim(),
-                custom_subject: `Payment for Cleaning Service - ${format(new Date(booking.date_time), 'dd MMM yyyy')}`,
+                custom_subject: `Payment for Cleaning Service - ${formatUK(booking.date_time, 'dd MMM yyyy')}`,
                 custom_content: `
                   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; background-color: #fafafa; padding: 40px 20px;">
                     <div style="background-color: white; border-radius: 8px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
                       <h2 style="color: hsl(196, 62%, 25%); font-size: 22px; margin: 0 0 16px;">Complete Your Payment</h2>
-                      <p style="color: hsl(210, 20%, 15%); font-size: 16px;">Please complete your payment of <strong>£${(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</strong> for your cleaning service on ${format(new Date(booking.date_time), 'dd MMM yyyy')}.</p>
+                      <p style="color: hsl(210, 20%, 15%); font-size: 16px;">Please complete your payment of <strong>£${(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</strong> for your cleaning service on ${formatUK(booking.date_time, 'dd MMM yyyy')}.</p>
                       
                       <div style="background-color: hsl(45, 100%, 96%); border-left: 4px solid hsl(45, 100%, 51%); padding: 16px; margin: 20px 0; border-radius: 4px;">
                         <h3 style="color: hsl(45, 100%, 35%); margin: 0 0 10px 0; font-size: 16px;">🔔 Important: We've Moved to Automatic Invoices</h3>
@@ -210,11 +211,11 @@ const BulkInvoiceDialog = ({ open, onOpenChange, selectedBookings, onSuccess }: 
       // Generate itemized service list
       const serviceItems = selectedBookings.map(booking => {
         const cost = typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost;
-        const date = new Date(booking.date_time).toLocaleDateString('en-GB', {
+        const date = formatUKLocaleDate(booking.date_time, {
           day: '2-digit',
           month: 'short',
           year: 'numeric'
-        });
+        }, 'en-GB');
         return `• ${date} - ${booking.address} - £${cost.toFixed(2)}`;
       }).join('\n');
 

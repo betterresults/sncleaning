@@ -19,6 +19,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { useToast } from '@/hooks/use-toast';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 const CustomerDashboard = () => {
   const { user, userRole, customerId, cleanerId, signOut, loading } = useAuth();
@@ -91,7 +92,7 @@ const CustomerDashboard = () => {
                           <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-white rounded border border-red-200">
                             <div className="space-y-1">
                               <p className="font-medium text-gray-900">
-                                {new Date(booking.date_time).toLocaleDateString('en-GB')} - {booking.address}
+                                {formatUKLocaleDate(booking.date_time, undefined, 'en-GB')} - {booking.address}
                               </p>
                               <p className="text-sm text-gray-600">
                                 Amount: £{parseFloat(String(booking.total_cost ?? '0')).toFixed(2)} • {daysOverdue} days overdue
@@ -213,7 +214,7 @@ const CustomerDashboard = () => {
                                         <div>
                                           <div className="font-medium text-sm">{booking.cleaning_type}</div>
                                           <div className="text-xs text-gray-500">
-                                            {new Date(booking.date_time).toLocaleDateString('en-GB')} • {booking.address}
+                                            {formatUKLocaleDate(booking.date_time, undefined, 'en-GB')} • {booking.address}
                                           </div>
                                         </div>
                                          <div className="text-right">
@@ -243,7 +244,7 @@ const CustomerDashboard = () => {
                                         <div>
                                           <div className="font-medium text-sm">{order.cleaning_type}</div>
                                           <div className="text-xs text-gray-500">
-                                            {new Date(order.date_time).toLocaleDateString('en-GB')} • {order.address}
+                                            {formatUKLocaleDate(order.date_time, undefined, 'en-GB')} • {order.address}
                                           </div>
                                         </div>
                                          <div className="text-right">

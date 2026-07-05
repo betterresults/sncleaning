@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface SMSRecipient {
   id: string;
@@ -496,7 +497,7 @@ const SMSNotificationManager = () => {
       booking.id.toString().includes(searchLower) ||
       customerName.includes(searchLower) ||
       booking.address?.toLowerCase().includes(searchLower) ||
-      new Date(booking.date_time).toLocaleDateString().includes(searchLower)
+      formatUKLocaleDate(booking.date_time).includes(searchLower)
     );
   });
 
@@ -774,7 +775,7 @@ const SMSNotificationManager = () => {
                           #{booking.id} - {booking.first_name} {booking.last_name || ''}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(booking.date_time).toLocaleDateString()} - {booking.address?.substring(0, 30)}...
+                          {formatUKLocaleDate(booking.date_time)} - {booking.address?.substring(0, 30)}...
                         </span>
                       </div>
                     </SelectItem>

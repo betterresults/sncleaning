@@ -8,6 +8,7 @@ import { CheckSquare, Calendar, MapPin, Clock, Check, AlertCircle } from 'lucide
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface ChecklistWithBooking {
   id: string;
@@ -218,7 +219,7 @@ export function CleanerChecklistsList() {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {format(new Date(checklist.booking.date_time), 'PPP')}
+                      {formatUK(checklist.booking.date_time, 'PPP')}
                     </div>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />

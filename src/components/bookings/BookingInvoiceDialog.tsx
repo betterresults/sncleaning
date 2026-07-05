@@ -8,6 +8,7 @@ import { pdf } from '@react-pdf/renderer';
 import { BookingInvoicePDF } from './BookingInvoicePDF';
 import { format } from 'date-fns';
 import { Download, Send, Eye, FileText, Calendar, MapPin, User, Clock, Banknote } from 'lucide-react';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -67,7 +68,7 @@ export const BookingInvoiceDialog: React.FC<BookingInvoiceDialogProps> = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Invoice-${booking.id}-${format(new Date(booking.date_time), 'yyyy-MM-dd')}.pdf`;
+      link.download = `Invoice-${booking.id}-${formatUK(booking.date_time, 'yyyy-MM-dd')}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
 
@@ -95,7 +96,7 @@ export const BookingInvoiceDialog: React.FC<BookingInvoiceDialogProps> = ({
       const arrayBuffer = await blob.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-      const bookingDate = format(new Date(booking.date_time), 'dd MMMM yyyy');
+      const bookingDate = formatUK(booking.date_time, 'dd MMMM yyyy');
 
       // Send email with invoice
       const { error } = await supabase.functions.invoke('send-notification-email', {
@@ -134,7 +135,7 @@ export const BookingInvoiceDialog: React.FC<BookingInvoiceDialogProps> = ({
           `,
           attachments: [
             {
-              filename: `Invoice-${booking.id}-${format(new Date(booking.date_time), 'yyyy-MM-dd')}.pdf`,
+              filename: `Invoice-${booking.id}-${formatUK(booking.date_time, 'yyyy-MM-dd')}.pdf`,
               content: base64,
               type: 'application/pdf'
             }
@@ -163,11 +164,11 @@ export const BookingInvoiceDialog: React.FC<BookingInvoiceDialogProps> = ({
   };
 
   const bookingDate = booking.date_time 
-    ? format(new Date(booking.date_time), 'EEE, dd MMM yyyy')
+    ? formatUK(booking.date_time, 'EEE, dd MMM yyyy')
     : 'N/A';
   
   const bookingTime = booking.date_time 
-    ? format(new Date(booking.date_time), 'HH:mm')
+    ? formatUK(booking.date_time, 'HH:mm')
     : 'N/A';
 
   return (

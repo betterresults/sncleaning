@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Send, TestTube, Eye, Search, Calendar } from "lucide-react";
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface EmailTemplate {
   id: string;
@@ -255,8 +256,8 @@ export const NotificationTestInterface = () => {
       customer_first_name: customer.first_name,
       customer_last_name: customer.last_name,
       customer_email: customer.email,
-      booking_date: new Date(booking.date_time).toLocaleDateString(),
-      booking_time: new Date(booking.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      booking_date: formatUKLocaleDate(booking.date_time),
+      booking_time: formatUKLocaleTime(booking.date_time, { hour: '2-digit', minute: '2-digit' }, []),
       service_type: formatServiceType(booking.service_type),
       address: booking.address || 'Address not specified',
       total_cost: booking.total_cost?.toString() || '0',
@@ -282,7 +283,7 @@ export const NotificationTestInterface = () => {
       customer?.last_name?.toLowerCase().includes(searchLower) ||
       customer?.email?.toLowerCase().includes(searchLower) ||
       booking.address?.toLowerCase().includes(searchLower) ||
-      new Date(booking.date_time).toLocaleDateString().includes(searchLower)
+      formatUKLocaleDate(booking.date_time).includes(searchLower)
     );
   });
 
@@ -405,7 +406,7 @@ export const NotificationTestInterface = () => {
                               #{booking.id} - {customer ? `${customer.first_name} ${customer.last_name}` : 'Unknown'}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(booking.date_time).toLocaleDateString()} - {booking.address?.substring(0, 30)}...
+                              {formatUKLocaleDate(booking.date_time)} - {booking.address?.substring(0, 30)}...
                             </span>
                           </div>
                         </SelectItem>

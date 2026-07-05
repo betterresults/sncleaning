@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PastBookingsListActionsMenu } from './PastBookingsListActionsMenu';
 import type { PastBooking, PastBookingsListCardHandlers } from './types';
 import { getPastCleanerName, usePastBookingsListLabels } from './usePastBookingsListLabels';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface PastBookingsListCardProps {
   booking: PastBooking;
@@ -21,10 +22,10 @@ export function PastBookingsListCard({ booking, handlers }: PastBookingsListCard
   const isUnsigned = !booking.cleaner;
   const cleanerName = getPastCleanerName(booking);
   const timeFromTimeOnly = booking.time_only ? String(booking.time_only).slice(0, 5) : null;
-  const timeFromDate = booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : null;
+  const timeFromDate = booking.date_time ? formatUK(booking.date_time, 'HH:mm') : null;
   const bookingTime = timeFromTimeOnly ?? timeFromDate ?? '—';
   const isTimeMissing = !timeFromTimeOnly && !timeFromDate;
-  const bookingDate = booking.date_time ? format(new Date(booking.date_time), 'dd MMM') : 'N/A';
+  const bookingDate = booking.date_time ? formatUK(booking.date_time, 'dd MMM') : 'N/A';
   const serviceBadgeColor = getServiceBadgeColor(booking.service_type);
   const serviceLabel = getServiceTypeLabel(booking.service_type);
   const cleaningLabel = getCleaningTypeLabel(booking.cleaning_type);

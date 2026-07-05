@@ -7,6 +7,7 @@ import { ArrowLeft, Building2, User, Calendar, MapPin, MessageCircle, Plus, User
 import { ChatWithLastMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface BookingContact {
   id: string;
@@ -331,7 +332,7 @@ const WhatsAppContactList = ({
                           <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Calendar className="h-2 w-2 sm:h-3 sm:w-3" />
-                              <span>{new Date(booking.dateTime).toLocaleDateString()}</span>
+                              <span>{formatUKLocaleDate(booking.dateTime)}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <MapPin className="h-2 w-2 sm:h-3 sm:w-3" />

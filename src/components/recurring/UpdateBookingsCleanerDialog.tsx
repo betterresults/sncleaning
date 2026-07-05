@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface AffectedBooking {
   id: number;
@@ -246,7 +247,7 @@ export default function UpdateBookingsCleanerDialog({
                           />
                           <Label htmlFor={`booking-${booking.id}`} className="flex-1 cursor-pointer">
                             <div className="font-medium">
-                              {format(new Date(booking.date_time), 'PPP p')}
+                              {formatUK(booking.date_time, 'PPP p')}
                             </div>
                             <div className="text-muted-foreground">{booking.address}</div>
                             <div className="text-xs text-muted-foreground">

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeCleaningTypeKey, normalizeServiceTypeKey, correctBookingTypes } from '@/utils/bookingFormatters';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface CleanerBookingCardProps {
   booking: Booking;
@@ -96,19 +97,19 @@ const CleanerBookingCard = ({
           <div className="flex items-center gap-2 text-muted-foreground min-w-0 flex-1">
             <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="font-medium truncate">
-              {new Date(booking.date_time).toLocaleDateString('en-GB', { 
+              {formatUKLocaleDate(booking.date_time, { 
                 weekday: 'short',
                 day: 'numeric', 
                 month: 'short', 
                 year: 'numeric' 
-              })}, {isFlexibleTime ? (
+              }, 'en-GB')}, {isFlexibleTime ? (
                 <span className="text-orange-500" title="Customer requested flexible arrival time">⏰ Flexible</span>
               ) : (
-                new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                formatUKLocaleTime(booking.date_time, { 
                   hour: 'numeric', 
                   minute: '2-digit',
                   hour12: true 
-                })
+                }, 'en-GB')
               )}
             </span>
           </div>

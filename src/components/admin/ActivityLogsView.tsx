@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface ActivityLog {
   id: string;
@@ -310,7 +311,7 @@ const ActivityLogsView = () => {
                         <div className="space-y-1">
                           <div className="font-medium">#{log.booking_info.id}</div>
                           <div className="text-xs text-muted-foreground">
-                            {format(new Date(log.booking_info.date_time), 'MMM dd, HH:mm')}
+                            {formatUK(log.booking_info.date_time, 'MMM dd, HH:mm')}
                           </div>
                           <div className="text-xs text-muted-foreground max-w-32 truncate">
                             {log.booking_info.address}

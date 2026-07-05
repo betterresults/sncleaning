@@ -7,6 +7,7 @@ import { CreditCard, Loader2, CheckCircle, AlertCircle, Calendar, Star } from 'l
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { playSuccessSound } from '@/utils/soundEffects';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface UnpaidBooking {
   id: string;
@@ -379,7 +380,7 @@ const CustomerDirectPaymentDialog = ({
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-gray-500" />
                                 <span className="font-medium">
-                                  {new Date(booking.date_time).toLocaleDateString()}
+                                  {formatUKLocaleDate(booking.date_time)}
                                 </span>
                                 <Badge variant="outline" className="text-xs">
                                   {booking.source === 'past_booking' ? 'Cleaning' : 'Linen'}
