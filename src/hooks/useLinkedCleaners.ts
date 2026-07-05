@@ -84,7 +84,7 @@ export const useLinkedCleaners = (
       const enriched: LinkedCleaner[] = (data || []).map((c) => {
         const serviceTypeKeys = c.service_type_keys || [];
         const coverageAreaIds = c.coverage_area_ids || [];
-        const workingHours = (c.working_hours || []) as WorkingHourBlock[];
+        const workingHours = (c.working_hours || []) as unknown as WorkingHourBlock[];
         return {
           id: c.id,
           first_name: c.first_name,
