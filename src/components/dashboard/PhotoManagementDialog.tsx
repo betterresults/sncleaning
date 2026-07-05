@@ -18,7 +18,6 @@ import { savePhotoLocally, initPhotoStorage } from '@/utils/photoStorage';
 import { addToQueue } from '@/utils/photoQueue';
 import { startBackgroundSync, syncPhotos } from '@/utils/syncQueue';
 import {
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -28,6 +27,7 @@ import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleD
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface PhotoManagementDialogProps {
   open: boolean;
