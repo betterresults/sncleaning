@@ -1,52 +1,49 @@
-# Improve Meta CAPI Coverage for fbc / fbp
+## Problem
 
-Meta is flagging low event-match quality because `fbc` and `fbp` are missing on many server-side (CAPI) events. This plan closes those gaps. No creative / image work.
+Bookings are stored as London wall-clock time with a hardcoded `+00:00` suffix (e.g. an 08:00 London booking is saved as `2026-07-10T08:00:00+00:00`). Right now:
 
----
+- The **admin/customer/cleaner UI** formats these values with `new Date(...).toLocaleString(...)` **without a timezone**, so the displayed time follows the viewer's device timezone. A user in Bulgaria sees `10:00` (or `11:00` in DST) for an 08:00 London booking.
+- **Edge functions** (running in UTC) also format without a pinned timezone, so notifications currently show the correct London wall-clock — this is what creates the mismatch the user reported between the app UI and the emails/SMS.
+- A couple of components (`CleanerAvailability`, `BookingDetailsSheet`) already pin `timeZone: 'UTC'` and are correct.
 
-## Current behavior (verified in code)
+Goal: every date/time derived from `bookings.date_time` / `end_date_time` (and the equivalent columns on `past_bookings`, `quote_leads`, `recurring_services`) must show UK time for every viewer, regardless of their device timezone, and must match what customers/cleaners receive in emails and SMS.
 
-- `index.html` loads the Meta Pixel which auto-sets `_fbp` and `_fbc` cookies on first pageview.
-- `src/components/FbclidCapture.tsx` rewrites `_fbc` on any SPA route change that contains `?fbclid=`.
-- `src/lib/metaCapi.ts` reads `_fbc` / `_fbp` from cookies and forwards them to the `meta-capi-track` edge function.
-- `supabase/functions/meta-capi-track/index.ts` passes them through to Meta.
-- Offline `Purchase` events (WhatsApp / phone bookings, per `mem://marketing/offline-reporting`) currently have **no** `fbc` / `fbp` because those leads never carry browser cookies into the admin reporting flow.
+## Approach
 
-## Gaps to fix
+1. **New utility `src/lib/ukTime.ts`** with a single source of truth for booking time formatting. Because the stored value already contains the London wall-clock digits under a `+00:00` suffix, all formatters pin `timeZone: 'UTC'`, which preserves those digits verbatim for every viewer. Exposed helpers (thin wrappers over `Intl.DateTimeFormat` and `date-fns`):
+   - `formatUKDate(value, pattern?)` — default `dd MMM yyyy`
+   - `formatUKTime(value)` — `HH:mm`
+   - `formatUKDateTime(value, pattern?)` — default `dd MMM yyyy HH:mm`
+   - `formatUKLong(value)` — `EEEE, d MMMM yyyy`
+   - `ukDateParts(value)` — `{ date, time, weekday }` for composed strings
+   - Internally uses `date-fns-tz`'s `formatInTimeZone(value, 'Europe/London', ...)` on the raw string (bypasses the misleading `+00:00`) so future data written with a real timezone offset is still handled correctly.
 
-1. **Cookie loss across sessions / Safari ITP.** `_fbc` and `_fbp` can be cleared or blocked. Mirror both into `localStorage` whenever we see them, and read back from storage as a fallback in `metaCapi.ts`.
-2. **Server-side `fbc` synthesis.** When the client sends no `fbc` but the request `event_source_url` or `Referer` contains `fbclid`, build `fb.1.<unix_ms>.<fbclid>` server-side.
-3. **Server-side `fbp` generation.** If `fbp` is absent, generate `fb.1.<unix_ms>.<10-digit-random>` server-side (Meta-compliant format) and return it so the client can persist it for future events in the same session.
-4. **Persist identifiers on the lead row.** Add `fbc`, `fbp`, `client_user_agent`, `client_ip` columns to `quote_leads`, and have `track-funnel-event` write them whenever a lead is upserted. This makes them available for later offline Purchase reporting.
-5. **Offline Purchase reporting.** When sending Purchase for WhatsApp / phone bookings, look up the matching `quote_leads` row (by phone — most reliable for offline channels) and forward the stored `fbc` / `fbp` / UA / IP.
-6. **Advanced-matching parity audit.** Make sure every `trackMetaEvent` call site passes `email`, `phone`, `first_name`, `last_name` when available (booking form, payment, confirmation). Boosts EMQ alongside fbc/fbp.
+2. **Refactor every UI usage tied to booking `date_time` / `end_date_time`** to call the new helpers instead of raw `new Date(...).toLocale*` or `format(new Date(...), ...)`. Files include (non-exhaustive, from grep):
+   - Dashboard: `UpcomingBookings`, `RecentActivity`, `PerformanceChart`, `PhotoManagementDialog`, `ManualEmailDialog`, `EditBookingDialog`, `EditPastBookingDialog`, `DuplicateBookingDialog`, `AssignCleanerDialog`, `DayBookingsDialog`, `AssignCleanerToPastBookingDialog`
+   - Admin: `BookingsTable`, `ActivityLogsView`, `AdminAddCleanerPayment`, `BulkEditBookings`
+   - Customer: `CustomerDashboard`, `CustomerUpcomingBookings`, `CustomerPastBookings`, `CustomerBookingPaymentDialog`, `EditBookingDialog`, `DuplicateBookingDialog`, `BulkPaymentDialog`, `AddressManager`, `detail/*Tab.tsx`
+   - Cleaner: `ViewBookingDialog`, `CleaningPhotosUploadDialog`, `BookingDetailsSheet` (align to helper)
+   - Bookings: `BookingInvoiceDialog`, `BookingsPDF`, `BookingConfirmation`
+   - Payments: `CleanerPaymentsManager`, `StripePaymentsDashboard`, `ProfitTrackingTable`
+   - SMS/Chat: `WhatsAppMessageList`, `CustomerLookupContent`
+   - Recurring: `UpdateBookingsCleanerDialog`, `AddRecurringBooking`
+   - Photos: `CleaningPhotosViewDialog`, `CustomerPhotos`, `CleanerChecklist`
 
-## Files to change
+3. **Notifications (edge functions)** — even though these coincidentally produce London digits today, pin the timezone explicitly so it stays correct if Supabase ever changes runtime TZ or the stored format is normalized:
+   - `process-scheduled-notifications`: `booking_date` / `booking_time` formatted with `timeZone: 'UTC'` (matches wall-clock) and `time_only` used as-is.
+   - `manual-authorize-booking`, `stripe-authorize-payment`, `stripe-collect-payment-method`, `check-incomplete-payments`, `stripe-webhook`, `auto-photo-notification`, `send-photo-notification`, `send-admin-quote-email`, `send-quote-email`, `invoiless-auto-invoice`: same pin.
+   - Add a small shared helper `supabase/functions/_shared/ukTime.ts` (imported per-function since edge functions can't share modules across folders — copy the tiny helper into each function to keep the "no subfolders" rule).
 
-- `src/components/FbclidCapture.tsx` — mirror `_fbc` to localStorage.
-- `src/lib/metaCapi.ts` — read `_fbc` / `_fbp` from cookie OR localStorage fallback; persist server-returned `fbp` back to both.
-- `supabase/functions/meta-capi-track/index.ts` — synthesize missing `fbc` from URL/Referer `fbclid`; generate `fbp` if absent; return the values used in the response body.
-- `supabase/functions/track-funnel-event/index.ts` — accept and persist `fbc`, `fbp`, `client_user_agent`, `client_ip` on `quote_leads` upserts.
-- Whichever edge function emits offline Purchases (located during build) — look up `quote_leads` by phone and forward stored identifiers.
-- Quick audit pass in `src/features/booking/**` + `src/pages/BookingConfirmation.tsx` for missing user fields on `trackMetaEvent` calls.
-
-## Database migration
-
-```sql
-ALTER TABLE public.quote_leads
-  ADD COLUMN IF NOT EXISTS fbc text,
-  ADD COLUMN IF NOT EXISTS fbp text,
-  ADD COLUMN IF NOT EXISTS client_user_agent text,
-  ADD COLUMN IF NOT EXISTS client_ip text;
-```
-
-No new GRANTs needed — columns inherit existing `quote_leads` privileges.
+4. **Do not touch** stored data, date-picker inputs (`selectedDate` is a local Date the user picks), or unrelated visual/layout code. Business logic and pricing stay untouched per project rules.
 
 ## Verification
 
-- Meta Events Manager → Test Events with a real `?fbclid=...` URL → confirm `fbc` and `fbp` appear on Lead, InitiateCheckout, AddPaymentInfo, and Purchase.
-- Check Event Match Quality in Events Manager (should rise within 24–48h).
+- Run `tsgo` (typecheck) after the refactor.
+- Open the preview at `/admin` upcoming bookings and confirm the displayed time matches the value shown in a customer confirmation email for the same booking.
+- Spot-check `CustomerUpcomingBookings` and cleaner `ViewBookingDialog` for the same booking — all three surfaces should show the identical UK time regardless of device timezone.
 
----
+## Out of scope
 
-Ready to switch to build mode and ship this?
+- Changing how `date_time` is stored (still London wall-clock + `+00:00`).
+- Redesigning any component; only the formatting call changes.
+- Non-booking timestamps like `activity_logs.timestamp` or `sms.created_at`, which are real UTC and correctly shown in viewer-local time — unless the user later asks to force them to UK too.
