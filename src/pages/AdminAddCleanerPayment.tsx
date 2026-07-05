@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { Badge } from '@/components/ui/badge';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface PastBooking {
   id: number;
@@ -347,7 +348,7 @@ const AdminAddCleanerPayment = () => {
                                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                                       <span className="flex items-center gap-1">
                                         <Calendar className="h-3 w-3" />
-                                        {format(new Date(booking.date_time), 'dd MMM yyyy')}
+                                        {formatUK(booking.date_time, 'dd MMM yyyy')}
                                       </span>
                                       <span>#{booking.id}</span>
                                     </div>
@@ -395,7 +396,7 @@ const AdminAddCleanerPayment = () => {
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <div>
                               <p className="text-muted-foreground text-xs">Date & Time</p>
-                              <p className="font-medium">{format(new Date(selectedBooking.date_time), 'dd MMM yyyy HH:mm')}</p>
+                              <p className="font-medium">{formatUK(selectedBooking.date_time, 'dd MMM yyyy HH:mm')}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

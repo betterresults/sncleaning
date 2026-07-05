@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { format, subHours } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 const styles = StyleSheet.create({
   page: {
@@ -304,11 +305,11 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
   const formattedNotes = formatAdditionalDetails(booking.additional_details);
 
   const bookingDate = booking.date_time 
-    ? format(new Date(booking.date_time), 'dd MMMM yyyy')
+    ? formatUK(booking.date_time, 'dd MMMM yyyy')
     : 'N/A';
   
   const bookingTime = booking.date_time 
-    ? format(new Date(booking.date_time), 'HH:mm')
+    ? formatUK(booking.date_time, 'HH:mm')
     : 'N/A';
 
   const invoiceNumber = `INV-${booking.id.toString().padStart(6, '0')}`;

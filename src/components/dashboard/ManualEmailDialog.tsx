@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail, Send, Plus, X } from 'lucide-react';
 import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface EmailTemplate {
   id: string;
@@ -81,8 +82,8 @@ const ManualEmailDialog = ({ open, onOpenChange, booking }: ManualEmailDialogPro
         booking_id: booking.id.toString(),
         customer_name: `${booking.first_name || booking.customers?.first_name || ''} ${booking.last_name || booking.customers?.last_name || ''}`.trim() || 'Customer',
         customer_email: booking.email || '',
-        booking_date: booking.date_time ? new Date(booking.date_time).toLocaleDateString() : '',
-        booking_time: booking.date_time ? new Date(booking.date_time).toLocaleTimeString() : '',
+        booking_date: booking.date_time ? formatUKLocaleDate(booking.date_time) : '',
+        booking_time: booking.date_time ? formatUKLocaleTime(booking.date_time) : '',
         service_type: booking.service_type || '',
         address: booking.address || '',
         total_cost: booking.total_cost?.toString() || '0',

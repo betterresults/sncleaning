@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useSearchParams } from 'react-router-dom';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface PastBooking {
   id: number;
@@ -1000,11 +1001,11 @@ const CustomerPastBookings = () => {
                         <div
                           key={booking.id}
                           className="text-xs p-1 mb-1 rounded truncate bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer"
-                          title={`${booking.cleaning_type || booking.service_type} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                          title={`${booking.cleaning_type || booking.service_type} - ${booking.address} - ${formatUKLocaleTime(booking.date_time, { 
                             hour: 'numeric', 
                             minute: '2-digit',
                             hour12: true 
-                          })}`}
+                          }, 'en-GB')}`}
                         >
                           <div className="font-medium">{booking.cleaning_type || booking.service_type}</div>
                           <div className="text-[10px] opacity-80">{booking.address}</div>
@@ -1240,7 +1241,7 @@ const CustomerPastBookings = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-500 text-xs">
-                          {new Date(booking.date_time).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
+                          {formatUKLocaleDate(booking.date_time, { day: '2-digit', month: '2-digit' }, 'en-GB')}
                         </span>
                         <Button
                           variant="ghost"

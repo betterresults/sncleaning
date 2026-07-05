@@ -18,6 +18,7 @@ import { savePhotoLocally, initPhotoStorage } from '@/utils/photoStorage';
 import { addToQueue } from '@/utils/photoQueue';
 import { startBackgroundSync, syncPhotos } from '@/utils/syncQueue';
 import {
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -418,7 +419,7 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
                   <p className="text-sm text-muted-foreground mt-1">
                     {booking.first_name && booking.last_name 
                       ? `${booking.first_name} ${booking.last_name}` 
-                      : `Booking #${booking.id}`} · {new Date(booking.date_time).toLocaleDateString()}
+                      : `Booking #${booking.id}`} · {formatUKLocaleDate(booking.date_time)}
                   </p>
                 </div>
               </div>

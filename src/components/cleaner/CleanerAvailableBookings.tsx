@@ -17,6 +17,7 @@ import { useCleanerCoverageAreas, usePostcodePrefixIndex, cleanerCoversArea } fr
 import { matchPostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { useCleanerWorkingHours } from '@/hooks/useCleanerWorkingHours';
 import { computeBookingTimeWindow, cleanerCoversTime, describeTimeWindow } from '@/lib/cleanerAvailabilityMatch';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
@@ -243,11 +244,11 @@ const CleanerAvailableBookings = () => {
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                       <div className="flex items-center">
                         <CalendarDays className="h-4 w-4 mr-1" />
-                        {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                        {booking.date_time ? formatUK(booking.date_time, 'dd/MM/yyyy') : 'No date'}
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
-                        {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                        {booking.date_time ? formatUK(booking.date_time, 'HH:mm') : 'No time'}
                       </div>
                     </div>
                   </div>

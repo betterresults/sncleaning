@@ -10,6 +10,7 @@ import {
   Keyboard,
 } from 'lucide-react';
 import type { CustomerDetailPaymentsTabProps } from './types';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 export function CustomerDetailPaymentsTab({
   paymentMethods,
@@ -132,7 +133,7 @@ export function CustomerDetailPaymentsTab({
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium">
-                          {new Date(booking.date_time).toLocaleDateString()}
+                          {formatUKLocaleDate(booking.date_time)}
                         </span>
                         <Badge variant="outline" className="text-xs">
                           {booking.source === 'past_booking' ? 'Cleaning' : 'Linen'}

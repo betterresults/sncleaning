@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users } from 'lucide-react';
 import {
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -97,7 +98,7 @@ export const ProfitTrackingTable = ({
               return (
                 <TableRow key={booking.id}>
                   <TableCell>
-                    {format(new Date(booking.date_time), 'MMM dd, yyyy')}
+                    {formatUK(booking.date_time, 'MMM dd, yyyy')}
                   </TableCell>
                   <TableCell>{customerName}</TableCell>
                   <TableCell>

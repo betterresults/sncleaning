@@ -15,6 +15,7 @@ import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import { formatServiceType } from '@/utils/bookingFormatters';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface PastBooking {
   id: number;
@@ -342,7 +343,7 @@ const CleanerPastBookings = () => {
       <div className="space-y-2 mb-3 sm:mb-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <CalendarDays className="h-4 w-4 text-primary flex-shrink-0" />
-          <span className="font-medium">{booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}</span>
+          <span className="font-medium">{booking.date_time ? formatUK(booking.date_time, 'dd/MM/yyyy') : 'No date'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <User className="h-4 w-4 text-blue-600 flex-shrink-0" />

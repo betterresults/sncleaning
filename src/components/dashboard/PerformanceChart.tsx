@@ -5,6 +5,7 @@ import { format, subDays } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ShellEmpty } from '@/layouts/shell';
 import { PerformanceChartSkeleton } from './PerformanceChartSkeleton';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface ChartData {
   date: string;
@@ -38,7 +39,7 @@ const PerformanceChart = () => {
       const dataByDate: { [key: string]: { bookings: number; revenue: number } } = {};
 
       bookingsData?.forEach((booking) => {
-        const date = format(new Date(booking.date_time), 'MMM dd');
+        const date = formatUK(booking.date_time, 'MMM dd');
         if (!dataByDate[date]) {
           dataByDate[date] = { bookings: 0, revenue: 0 };
         }

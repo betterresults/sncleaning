@@ -14,6 +14,7 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown, Plus, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 // Helper to format service type for display
 const formatServiceType = (serviceType: string | null | undefined): string => {
@@ -236,7 +237,7 @@ const BookingPaymentCard: React.FC<BookingPaymentCardProps> = ({ booking, onUpda
             )}
             
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{format(new Date(booking.date_time), booking.is_standalone ? 'MMM dd, yyyy' : 'MMM dd, yyyy HH:mm')}</span>
+              <span>{formatUK(booking.date_time, booking.is_standalone ? 'MMM dd, yyyy' : 'MMM dd, yyyy HH:mm')}</span>
               <span>{booking.total_hours}h</span>
             </div>
           </div>

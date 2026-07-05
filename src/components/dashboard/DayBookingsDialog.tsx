@@ -7,6 +7,7 @@ import { CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, Edit, Copy, U
 import { format } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -132,7 +133,7 @@ const DayBookingsDialog: React.FC<DayBookingsDialogProps> = ({
                             </h3>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Clock className="h-4 w-4" />
-                              {format(new Date(booking.date_time), 'h:mm a')}
+                              {formatUK(booking.date_time, 'h:mm a')}
                             </div>
                           </div>
                         </div>

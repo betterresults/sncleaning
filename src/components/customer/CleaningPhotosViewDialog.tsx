@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Camera, Download, AlertTriangle, Calendar, MapPin, X, Link2 } from 'lucide-react';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface CleaningPhoto {
   id: string;
@@ -289,7 +290,7 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                {new Date(booking.date_time).toLocaleDateString()}
+                {formatUKLocaleDate(booking.date_time)}
               </div>
               <Badge variant="outline" className="text-xs">{booking.service_type}</Badge>
             </div>

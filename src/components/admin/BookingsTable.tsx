@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import DashboardStats from './DashboardStats';
 import EditBookingDialog from '../dashboard/EditBookingDialog';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -542,10 +543,10 @@ const BookingsTable = () => {
                         <TableCell>
                           <div className="text-sm">
                             <div className="font-medium">
-                              {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                              {formatUK(booking.date_time, 'dd/MM/yyyy')}
                             </div>
                             <div className="text-gray-500">
-                              {format(new Date(booking.date_time), 'HH:mm')}
+                              {formatUK(booking.date_time, 'HH:mm')}
                             </div>
                           </div>
                         </TableCell>

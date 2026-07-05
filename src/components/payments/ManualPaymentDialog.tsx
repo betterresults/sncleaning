@@ -15,6 +15,7 @@ import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link, Copy, Check,
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { playSuccessSound } from '@/utils/soundEffects';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface PaymentMethod {
   id: string;
@@ -66,7 +67,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
     if (booking) {
       setAmount(booking.total_cost || 0);
       setNewPaymentStatus(booking.payment_status || '');
-      const cleaningDate = new Date(booking.date_time).toLocaleDateString('en-GB');
+      const cleaningDate = formatUKLocaleDate(booking.date_time, undefined, 'en-GB');
       setPaymentLinkDescription(`Cleaning Service - ${cleaningDate} - ${booking.address}`);
       fetchPaymentMethods();
     }
@@ -639,7 +640,7 @@ const ManualPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: ManualPaym
               <div className="grid grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Date</p>
-                  <p className="font-semibold">{new Date(booking.date_time).toLocaleDateString()}</p>
+                  <p className="font-semibold">{formatUKLocaleDate(booking.date_time)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Address</p>

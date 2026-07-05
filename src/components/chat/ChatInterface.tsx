@@ -7,6 +7,7 @@ import { Chat, ChatMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface ChatInterfaceProps {
   chat: Chat;
@@ -194,7 +195,7 @@ const ChatInterface = ({ chat, messages, onSendMessage, sendingMessage, onBack }
           </h3>
           {chat.booking && (
             <p className="text-xs text-muted-foreground truncate">
-              {new Date(chat.booking.date_time).toLocaleDateString()}
+              {formatUKLocaleDate(chat.booking.date_time)}
             </p>
           )}
         </div>

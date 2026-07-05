@@ -16,6 +16,7 @@ import EditBookingDialog from './EditBookingDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import BookingCard from '@/components/booking/BookingCard';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 type Booking = CustomerUpcomingBooking;
 
@@ -288,11 +289,11 @@ const CustomerUpcomingBookings = () => {
                               : 'bg-primary/10 text-primary hover:bg-primary/20'
                           }`}
                           onClick={() => handleEditBooking(booking)}
-                          title={`Click to edit: ${booking.cleaning_type}${booking.same_day ? ' (Same Day)' : ''} - ${booking.address} - ${new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+                          title={`Click to edit: ${booking.cleaning_type}${booking.same_day ? ' (Same Day)' : ''} - ${booking.address} - ${formatUKLocaleTime(booking.date_time, { 
                             hour: 'numeric', 
                             minute: '2-digit',
                             hour12: true 
-                          })}`}
+                          }, 'en-GB')}`}
                         >
                           <div className="font-medium flex items-center justify-between">
                             <span>{booking.cleaning_type}</span>

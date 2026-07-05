@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { CalendarDays, DollarSign, TrendingUp, Clock, Calendar, CreditCard } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, subDays, isAfter, startOfYear } from 'date-fns';
 import { formatServiceType } from '@/utils/bookingFormatters';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface EarningsData {
   upcomingPayment: {
@@ -529,7 +530,7 @@ const CleanerEarnings = () => {
                       </div>
                     </div>
                     <div className="flex justify-between text-sm text-gray-500">
-                      <span>{format(new Date(job.date_time), 'dd/MM/yyyy')}</span>
+                      <span>{formatUK(job.date_time, 'dd/MM/yyyy')}</span>
                       <span>{formatServiceType(job.cleaning_type)}</span>
                     </div>
                   </div>
@@ -540,7 +541,7 @@ const CleanerEarnings = () => {
                       {job.first_name} {job.last_name}
                     </div>
                     <div className="flex-1 text-sm text-gray-500 text-center">
-                      {format(new Date(job.date_time), 'dd/MM/yyyy')}
+                      {formatUK(job.date_time, 'dd/MM/yyyy')}
                     </div>
                     <div className="flex-1 text-sm text-gray-600 text-center">
                       {formatServiceType(job.cleaning_type)}

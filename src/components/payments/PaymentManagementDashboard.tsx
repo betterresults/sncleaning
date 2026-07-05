@@ -29,6 +29,7 @@ import EmailStatusIndicator from './EmailStatusIndicator';
 import { useSendPaymentSMS } from '@/hooks/useSendPaymentSMS';
 import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
 import MessagePreviewDialog from './MessagePreviewDialog';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -350,7 +351,7 @@ const PaymentManagementDashboard = () => {
     if (previewMessageType === 'email') {
       return `Hi ${previewBooking.first_name},
 
-This is a payment reminder for your booking on ${format(new Date(previewBooking.date_time), 'dd MMM yyyy HH:mm')}.
+This is a payment reminder for your booking on ${formatUK(previewBooking.date_time, 'dd MMM yyyy HH:mm')}.
 
 Amount due: £${amount.toFixed(2)}
 Address: ${previewBooking.address}
@@ -703,7 +704,7 @@ SN Cleaning Team`;
                         </div>
                       </TableCell>
                       <TableCell className="whitespace-nowrap font-medium text-slate-700">
-                        {format(new Date(booking.date_time), 'dd MMM yyyy HH:mm')}
+                        {formatUK(booking.date_time, 'dd MMM yyyy HH:mm')}
                       </TableCell>
                       <TableCell className="max-w-xs truncate text-slate-600">{booking.address}</TableCell>
                       <TableCell className="font-bold text-slate-900">£{(typeof booking.total_cost === 'string' ? parseFloat(booking.total_cost) || 0 : booking.total_cost).toFixed(2)}</TableCell>

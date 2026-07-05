@@ -22,6 +22,7 @@ import {
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 import { formatPropertyDetails, formatAdditionalDetails, normalizeCleaningTypeKey, normalizeServiceTypeKey, correctBookingTypes } from '@/utils/bookingFormatters';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface ViewBookingDialogProps {
   open: boolean;
@@ -82,13 +83,13 @@ const ViewBookingDialog: React.FC<ViewBookingDialogProps> = ({
                   <div>
                     <div className="font-semibold">
                       {booking.date_time && isValid(new Date(booking.date_time)) 
-                        ? format(new Date(booking.date_time), 'EEEE, do MMMM yyyy') 
+                        ? formatUK(booking.date_time, 'EEEE, do MMMM yyyy') 
                         : 'Date not available'}
                     </div>
                     <div className="text-sm text-gray-500 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {booking.date_time && isValid(new Date(booking.date_time))
-                        ? format(new Date(booking.date_time), 'HH:mm') 
+                        ? formatUK(booking.date_time, 'HH:mm') 
                         : 'Time not available'}
                     </div>
                   </div>

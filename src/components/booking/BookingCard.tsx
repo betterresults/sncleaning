@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera, ExternalLink, FileText } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface BaseBooking {
   id: number;
@@ -155,15 +156,15 @@ const BookingCard = <T extends BaseBooking>({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 text-sm gap-3 sm:gap-0">
         <div className="flex items-center gap-2 text-[#185166]">
           <Calendar className="h-4 w-4 text-gray-600" />
-          <span className="font-medium">{new Date(booking.date_time).toLocaleDateString('en-GB', { 
+          <span className="font-medium">{formatUKLocaleDate(booking.date_time, { 
             day: 'numeric', 
             month: 'long', 
             year: 'numeric' 
-          })}, {new Date(booking.date_time).toLocaleTimeString('en-GB', { 
+          }, 'en-GB')}, {formatUKLocaleTime(booking.date_time, { 
             hour: 'numeric', 
             minute: '2-digit',
             hour12: true 
-          })}</span>
+          }, 'en-GB')}</span>
         </div>
         <div className="flex items-center gap-4 text-sm text-[#185166]">
           {booking.cleaner && (

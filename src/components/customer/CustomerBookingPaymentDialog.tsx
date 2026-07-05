@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { CreditCard, Calendar, MapPin, Clock, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface PaymentMethod {
   id: string;
@@ -201,11 +202,11 @@ const CustomerPaymentDialog = ({ booking, isOpen, onClose, onSuccess }: Customer
                 
                 <div className="flex items-center gap-2 text-gray-600">
                   <Calendar className="h-4 w-4" />
-                  <span>{new Date(booking.date_time).toLocaleDateString('en-GB', { 
+                  <span>{formatUKLocaleDate(booking.date_time, { 
                     day: 'numeric', 
                     month: 'long', 
                     year: 'numeric' 
-                  })}</span>
+                  }, 'en-GB')}</span>
                 </div>
                 
                 <div className="flex items-center gap-2 text-gray-600">

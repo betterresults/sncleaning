@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
 import { format } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 const styles = StyleSheet.create({
   page: {
@@ -129,7 +130,7 @@ export const BookingsPDF: React.FC<BookingsPDFProps> = ({ bookings, title = "Boo
           {bookings.map((booking, index) => (
             <View key={booking.id} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
               <Text style={styles.col1}>
-                {format(new Date(booking.date_time), 'dd/MM/yyyy')}
+                {formatUK(booking.date_time, 'dd/MM/yyyy')}
               </Text>
               <Text style={styles.col2}>
                 {booking.first_name} {booking.last_name}

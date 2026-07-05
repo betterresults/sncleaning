@@ -12,6 +12,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 // Customer Portal Email Template
 const CUSTOMER_PORTAL_EMAIL_TEMPLATE = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
@@ -504,8 +505,8 @@ const EmailNotificationManager = () => {
           const enhancedClientData = {
             ...client,
             booking_id: booking.id.toString(),
-            booking_date: booking.date_only || new Date(booking.date_time).toLocaleDateString(),
-            booking_time: booking.time_only || new Date(booking.date_time).toLocaleTimeString(),
+            booking_date: booking.date_only || formatUKLocaleDate(booking.date_time),
+            booking_time: booking.time_only || formatUKLocaleTime(booking.date_time),
             address: booking.address,
             total_cost: booking.total_cost?.toString() || '0',
             service_type: booking.service_type,
@@ -700,7 +701,7 @@ const EmailNotificationManager = () => {
                     <SelectItem value="none">No booking attached</SelectItem>
                     {customerBookings.map(booking => (
                       <SelectItem key={booking.id} value={booking.id.toString()}>
-                        {new Date(booking.date_time).toLocaleDateString()} - {booking.address} - £{booking.total_cost}
+                        {formatUKLocaleDate(booking.date_time)} - {booking.address} - £{booking.total_cost}
                       </SelectItem>
                     ))}
                   </SelectContent>

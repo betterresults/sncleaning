@@ -23,6 +23,7 @@ import { BookingsPDF } from '@/components/bookings/BookingsPDF';
 import BookingsPagination from '@/components/cleaner/BookingsPagination';
 import TableControls from '@/components/cleaner/TableControls';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -219,7 +220,7 @@ const BulkEditBookings = () => {
       filtered = filtered.filter(booking => {
         const customerName = `${booking.first_name} ${booking.last_name}`.toLowerCase();
         const cleanerName = booking.cleaners ? `${booking.cleaners.first_name} ${booking.cleaners.last_name}`.toLowerCase() : '';
-        const dateString = booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : '';
+        const dateString = booking.date_time ? formatUK(booking.date_time, 'dd/MM/yyyy') : '';
         
         return customerName.includes(filters.customerSearch.toLowerCase()) ||
                cleanerName.includes(filters.customerSearch.toLowerCase()) ||
@@ -453,7 +454,7 @@ const BulkEditBookings = () => {
               email: booking.email,
               name: `${booking.first_name} ${booking.last_name || ''}`.trim(),
               amount: booking.total_cost,
-              description: `Cleaning Service - ${format(new Date(booking.date_time), 'dd MMM yyyy')}`,
+              description: `Cleaning Service - ${formatUK(booking.date_time, 'dd MMM yyyy')}`,
               booking_id: booking.id,
               collect_payment_method: true, // Collect card details for future use
             }
@@ -1005,10 +1006,10 @@ const BulkEditBookings = () => {
                                 <TableCell>
                                   <div className="text-sm">
                                     <div className="font-medium">
-                                      {booking.date_time ? format(new Date(booking.date_time), 'dd/MM/yyyy') : 'No date'}
+                                      {booking.date_time ? formatUK(booking.date_time, 'dd/MM/yyyy') : 'No date'}
                                     </div>
                                     <div className="text-muted-foreground">
-                                      {booking.date_time ? format(new Date(booking.date_time), 'HH:mm') : 'No time'}
+                                      {booking.date_time ? formatUK(booking.date_time, 'HH:mm') : 'No time'}
                                     </div>
                                   </div>
                                 </TableCell>
