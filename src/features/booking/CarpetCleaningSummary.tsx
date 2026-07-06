@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
+import { format } from 'date-fns';
 
 interface CarpetCleaningSummaryProps {
   data: CarpetCleaningData;
@@ -39,7 +41,7 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
     if (!data.selectedDate) {
       return { charge: 0, notice: '', hoursUntil: 0 };
     }
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     const cleaningDate = new Date(data.selectedDate);
     const isToday = cleaningDate.getDate() === now.getDate() && 
                     cleaningDate.getMonth() === now.getMonth() && 
@@ -185,11 +187,7 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">
-              {data.selectedDate.toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short'
-              })}
+              {format(data.selectedDate, 'EEE d MMM')}
               {data.selectedTime && ` at ${data.selectedTime}`}
             </p>
           </div>

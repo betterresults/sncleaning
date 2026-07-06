@@ -11,6 +11,7 @@ import {
   HelpCircle, Tag, Pencil, Share2
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatLondon } from '@/lib/ukTime';
 import { useNavigate } from 'react-router-dom';
 import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 import MetaCapiBookingSelector from '@/components/admin/MetaCapiBookingSelector';
@@ -119,7 +120,7 @@ const QuoteLeadCard: React.FC<QuoteLeadCardProps> = ({ lead, adminName, isSelect
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return null;
     try {
-      return format(new Date(dateStr), 'dd MMM, HH:mm');
+      return formatLondon(dateStr, 'dd MMM, HH:mm');
     } catch {
       return dateStr;
     }

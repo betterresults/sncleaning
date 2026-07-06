@@ -5,7 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
+import { format, subDays, subWeeks, subMonths } from 'date-fns';
+import { formatLondon, getLondonWallClockDate } from '@/lib/ukTime';
 import { 
   RefreshCw, Copy, ExternalLink,
   User, Mail, Phone, MapPin, Home, Bath, BedDouble, 
@@ -26,20 +27,30 @@ const TIME_PERIODS: { value: TimePeriod; label: string }[] = [
   { value: 'all', label: 'All time' },
 ];
 
-const getDateRange = (period: TimePeriod): { start: Date; end: Date } | null => {
-  const now = new Date();
+// `created_at` on these tables is a GENUINE real-UTC timestamp (unlike the naive
+// `bookings.date_time` family), so period boundaries here must be anchored to the
+// UK calendar day (Europe/London), not the viewer's own device timezone/clock.
+// We compare `yyyy-MM-dd` day strings rather than `isWithinInterval` on raw device-local
+// `Date` objects so the result is identical for every viewer regardless of timezone.
+const getDateRange = (period: TimePeriod): { start: string; end: string } | null => {
+  // Local getters of `todayLondon` equal the real current UK wall-clock digits, so
+  // plain date-fns `format()`/`subDays`/`subWeeks`/`subMonths` (all local-getter based)
+  // can operate on it directly to get UK-calendar-correct day strings.
+  const todayLondon = getLondonWallClockDate(new Date())!;
+  const today = format(todayLondon, 'yyyy-MM-dd');
   switch (period) {
     case 'today':
-      return { start: startOfDay(now), end: endOfDay(now) };
-    case 'yesterday':
-      const yesterday = subDays(now, 1);
-      return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+      return { start: today, end: today };
+    case 'yesterday': {
+      const yesterday = format(subDays(todayLondon, 1), 'yyyy-MM-dd');
+      return { start: yesterday, end: yesterday };
+    }
     case 'last_week':
-      return { start: startOfDay(subWeeks(now, 1)), end: endOfDay(now) };
+      return { start: format(subWeeks(todayLondon, 1), 'yyyy-MM-dd'), end: today };
     case 'last_month':
-      return { start: startOfDay(subMonths(now, 1)), end: endOfDay(now) };
+      return { start: format(subMonths(todayLondon, 1), 'yyyy-MM-dd'), end: today };
     case 'last_3_months':
-      return { start: startOfDay(subMonths(now, 3)), end: endOfDay(now) };
+      return { start: format(subMonths(todayLondon, 3), 'yyyy-MM-dd'), end: today };
     case 'all':
     default:
       return null;
@@ -241,8 +252,8 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
     if (!range) return items;
     return items.filter(item => {
       if (!item.created_at) return false;
-      const date = new Date(item.created_at);
-      return isWithinInterval(date, { start: range.start, end: range.end });
+      const day = formatLondon(item.created_at, 'yyyy-MM-dd');
+      return day >= range.start && day <= range.end;
     });
   };
 
@@ -523,7 +534,7 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
                     account.sncleaningservices.co.uk/b/{quote.short_code}
                   </span>
                   <span className="ml-auto">
-                    Sent {quote.created_at && format(new Date(quote.created_at), 'dd MMM yyyy, HH:mm')}
+                    Sent {quote.created_at && formatLondon(quote.created_at, 'dd MMM yyyy, HH:mm')}
                   </span>
                 </div>
               </CardContent>

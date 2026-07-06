@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getUKNowAsStoredString } from '@/lib/ukTime';
 import type { CustomerDetailData, CustomerDetailBooking } from './types';
 
 export async function fetchCustomerDetailData(customerId: number): Promise<CustomerDetailData> {
@@ -30,7 +31,7 @@ export async function fetchCustomerDetailData(customerId: number): Promise<Custo
       cleaners!inner(first_name, last_name)
     `)
     .eq('customer', customerId)
-    .gte('date_time', new Date().toISOString())
+    .gte('date_time', getUKNowAsStoredString())
     .order('date_time', { ascending: true });
 
   const upcomingBookings: CustomerDetailBooking[] =

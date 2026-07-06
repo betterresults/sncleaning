@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatLondonLocale } from '@/lib/ukTime';
 
 interface StripePayment {
   stripe_payment_intent_id: string;
@@ -160,7 +161,7 @@ export const StripePaymentsDashboard = () => {
       payment.customer_email || '',
       payment.stripe_amount || payment.booking_total_cost || '',
       payment.booking_payment_status || '',
-      payment.stripe_created ? new Date(payment.stripe_created).toLocaleDateString('bg-BG') : '',
+      payment.stripe_created ? formatLondonLocale(payment.stripe_created, undefined, 'bg-BG') : '',
     ]);
 
     const csv = [headers, ...csvData].map((row) => row.join(',')).join('\n');
@@ -276,11 +277,11 @@ export const StripePaymentsDashboard = () => {
                     </TableCell>
                     <TableCell className="text-sm">
                       {payment.stripe_created
-                        ? new Date(payment.stripe_created).toLocaleDateString('bg-BG', {
+                        ? formatLondonLocale(payment.stripe_created, {
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric'
-                          })
+                          }, 'bg-BG')
                         : '-'}
                     </TableCell>
                   </TableRow>

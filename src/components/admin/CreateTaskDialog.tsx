@@ -25,6 +25,7 @@ import { CalendarIcon, Loader2, Check, Search, X, ChevronDown, ChevronUp } from 
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { formatUKDate, getUKNowAsLocalDate, ukPickerDateToInstant } from '@/lib/ukTime';
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -185,7 +186,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
         priority: formData.priority,
         customer_id: formData.customer_id ? parseInt(formData.customer_id) : null,
         booking_id: formData.booking_id ? parseInt(formData.booking_id) : null,
-        due_date: dueDate ? dueDate.toISOString() : null,
+        due_date: dueDate ? ukPickerDateToInstant(dueDate)?.toISOString() ?? null : null,
       });
       
       // Reset form
@@ -234,7 +235,7 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
   const selectedCustomer = customers.find(c => c.id.toString() === formData.customer_id);
 
   const getBookingDisplayName = (booking: Booking) => {
-    const date = booking.date_only ? format(new Date(booking.date_only), 'dd MMM yyyy') : 'No date';
+    const date = booking.date_only ? formatUKDate(booking.date_only) : 'No date';
     const name = booking.first_name || booking.last_name 
       ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim()
       : '';
@@ -524,7 +525,11 @@ export const CreateTaskDialog: React.FC<CreateTaskDialogProps> = ({
                           setDueDate(date);
                           setCalendarOpen(false);
                         }}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        disabled={(date) => {
+                          const today = getUKNowAsLocalDate();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today;
+                        }}
                         initialFocus
                       />
                     </div>

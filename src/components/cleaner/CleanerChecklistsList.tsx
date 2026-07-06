@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { CheckSquare, Calendar, MapPin, Clock, Check, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatLondon } from '@/lib/ukTime';
 
 interface ChecklistWithBooking {
   id: string;
@@ -234,7 +234,7 @@ export function CleanerChecklistsList() {
 
                   {checklist.completed_at && (
                     <div className="text-sm text-green-600">
-                      Completed on {format(new Date(checklist.completed_at), 'PPp')}
+                      Completed on {formatLondon(checklist.completed_at, 'PPp')}
                     </div>
                   )}
                 </div>

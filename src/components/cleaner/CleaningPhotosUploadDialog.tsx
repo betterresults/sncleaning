@@ -13,6 +13,7 @@ import { compressImage } from '@/utils/imageCompression';
 import { isCapacitor, getPlatform } from '@/utils/capacitor';
 import { pickFilesNative } from '@/utils/nativeFilePicker';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatLondonDate } from '@/lib/ukTime';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -202,7 +203,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
           <Trash2 className="h-3 w-3" />
         </button>
         <p className="text-xs text-muted-foreground mt-1 truncate">
-          {new Date(photo.created_at).toLocaleDateString()}
+          {formatLondonDate(photo.created_at)}
         </p>
       </div>
     );

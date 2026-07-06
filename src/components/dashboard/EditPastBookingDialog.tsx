@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { usePaymentMethods } from '@/hooks/useCompanySettings';
+import { getUKStoredAsLocalDate } from '@/lib/ukTime';
 
 interface PastBooking {
   id: number;
@@ -76,7 +77,7 @@ const EditPastBookingDialog: React.FC<EditPastBookingDialogProps> = ({
 
   useEffect(() => {
     if (booking && open) {
-      const bookingDate = new Date(booking.date_time);
+      const bookingDate = getUKStoredAsLocalDate(booking.date_time) || new Date();
       setSelectedDate(bookingDate);
       setSelectedTime(format(bookingDate, 'HH:mm'));
       

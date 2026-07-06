@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Mail, Phone, MapPin, Send, CheckCircle2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
+import { formatLondonDateTime } from '@/lib/ukTime';
 
 type QuoteRequest = {
   id: string;
@@ -110,7 +111,7 @@ const AdminQuoteRequests: React.FC = () => {
                               <Badge variant="secondary">{q.service}</Badge>
                               <Badge>{q.status}</Badge>
                             </div>
-                            <div className="text-xs text-slate-500 mt-1">{new Date(q.created_at).toLocaleString()}</div>
+                            <div className="text-xs text-slate-500 mt-1">{formatLondonDateTime(q.created_at)}</div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Select value={q.status} onValueChange={(v) => updateStatus(q.id, v)}>
@@ -145,7 +146,7 @@ const AdminQuoteRequests: React.FC = () => {
                           {q.quoted_price != null && (
                             <div className="mb-3 flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded p-2">
                               <CheckCircle2 className="w-4 h-4" />
-                              Quote of <strong>£{Number(q.quoted_price).toFixed(2)}</strong> sent {q.quoted_at ? `on ${new Date(q.quoted_at).toLocaleString()}` : ''}
+                              Quote of <strong>£{Number(q.quoted_price).toFixed(2)}</strong> sent {q.quoted_at ? `on ${formatLondonDateTime(q.quoted_at)}` : ''}
                             </div>
                           )}
                           <div className="grid md:grid-cols-[160px_1fr_auto] gap-2 items-start">

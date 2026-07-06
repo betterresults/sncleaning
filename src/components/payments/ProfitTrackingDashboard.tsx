@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ProfitTrackingTable } from './ProfitTrackingTable';
 import { DateRange } from 'react-day-picker';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
 
 interface SubCleaner {
   cleaner_id: number;
@@ -36,8 +37,8 @@ interface CompletedBooking {
 
 export const ProfitTrackingDashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: startOfMonth(new Date()),
-    to: endOfMonth(new Date())
+    from: startOfMonth(getUKNowAsLocalDate()),
+    to: endOfMonth(getUKNowAsLocalDate())
   });
 
   const fetchCompletedBookings = async () => {
@@ -60,13 +61,14 @@ export const ProfitTrackingDashboard = () => {
       .or('booking_status.is.null,booking_status.neq.cancelled');
 
     if (dateRange.from) {
-      query = query.gte('date_time', dateRange.from.toISOString());
+      // `dateRange.from`/`to` are calendar-picker Dates whose LOCAL Y/M/D represent the
+      // intended UK day (no real timezone meaning). Build the boundary directly from those
+      // local getters instead of `.toISOString()`, which would shift the day on a non-UK device.
+      query = query.gte('date_time', format(dateRange.from, "yyyy-MM-dd'T'00:00:00'+00:00'"));
     }
     
     if (dateRange.to) {
-      const endDate = new Date(dateRange.to);
-      endDate.setHours(23, 59, 59, 999);
-      query = query.lte('date_time', endDate.toISOString());
+      query = query.lte('date_time', format(dateRange.to, "yyyy-MM-dd'T'23:59:59.999'+00:00'"));
     }
 
     const { data: bookings, error } = await query.order('date_time', { ascending: false });
@@ -170,7 +172,7 @@ export const ProfitTrackingDashboard = () => {
   }, [completedBookings]);
 
   const setQuickRange = (range: 'thisMonth' | 'lastMonth' | 'last30Days' | 'last90Days') => {
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     
     switch (range) {
       case 'thisMonth':

@@ -13,6 +13,7 @@ import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, User, Clock, Banknote, CalendarDays, CalendarIcon, Users } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { getUKTodayDateString, formatUK, getUKStoredAsLocalDate } from "@/lib/ukTime";
 import CreateCustomerDialog from "@/components/booking/CreateCustomerDialog";
 import CreateCleanerDialog from "@/components/booking/CreateCleanerDialog";
 import { useServiceTypes, useCleaningTypes, usePaymentMethods } from "@/hooks/useCompanySettings";
@@ -167,17 +168,16 @@ export default function AddRecurringBooking() {
       console.log('Original booking data:', data);
       
       if (data && data.date_time) {
-        const originalDate = new Date(data.date_time);
+        // Hydrate the stored (naive-mislabeled UTC+00:00) date_time into a Date whose
+        // local getters equal the UK digits, so it's safe to hand to the calendar picker.
+        const originalDate = getUKStoredAsLocalDate(data.date_time);
         console.log('Original date from booking:', originalDate);
         
-        // No timezone adjustment needed - use the date as is
-        console.log('Using date as is:', originalDate);
-        
-        const dayName = originalDate.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        const dayName = formatUK(data.date_time, 'EEEE').toLowerCase();
         console.log('Day name:', dayName);
         
         // Set the date as selected date
-        setSelectedDate(originalDate);
+        setSelectedDate(originalDate || undefined);
         
         // Auto-select the day of the week
         setSelectedDays([dayName]);
@@ -185,7 +185,7 @@ export default function AddRecurringBooking() {
           ...prev,
           days_of_the_week: dayName,
           days_number: '1',
-          start_date: originalDate.toISOString().split('T')[0],
+          start_date: originalDate ? format(originalDate, 'yyyy-MM-dd') : prev.start_date,
           cleaner_rate: data.cleaner_rate?.toString() || prev.cleaner_rate
         }));
       }
@@ -561,7 +561,7 @@ export default function AddRecurringBooking() {
                         onSelect={(date) => {
                           setSelectedDate(date);
                           if (date) {
-                            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+                            const dayName = format(date, 'EEEE').toLowerCase();
                             setSelectedDays([dayName]);
                             setFormData(prev => ({
                               ...prev,
@@ -572,8 +572,10 @@ export default function AddRecurringBooking() {
                           }
                         }}
                         disabled={(date) => {
-                          const today = new Date();
-                          today.setHours(0, 0, 0, 0);
+                          // Anchor "today" to the UK calendar date (not the viewer's device
+                          // timezone) so the cutoff matches how `start_date` is interpreted.
+                          const [y, m, d] = getUKTodayDateString().split('-').map(Number);
+                          const today = new Date(y, m - 1, d);
                           return date < today;
                         }}
                         initialFocus

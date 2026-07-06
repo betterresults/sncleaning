@@ -1,6 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { format } from 'date-fns';
+import { formatUKDate } from '@/lib/ukTime';
 
 const styles = StyleSheet.create({
   page: {
@@ -217,12 +217,12 @@ export const LinenOrderPDF: React.FC<LinenOrderPDFProps> = ({ order, customer, a
               </View>
               <View style={styles.row}>
                 <Text style={styles.label}>Order Date:</Text>
-                <Text style={styles.value}>{format(new Date(order.order_date), 'dd MMMM yyyy')}</Text>
+                <Text style={styles.value}>{formatUKDate(order.order_date, 'dd MMMM yyyy')}</Text>
               </View>
               {order.delivery_date && (
                 <View style={styles.row}>
                   <Text style={styles.label}>Delivery Date:</Text>
-                  <Text style={styles.value}>{format(new Date(order.delivery_date), 'dd MMMM yyyy')}</Text>
+                  <Text style={styles.value}>{formatUKDate(order.delivery_date, 'dd MMMM yyyy')}</Text>
                 </View>
               )}
               <View style={styles.row}>

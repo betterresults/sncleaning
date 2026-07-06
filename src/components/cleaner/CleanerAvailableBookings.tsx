@@ -17,7 +17,7 @@ import { useCleanerCoverageAreas, usePostcodePrefixIndex, cleanerCoversArea } fr
 import { matchPostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { useCleanerWorkingHours } from '@/hooks/useCleanerWorkingHours';
 import { computeBookingTimeWindow, cleanerCoversTime, describeTimeWindow } from '@/lib/cleanerAvailabilityMatch';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString } from '@/lib/ukTime';
 
 const CleanerAvailableBookings = () => {
   const { cleanerId } = useAuth();
@@ -39,7 +39,7 @@ const CleanerAvailableBookings = () => {
       .select('*')
       .is('cleaner', null)
       .neq('booking_status', 'cancelled')
-      .gte('date_time', new Date().toISOString()) // Only future bookings  
+      .gte('date_time', getUKNowAsStoredString()) // Only future bookings  
       .order('date_time', { ascending: true });
 
     if (error) {

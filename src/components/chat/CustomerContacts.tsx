@@ -7,7 +7,7 @@ import { ChatWithLastMessage } from '@/types/chat';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString } from '@/lib/ukTime';
 
 interface BookingContact {
   id: string;
@@ -80,7 +80,7 @@ const CustomerContacts = ({
           cleaners(id, first_name, last_name)
         `)
         .eq('customer', effectiveCustomerId)
-        .gte('date_time', new Date().toISOString())
+        .gte('date_time', getUKNowAsStoredString())
         .order('date_time', { ascending: true });
 
       if (error) throw error;

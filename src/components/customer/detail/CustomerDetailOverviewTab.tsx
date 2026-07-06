@@ -16,6 +16,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import type { CustomerDetailOverviewTabProps } from './types';
+import { formatLondonDate } from '@/lib/ukTime';
 
 export function CustomerDetailOverviewTab({
   customer,
@@ -196,7 +197,7 @@ export function CustomerDetailOverviewTab({
                 )}
               </div>
               <div className="text-sm text-muted-foreground">
-                Customer since: {new Date(customer.created_at).toLocaleDateString()}
+                Customer since: {formatLondonDate(customer.created_at)}
               </div>
             </div>
           )}

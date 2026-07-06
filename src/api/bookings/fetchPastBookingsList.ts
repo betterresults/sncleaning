@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getUKNowAsStoredString } from '@/lib/ukTime';
 import type {
   CleanerOption,
   PastBookingListItem,
@@ -23,7 +24,7 @@ export async function fetchPastBookingsList(
       .gte('date_time', dashboardDateFilter.dateFrom)
       .lte('date_time', dashboardDateFilter.dateTo);
   } else {
-    const nowIso = new Date().toISOString();
+    const nowIso = getUKNowAsStoredString();
     bookingsQuery = bookingsQuery.or(
       `date_time.lte.${nowIso},booking_status.eq.Completed,booking_status.eq.completed`,
     );

@@ -9,6 +9,8 @@ import { CalendarDays, Clock, Mic, AlertTriangle, Info } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
 import { SelectionCard } from '@/components/ui/selection-card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
+import { format } from 'date-fns';
 
 interface ScheduleStepProps {
   data: BookingData;
@@ -34,12 +36,12 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   const charge12h = getChargeFromConfig('under_12h', 50);
   
   // Calendar always opens on the current month so customers see today's date first.
-  const getDefaultMonth = () => new Date();
+  const getDefaultMonth = () => getUKNowAsLocalDate();
 
   // Generate time slots based on current time for same-day booking
   // Format: Simple arrival times like "9:00 AM" instead of confusing windows
   const generateTimeSlots = () => {
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     const selectedDate = data.selectedDate;
     const isToday = selectedDate && 
       selectedDate.getDate() === now.getDate() &&
@@ -77,7 +79,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   const calculateShortNoticeCharge = () => {
     if (!data.selectedDate) return { charge: 0, notice: '', hoursUntil: 0 };
     
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     const cleaningDate = new Date(data.selectedDate);
     
     // Check if it's today (same-day booking)
@@ -166,7 +168,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
           onSelect={(date) => onUpdate({ selectedDate: date || null })}
           defaultMonth={getDefaultMonth()}
           disabled={(date) => {
-            const today = new Date();
+            const today = getUKNowAsLocalDate();
             today.setHours(0, 0, 0, 0);
             const checkDate = new Date(date);
             checkDate.setHours(0, 0, 0, 0);
@@ -194,11 +196,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         <div className="space-y-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-700 mb-4">
-              {data.selectedDate.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
+              {format(data.selectedDate, 'EEEE, MMMM d')}
             </h2>
           </div>
 
@@ -285,7 +283,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
       {/* Same Day Booking - No Available Times Warning */}
       {data.selectedDate && (
         (() => {
-          const now = new Date();
+          const now = getUKNowAsLocalDate();
           const selectedDate = data.selectedDate;
           const isToday = selectedDate.getDate() === now.getDate() &&
             selectedDate.getMonth() === now.getMonth() &&

@@ -6,6 +6,7 @@ import { useEndOfTenancyCalculations } from '@/hooks/useEndOfTenancyCalculations
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { format } from 'date-fns';
 
 interface EndOfTenancySummaryProps {
   data: EndOfTenancyBookingData;
@@ -182,11 +183,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Clean date</span>
             <span className="text-foreground font-medium">
-              {data.selectedDate.toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short'
-              })}
+              {format(data.selectedDate, 'EEE d MMM')}
             </span>
           </div>
           

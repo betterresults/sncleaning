@@ -8,14 +8,19 @@ export function applyBookingsListFilters(
 ): BookingListItem[] {
   let filtered = [...bookings];
 
+  // `filters.dateFrom`/`dateTo` are bare `YYYY-MM-DD` strings; build them into
+  // `date_time`-style boundary strings (naive UK digits + fake `+00:00`) so the
+  // comparison stays in the same naive-UK-frame convention as `booking.date_time`.
   if (filters.dateFrom) {
+    const fromBoundary = new Date(`${filters.dateFrom}T00:00:00+00:00`);
     filtered = filtered.filter(
-      (booking) => new Date(booking.date_time) >= new Date(filters.dateFrom),
+      (booking) => new Date(booking.date_time) >= fromBoundary,
     );
   }
   if (filters.dateTo) {
+    const toBoundary = new Date(`${filters.dateTo}T23:59:59.999+00:00`);
     filtered = filtered.filter(
-      (booking) => new Date(booking.date_time) <= new Date(filters.dateTo),
+      (booking) => new Date(booking.date_time) <= toBoundary,
     );
   }
 

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar, Clock, MapPin, User, Edit, Star, CreditCard, Camera, ExternalLink, FileText } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredDate } from '@/lib/ukTime';
 
 interface BaseBooking {
   id: number;
@@ -58,7 +58,7 @@ const BookingCard = <T extends BaseBooking>({
 }: BookingCardProps<T>) => {
   // Check if booking is within 24 hours
   const isWithin24Hours = () => {
-    const now = new Date();
+    const now = getUKNowAsStoredDate();
     const bookingDate = new Date(booking.date_time);
     const diffInHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     return diffInHours <= 24 && diffInHours >= 0;

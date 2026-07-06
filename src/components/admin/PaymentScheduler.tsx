@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Play, Pause, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { formatLondon } from '@/lib/ukTime';
 
 export const PaymentScheduler = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -237,7 +238,7 @@ export const PaymentScheduler = () => {
 
         {lastRun && (
           <div className="text-sm text-muted-foreground">
-            Last run: {lastRun.toLocaleString()}
+            Last run: {formatLondon(lastRun, 'dd MMM yyyy HH:mm:ss')}
           </div>
         )}
 

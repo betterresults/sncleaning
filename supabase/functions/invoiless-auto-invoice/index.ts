@@ -6,6 +6,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Formats a genuine real-UTC instant as a UK wall-clock calendar-date string
+// (DST-aware via Europe/London) in YYYY-MM-DD form, so invoice dates near UTC
+// midnight during BST always reflect the correct UK calendar day.
+function formatLondonDateISO(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/London',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(date);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -218,22 +228,25 @@ serve(async (req) => {
     }
     // Step 3: Create invoice
     const today = new Date();
-    const dateString = today.toISOString().split('T')[0];
+    const dateString = formatLondonDateISO(today); // YYYY-MM-DD, UK calendar day
     const termDays = booking.invoice_term ? parseInt(booking.invoice_term) : 1;
     const dueDate = new Date(today);
     dueDate.setDate(dueDate.getDate() + termDays);
-    const dueDateString = dueDate.toISOString().split('T')[0];
+    const dueDateString = formatLondonDateISO(dueDate); // YYYY-MM-DD, UK calendar day
 
-    // Format cleaning date for notes
+    // Format cleaning date for notes.
+    // booking.date_time follows the naive-UK-digits-stored-on-UTC convention (its
+    // UTC digits ARE the UK wall-clock digits), so read it back with UTC
+    // getters/timeZone rather than device-local ones to avoid re-shifting it.
     const formatDate = (dateStr: string) => {
       if (!dateStr) return 'N/A';
       const date = new Date(dateStr);
-      const day = date.getDate();
+      const day = date.getUTCDate();
       const suffix = day === 1 || day === 21 || day === 31 ? 'st' : 
                      day === 2 || day === 22 ? 'nd' : 
                      day === 3 || day === 23 ? 'rd' : 'th';
-      const month = date.toLocaleString('en-US', { month: 'long' });
-      const time = date.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+      const time = date.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' });
       return `${day}${suffix} of ${month}, ${time}`;
     };
 
@@ -350,9 +363,11 @@ Postcode: ${booking.postcode || 'N/A'}`;
           if (smsResponse.ok) {
             console.log('SMS sent successfully');
             
-            // Queue 2-hour follow-up SMS reminder
+            // Queue 2-hour follow-up SMS reminder. Use real millisecond arithmetic
+            // (not setHours/getHours device-local wall-clock getters) so the
+            // 2-hour elapsed-time shift is immune to any local-getter ambiguity.
             const sendAt = new Date();
-            sendAt.setHours(sendAt.getHours() + 2);
+            sendAt.setTime(sendAt.getTime() + 2 * 60 * 60 * 1000);
             
             await supabase.from('sms_reminders_queue').insert({
               booking_id: booking.id,

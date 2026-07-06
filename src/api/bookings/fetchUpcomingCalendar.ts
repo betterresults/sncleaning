@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getUKTodayRange } from '@/lib/ukTime';
 import type {
   UpcomingCalendarData,
   UpcomingCalendarParams,
@@ -10,8 +11,7 @@ export async function fetchUpcomingCalendarData(
 ): Promise<UpcomingCalendarData> {
   const { dashboardDateFilter, sortOrder, userRole, userId, assignedSources = [] } = params;
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = getUKTodayRange().start;
 
   let bookingsQuery = supabase.from('bookings').select(`
       *,
@@ -28,7 +28,7 @@ export async function fetchUpcomingCalendarData(
       .gte('date_time', dashboardDateFilter.dateFrom)
       .lte('date_time', dashboardDateFilter.dateTo);
   } else {
-    bookingsQuery = bookingsQuery.gte('date_time', todayStart.toISOString());
+    bookingsQuery = bookingsQuery.gte('date_time', todayStart);
   }
 
   const { data: bookingsData, error: bookingsError } = await bookingsQuery

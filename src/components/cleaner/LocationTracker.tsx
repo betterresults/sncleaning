@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Wifi, WifiOff } from 'lucide-react';
+import { formatLondonLocale } from '@/lib/ukTime';
 
 // ВРЕМЕННО ДЕАКТИВИРАНА СИСТЕМА ЗА GPS ЛОКАЦИЯ
 // Променете на true, когато искате да активирате отново автоматичното tracking
@@ -359,7 +360,7 @@ const LocationTracker: React.FC<LocationTrackerProps> = ({
         {currentLocation && (
           <div className="mt-2 text-xs text-gray-600">
             Accuracy: ±{Math.round(currentLocation.accuracy)}m | 
-            Last update: {new Date(currentLocation.timestamp).toLocaleTimeString()}
+            Last update: {formatLondonLocale(currentLocation.timestamp, { hour: 'numeric', minute: '2-digit', second: '2-digit' })}
           </div>
         )}
 

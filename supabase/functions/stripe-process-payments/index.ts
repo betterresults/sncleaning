@@ -6,6 +6,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// bookings.date_time is stored as naive London wall-clock digits with a hardcoded
+// +00:00 suffix (not a true UTC instant) — during BST (UTC+1) it's a real 1 hour ahead
+// of true UTC. Comparing real UTC `now` directly against it makes the authorization
+// window open ~1h late during summer. Convert `now` into the same naive-London-stamped
+// frame before comparing to `date_time` (real UTC columns like `last_payment_attempt_at`
+// should still be compared against the real `now`).
+function nowInBookingTimeFrame(): Date {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).formatToParts(new Date())
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? '00'
+  const hour = get('hour') === '24' ? '00' : get('hour')
+  return new Date(`${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}:${get('second')}+00:00`)
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,11 +36,12 @@ serve(async (req) => {
     )
 
     const now = new Date()
-    const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
+    const nowUK = nowInBookingTimeFrame()
+    const twentyFourHoursFromNow = new Date(nowUK.getTime() + 24 * 60 * 60 * 1000)
     const oneHourAgo = new Date(now.getTime() - 1 * 60 * 60 * 1000) // 1 hour ago for capture timing
     
     // For authorization: look for bookings happening within the next 24 hours (including ones starting now)
-    const authorizationWindowStart = new Date(now.getTime() - 2 * 60 * 60 * 1000) // 2 hours ago to catch any we missed
+    const authorizationWindowStart = new Date(nowUK.getTime() - 2 * 60 * 60 * 1000) // 2 hours ago to catch any we missed
     const authorizationWindowEnd = twentyFourHoursFromNow
 
     console.log('Processing payments at:', now.toISOString())

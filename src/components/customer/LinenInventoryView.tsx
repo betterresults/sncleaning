@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomerLinenOrders } from '@/hooks/useCustomerLinenOrders';
+import { formatUKLocaleDate } from '@/lib/ukTime';
 
 interface InventoryItem {
   id: string;
@@ -285,12 +286,12 @@ const LinenInventoryView = () => {
               <div className="space-y-2 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span>Ordered: {new Date(order.order_date).toLocaleDateString('en-GB')}</span>
+                  <span>Ordered: {formatUKLocaleDate(order.order_date)}</span>
                 </div>
                 {order.delivery_date && (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    <span>Delivery: {new Date(order.delivery_date).toLocaleDateString('en-GB')}</span>
+                    <span>Delivery: {formatUKLocaleDate(order.delivery_date)}</span>
                   </div>
                 )}
               </div>

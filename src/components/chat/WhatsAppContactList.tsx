@@ -7,7 +7,7 @@ import { ArrowLeft, Building2, User, Calendar, MapPin, MessageCircle, Plus, User
 import { ChatWithLastMessage } from '@/types/chat';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString } from '@/lib/ukTime';
 
 interface BookingContact {
   id: string;
@@ -76,7 +76,7 @@ const WhatsAppContactList = ({
           customers!inner(id, first_name, last_name, email)
         `)
         .eq('cleaner', effectiveCleanerId)
-        .gte('date_time', new Date().toISOString())
+        .gte('date_time', getUKNowAsStoredString())
         .order('date_time', { ascending: true });
 
       if (error) throw error;

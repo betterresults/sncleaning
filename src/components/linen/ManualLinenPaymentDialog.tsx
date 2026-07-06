@@ -14,6 +14,7 @@ import { CreditCard, DollarSign, Clock, Zap, RotateCcw, Mail, Link } from 'lucid
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { playSuccessSound } from '@/utils/soundEffects';
+import { formatUKLocaleDate } from '@/lib/ukTime';
 
 interface PaymentMethod {
   id: string;
@@ -61,7 +62,7 @@ const ManualLinenPaymentDialog = ({ order, isOpen, onClose, onSuccess }: ManualL
   useEffect(() => {
     if (order) {
       setAmount(order.total_cost || 0);
-      const deliveryDate = order.delivery_date ? new Date(order.delivery_date).toLocaleDateString('en-GB') : 'TBC';
+      const deliveryDate = order.delivery_date ? formatUKLocaleDate(order.delivery_date) : 'TBC';
       setPaymentLinkDescription(`Linen Service - ${deliveryDate} - ${order.addresses.address}`);
       fetchPaymentMethods();
     }

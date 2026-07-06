@@ -28,6 +28,7 @@ import {
   useCleanerCoverageAreas,
   useSaveCleanerCoverageAreas,
 } from '@/hooks/useCoverageAreas';
+import { getUKNowAsStoredDate } from '@/lib/ukTime';
 
 type OpenHoursByDay = Map<number, Set<number>>;
 
@@ -515,9 +516,10 @@ const MyAreasPanel: React.FC<MyAreasPanelProps> = ({ cleanerId }) => {
 
 interface CleanerAvailabilityProps {
   cleanerId: number | null;
+  isAdminViewing?: boolean;
 }
 
-const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) => {
+const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId, isAdminViewing = false }) => {
   const { data: workingHours = [], isLoading } = useCleanerWorkingHours(cleanerId);
   const { data: upcomingBookings = [], isLoading: isLoadingBookings } = useCleanerUpcomingBookings(cleanerId);
   const { startHour, endHour, isLoading: isLoadingHours } = useBusinessHoursRange();
@@ -526,7 +528,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
   const [openHours, setOpenHours] = useState<OpenHoursByDay>(emptyOpenHours);
   const [isDirty, setIsDirty] = useState(false);
 
-  const today = useMemo(() => new Date(), []);
+  const today = useMemo(() => getUKNowAsStoredDate(), []);
   const currentWeekStart = useMemo(() => startOfWeekUTC(today), [today]);
   const [weekOffset, setWeekOffset] = useState(0);
   const weekStart = useMemo(() => addDaysUTC(currentWeekStart, weekOffset * 7), [currentWeekStart, weekOffset]);
@@ -668,7 +670,11 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId }) 
   };
 
   if (!cleanerId) {
-    return <p className="text-sm text-muted-foreground">No cleaner profile linked to this account.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        {isAdminViewing ? 'Please select a cleaner above to view their availability.' : 'No cleaner profile linked to this account.'}
+      </p>
+    );
   }
 
   const ready = !isLoading && !isLoadingHours;

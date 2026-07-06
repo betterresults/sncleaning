@@ -16,6 +16,7 @@ import {
 import type { ChatStats, ChatTypeFilter, RecentChatMessage } from '../types';
 import type { ChatWithLastMessage } from '@/types/chat';
 import { getChatTypeDisplay, getSenderLabel } from '../utils/display';
+import { formatLondon } from '@/lib/ukTime';
 
 interface ChatOverviewSectionProps {
   chatStats: ChatStats;
@@ -130,7 +131,7 @@ export function ChatOverviewSection({
                     <span className="font-medium text-shell-text">{getSenderLabel(msg.sender_type)}:</span>{' '}
                     {msg.message}
                   </ShellListMeta>
-                  <ShellListMeta>{new Date(msg.created_at).toLocaleString()}</ShellListMeta>
+                  <ShellListMeta>{formatLondon(msg.created_at, 'dd/MM/yyyy, HH:mm:ss')}</ShellListMeta>
                 </ShellListContent>
                 <Badge variant="outline" className="shrink-0 font-normal">
                   {getChatTypeDisplay(msg.chats.chat_type)}

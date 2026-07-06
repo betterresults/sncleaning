@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffect } from 'react';
+import { getUKNowAsStoredString } from '@/lib/ukTime';
 
 export const useAvailableBookingsCount = () => {
   const queryClient = useQueryClient();
@@ -11,7 +12,7 @@ export const useAvailableBookingsCount = () => {
       .select('id', { count: 'exact', head: true })
       .is('cleaner', null)
       .neq('booking_status', 'cancelled')
-      .gte('date_time', new Date().toISOString());
+      .gte('date_time', getUKNowAsStoredString());
 
     if (error) {
       console.error('Error fetching available bookings count:', error);

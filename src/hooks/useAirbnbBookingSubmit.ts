@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 interface BookingSubmission {
   // Customer details
@@ -761,11 +762,7 @@ export const useAirbnbBookingSubmit = () => {
         console.log('[useAirbnbBookingSubmit] Sending bank transfer SMS for booking:', booking.id);
         try {
           const bookingDateFormatted = bookingData.selectedDate 
-            ? new Date(bookingData.selectedDate).toLocaleDateString('en-GB', { 
-                weekday: 'long', 
-                day: 'numeric', 
-                month: 'long' 
-              })
+            ? format(new Date(bookingData.selectedDate), 'EEEE, d MMMM')
             : 'your scheduled date';
           
           const { error: smsError } = await supabase.functions.invoke('send-bank-transfer-sms', {

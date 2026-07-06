@@ -18,6 +18,7 @@ import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import { format } from 'date-fns';
+import { formatUKDate, getUKNowAsLocalDate } from '@/lib/ukTime';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
@@ -152,15 +153,20 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
   const applyFilters = () => {
     let filtered = [...bookings];
 
-    // Apply date filters
+    // Apply date filters. `filters.dateFrom`/`dateTo` are bare `YYYY-MM-DD` strings from
+    // the filter UI; build them into `date_time`-style boundary strings (naive UK digits +
+    // fake `+00:00`) so the comparison stays in the same naive-UK-frame convention as
+    // `booking.date_time` instead of mixing it with a device-local parse of a bare date.
     if (filters.dateFrom) {
+      const fromBoundary = new Date(`${filters.dateFrom}T00:00:00+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= new Date(filters.dateFrom)
+        new Date(booking.date_time) >= fromBoundary
       );
     }
     if (filters.dateTo) {
+      const toBoundary = new Date(`${filters.dateTo}T23:59:59.999+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= new Date(filters.dateTo)
+        new Date(booking.date_time) <= toBoundary
       );
     }
 
@@ -323,7 +329,7 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
       if (!booking.date_time) return false;
       const bookingDate = new Date(booking.date_time);
       if (isNaN(bookingDate.getTime())) return false;
-      return bookingDate.toDateString() === date.toDateString();
+      return formatUKDate(booking.date_time, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
     });
     
     if (dayBookings.length > 0) {
@@ -341,7 +347,7 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
       if (!booking.date_time) return false;
       const bookingDate = new Date(booking.date_time);
       if (isNaN(bookingDate.getTime())) return false;
-      return bookingDate.toDateString() === date.toDateString();
+      return formatUKDate(booking.date_time, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
     });
   };
 
@@ -487,7 +493,7 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
           {viewMode === 'list' ? (
             <BookingsListView 
               dashboardDateFilter={bookedFilter !== 'none' ? (() => {
-                const now = new Date();
+                const now = getUKNowAsLocalDate();
                 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 let dateFrom: Date;
                 const dateTo = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1);

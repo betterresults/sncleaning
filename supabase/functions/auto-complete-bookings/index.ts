@@ -6,6 +6,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// bookings.date_time is stored as naive London wall-clock digits with a hardcoded
+// +00:00 suffix (not a true UTC instant) — during BST (UTC+1) it's a real 1 hour ahead
+// of true UTC. Comparing real UTC `now` directly against it makes completion fire ~1h
+// late during summer. Convert `now` into the same naive-London-stamped frame first.
+function nowInBookingTimeFrame(): Date {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).formatToParts(new Date())
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? '00'
+  const hour = get('hour') === '24' ? '00' : get('hour')
+  return new Date(`${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}:${get('second')}+00:00`)
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,6 +34,7 @@ serve(async (req) => {
     )
 
     const now = new Date()
+    const nowUK = nowInBookingTimeFrame()
     console.log('Auto-completing bookings at:', now.toISOString())
 
     // Find active bookings that finished more than 1 hour ago
@@ -61,7 +77,7 @@ serve(async (req) => {
       const bookingStart = new Date(booking.date_time)
       const bookingEnd = new Date(bookingStart.getTime() + (booking.total_hours || 0) * 60 * 60 * 1000)
       const completionTime = new Date(bookingEnd.getTime() + 1 * 60 * 60 * 1000) // 1 hour after service ends
-      return now >= completionTime
+      return nowUK >= completionTime
     })
 
     console.log(`Found ${bookingsReadyToComplete.length} bookings ready to complete (${bookingsToComplete.length} total active bookings)`)

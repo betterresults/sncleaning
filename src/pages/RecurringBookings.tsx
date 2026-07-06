@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PostponeDialog } from '@/components/recurringBookings/PostponeDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ShellLoading, ShellPage } from '@/layouts/shell';
+import { format } from 'date-fns';
+import { formatUKDate } from '@/lib/ukTime';
 interface RecurringService {
   id: number;
   customer: number;
@@ -364,14 +366,7 @@ export default function RecurringBookings() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="font-medium">
-                      Starts {new Date(service.start_date).toLocaleDateString('en-GB', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      })} at {service.start_time ? new Date(`2000-01-01T${service.start_time}`).toLocaleTimeString('en-GB', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : 'Not set'}
+                      Starts {formatUKDate(service.start_date, 'd MMM yyyy')} at {service.start_time ? format(new Date(`2000-01-01T${service.start_time}`), 'HH:mm') : 'Not set'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -390,11 +385,7 @@ export default function RecurringBookings() {
                   <div className="flex items-center gap-2 text-sm">
                     <Play className="h-4 w-4 text-orange-600 flex-shrink-0" />
                     <span className="font-medium text-orange-700 dark:text-orange-400">
-                      Resumes on {new Date(service.resume_date).toLocaleDateString('en-GB', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric' 
-                      })}
+                      Resumes on {formatUKDate(service.resume_date, 'd MMM yyyy')}
                     </span>
                   </div>
                 )}

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, Search, RefreshCw, Calendar } from "lucide-react";
-import { format } from "date-fns";
+import { formatLondon } from "@/lib/ukTime";
 
 interface NotificationLog {
   id: string;
@@ -237,7 +237,7 @@ export const NotificationLogsViewer = () => {
                         {log.notification_triggers?.name || (log.notification_type === 'sms' ? 'Manual SMS' : 'Unknown')}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(log.created_at), 'MMM dd, yyyy HH:mm')}
+                        {formatLondon(log.created_at, 'MMM dd, yyyy HH:mm')}
                       </TableCell>
                       <TableCell>
                         <Dialog>
@@ -319,15 +319,15 @@ const LogDetailView: React.FC<LogDetailViewProps> = ({ log }) => {
         <div>
           <h4 className="font-semibold mb-2">Timing</h4>
           <div className="space-y-2 text-sm">
-            <div><strong>Created:</strong> {format(new Date(log.created_at), 'MMM dd, yyyy HH:mm:ss')}</div>
+            <div><strong>Created:</strong> {formatLondon(log.created_at, 'MMM dd, yyyy HH:mm:ss')}</div>
             {log.sent_at && (
-              <div><strong>Sent:</strong> {format(new Date(log.sent_at), 'MMM dd, yyyy HH:mm:ss')}</div>
+              <div><strong>Sent:</strong> {formatLondon(log.sent_at, 'MMM dd, yyyy HH:mm:ss')}</div>
             )}
             {log.delivered_at && (
-              <div><strong>Delivered:</strong> {format(new Date(log.delivered_at), 'MMM dd, yyyy HH:mm:ss')}</div>
+              <div><strong>Delivered:</strong> {formatLondon(log.delivered_at, 'MMM dd, yyyy HH:mm:ss')}</div>
             )}
             {log.opened_at && (
-              <div><strong>Opened:</strong> {format(new Date(log.opened_at), 'MMM dd, yyyy HH:mm:ss')}</div>
+              <div><strong>Opened:</strong> {formatLondon(log.opened_at, 'MMM dd, yyyy HH:mm:ss')}</div>
             )}
           </div>
         </div>

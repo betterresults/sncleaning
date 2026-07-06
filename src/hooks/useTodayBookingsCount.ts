@@ -1,15 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { getUKTodayRange } from '@/lib/ukTime';
 
 export const useTodayBookingsCount = () => {
   const { cleanerId, userRole } = useAuth();
 
   const fetchTodayBookingsCount = async () => {
-    // Get today's date range
-    const today = new Date();
-    const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-    const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+    // Get today's date range, anchored to UK wall-clock time
+    const { start: startOfDay, end: endOfDay } = getUKTodayRange();
 
     // Determine which cleaner ID to use
     const effectiveCleanerId = userRole === 'admin' && !cleanerId ? null : cleanerId;

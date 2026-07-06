@@ -180,7 +180,7 @@ const handler = async (req: Request): Promise<Response> => {
               <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #18A5A5;">
                 <h3 style="margin-top: 0; color: #185166;">Service Details:</h3>
                 <p style="margin: 5px 0;"><strong>Service:</strong> ${finalServiceType}</p>
-                <p style="margin: 5px 0;"><strong>Date:</strong> ${finalBookingDate ? new Date(finalBookingDate).toLocaleDateString() : 'Recent service'}</p>
+                <p style="margin: 5px 0;"><strong>Date:</strong> ${finalBookingDate ? new Date(finalBookingDate).toLocaleDateString('en-GB', { timeZone: 'UTC' }) : 'Recent service'}</p>
                 <p style="margin: 5px 0;"><strong>Photos:</strong> ${photoCount} uploaded</p>
                 <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${booking_id}</p>
               </div>

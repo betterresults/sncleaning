@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { formatLondonDateTime } from '@/lib/ukTime';
 
 interface MetaCapiReportButtonProps {
   bookingId: number;
@@ -65,7 +66,7 @@ export const MetaCapiReportButton: React.FC<MetaCapiReportButtonProps> = ({
           Sent to Meta · resend
         </Button>
         <span className="text-xs text-muted-foreground">
-          {new Date(sentAt).toLocaleString()}
+          {formatLondonDateTime(sentAt)}
         </span>
       </div>
     );

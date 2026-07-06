@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import CustomerSelector from './CustomerSelector';
 import CleanerSelector from './CleanerSelector';
+import { getUKTodayDateString, getUKNowAsLocalDate } from '@/lib/ukTime';
 
 interface BookingDate {
   id: string;
@@ -48,7 +49,7 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
   
   // Multiple dates
   const [bookingDates, setBookingDates] = useState<BookingDate[]>([
-    { id: '1', date: new Date(), time: '10:00', sameDayCleaning: false }
+    { id: '1', date: getUKNowAsLocalDate(), time: '10:00', sameDayCleaning: false }
   ]);
 
   const addBookingDate = () => {
@@ -197,7 +198,7 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
       setHours('3');
       setCostPerHour('20');
       setCleanerRate('16');
-      setBookingDates([{ id: '1', date: new Date(), time: '10:00', sameDayCleaning: false }]);
+      setBookingDates([{ id: '1', date: getUKNowAsLocalDate(), time: '10:00', sameDayCleaning: false }]);
 
     } catch (error) {
       console.error('Error creating bulk bookings:', error);
@@ -311,7 +312,7 @@ const BulkAirbnbBookingDialog: React.FC<BulkAirbnbBookingDialogProps> = ({
                         mode="single"
                         selected={booking.date}
                         onSelect={(date) => date && updateBookingDate(booking.id, 'date', date)}
-                        disabled={(date) => date < new Date()}
+                        disabled={(date) => format(date, 'yyyy-MM-dd') < getUKTodayDateString()}
                         initialFocus
                       />
                     </PopoverContent>

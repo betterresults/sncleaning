@@ -16,7 +16,8 @@ import EditBookingDialog from './EditBookingDialog';
 import DuplicateBookingDialog from './DuplicateBookingDialog';
 import BookingCard from '@/components/booking/BookingCard';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { format } from 'date-fns';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate, getUKTodayDateString } from '@/lib/ukTime';
 
 type Booking = CustomerUpcomingBooking;
 
@@ -32,7 +33,7 @@ const CustomerUpcomingBookings = () => {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards');
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(getUKNowAsLocalDate());
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 10;
 
@@ -261,12 +262,11 @@ const CustomerUpcomingBookings = () => {
                 
                 for (let day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1)) {
                   const dayBookings = bookings.filter(booking => {
-                    const bookingDate = new Date(booking.date_time);
-                    return bookingDate.toDateString() === day.toDateString();
+                    return formatUKDate(booking.date_time, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
                   });
                   
                   const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                  const isToday = day.toDateString() === new Date().toDateString();
+                  const isToday = format(day, 'yyyy-MM-dd') === getUKTodayDateString();
                   
                   days.push(
                     <div 

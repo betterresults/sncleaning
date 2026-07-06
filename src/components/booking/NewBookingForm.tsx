@@ -24,6 +24,7 @@ import { LinenUsageItem } from '@/hooks/useLinenProducts';
 import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeBadgeColor, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
 import { computeBookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -596,7 +597,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
         calculated_quote: formData.totalCost,
         recommended_hours: formData.totalHours || null,
         discount_amount: formData.discount || 0,
-        selected_date: formData.selectedDate?.toISOString().split('T')[0] || null,
+        selected_date: formData.selectedDate ? format(formData.selectedDate, 'yyyy-MM-dd') : null,
         selected_time: formData.selectedTime,
         source: 'admin',
         status: 'quote_sent',
@@ -1154,7 +1155,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
                       selected={formData.selectedDate}
                       onSelect={(date) => handleInputChange('selectedDate', date)}
                       disabled={(date) => {
-                        const today = new Date();
+                        const today = getUKNowAsLocalDate();
                         today.setHours(0, 0, 0, 0);
                         return date < today;
                       }}

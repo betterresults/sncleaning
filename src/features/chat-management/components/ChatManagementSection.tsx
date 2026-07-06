@@ -16,6 +16,7 @@ import {
 import type { ChatWithLastMessage } from '@/types/chat';
 import type { ChatTypeFilter } from '../types';
 import { getChatTypeDisplay, getManagementTitle } from '../utils/display';
+import { formatLondonDate } from '@/lib/ukTime';
 
 interface ChatManagementSectionProps {
   chats: ChatWithLastMessage[];
@@ -91,7 +92,7 @@ export function ChatManagementSection({
                 <ShellListMeta>
                   {getChatTypeDisplay(chat.chat_type)}
                   {chat.last_message_at &&
-                    ` · Last active ${new Date(chat.last_message_at).toLocaleDateString()}`}
+                    ` · Last active ${formatLondonDate(chat.last_message_at)}`}
                 </ShellListMeta>
               </ShellListContent>
               <div className="flex shrink-0 items-center gap-2">

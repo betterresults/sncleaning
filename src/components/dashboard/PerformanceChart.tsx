@@ -5,7 +5,7 @@ import { format, subDays } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ShellEmpty } from '@/layouts/shell';
 import { PerformanceChartSkeleton } from './PerformanceChartSkeleton';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredDate } from '@/lib/ukTime';
 
 interface ChartData {
   date: string;
@@ -26,7 +26,7 @@ const PerformanceChart = () => {
     try {
       setLoading(true);
 
-      const last7Days = subDays(new Date(), 7);
+      const last7Days = subDays(getUKNowAsStoredDate(), 7);
 
       const { data: bookingsData, error } = await supabase
         .from('past_bookings')

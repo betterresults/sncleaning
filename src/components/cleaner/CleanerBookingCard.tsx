@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Booking } from './types';
 import { useServiceTypes, useCleaningTypes, getServiceTypeLabel, getCleaningTypeLabel } from '@/hooks/useCompanySettings';
 import { normalizeCleaningTypeKey, normalizeServiceTypeKey, correctBookingTypes } from '@/utils/bookingFormatters';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKTodayDateString } from '@/lib/ukTime';
 
 interface CleanerBookingCardProps {
   booking: Booking;
@@ -32,9 +32,7 @@ const CleanerBookingCard = ({
 
   // Check if booking is for today
   const isToday = () => {
-    const bookingDate = new Date(booking.date_time).toDateString();
-    const today = new Date().toDateString();
-    return bookingDate === today;
+    return formatUKDate(booking.date_time, 'yyyy-MM-dd') === getUKTodayDateString();
   };
 
   // Check if booking is same day

@@ -321,12 +321,10 @@ const SMSNotificationManager = () => {
     
     // === BOOKING VARIABLES ===
     if (booking) {
-      const bookingDate = booking.date_time ? new Date(booking.date_time) : null;
-      
       // Basic booking info
       processedContent = processedContent.replace(/\{\{booking_id\}\}/g, booking.id.toString());
-      processedContent = processedContent.replace(/\{\{booking_date\}\}/g, bookingDate ? bookingDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '');
-      processedContent = processedContent.replace(/\{\{booking_time\}\}/g, bookingDate ? bookingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
+      processedContent = processedContent.replace(/\{\{booking_date\}\}/g, booking.date_time ? formatUKLocaleDate(booking.date_time, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : '');
+      processedContent = processedContent.replace(/\{\{booking_time\}\}/g, booking.date_time ? formatUKTime(booking.date_time) : '');
       processedContent = processedContent.replace(/\{\{service_type\}\}/g, booking.service_type || '');
       processedContent = processedContent.replace(/\{\{cleaning_type\}\}/g, booking.cleaning_type || '');
       processedContent = processedContent.replace(/\{\{address\}\}/g, booking.address || '');

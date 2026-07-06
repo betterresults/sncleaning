@@ -8,6 +8,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
 };
 
+// Formats a genuine real-UTC "now" instant as a UK wall-clock date string
+// (DST-aware via Europe/London), so "Date Added"-style stamps in emails always
+// show UK time regardless of the server's own clock/timezone.
+function formatLondonDateStr(date: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  }).format(date);
+}
+
 // Fire a Purchase event to Meta CAPI (server-side) using the booking's stored meta_event_id
 // so it deduplicates with the browser-side Pixel event from SubscribedButtonClick/Purchase.
 async function fireMetaPurchase(
@@ -723,7 +733,7 @@ async function sendPaymentMethodSuccessEmail(
               <p style="margin: 0; color: #374151; font-size: 14px;"><strong>Card Type:</strong> ${cardBrand.charAt(0).toUpperCase() + cardBrand.slice(1)}</p>
               <p style="margin: 10px 0 0 0; color: #374151; font-size: 14px;"><strong>Card Number:</strong> •••• •••• •••• ${cardLast4}</p>
               <p style="margin: 10px 0 0 0; color: #374151; font-size: 14px;"><strong>Expires:</strong> ${cardExpMonth.toString().padStart(2, '0')}/${cardExpYear}</p>
-              <p style="margin: 10px 0 0 0; color: #374151; font-size: 14px;"><strong>Date Added:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
+              <p style="margin: 10px 0 0 0; color: #374151; font-size: 14px;"><strong>Date Added:</strong> ${formatLondonDateStr(new Date())}</p>
             </div>
           </div>
           

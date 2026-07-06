@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import {
   Calendar,
   Clock,
@@ -12,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { CustomerLookupResult } from '../types';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, formatLondonDate, formatLondonDateTime } from '@/lib/ukTime';
 
 interface CustomerLookupContentProps {
   lookupResult: CustomerLookupResult;
@@ -102,7 +101,7 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
               {lookupResult.quoteLead.selected_date && (
                 <p className="mt-2 text-sm">
                   <strong>Preferred Date:</strong>{' '}
-                  {format(new Date(lookupResult.quoteLead.selected_date), 'EEE, dd MMM yyyy')}
+                  {formatUKDate(lookupResult.quoteLead.selected_date, 'EEE, dd MMM yyyy')}
                 </p>
               )}
               <div className="mt-2 flex items-center gap-2">
@@ -115,7 +114,7 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
                 </Badge>
                 {lookupResult.quoteLead.created_at && (
                   <span className="text-xs text-muted-foreground">
-                    Created {format(new Date(lookupResult.quoteLead.created_at), 'dd MMM yyyy')}
+                    Created {formatLondonDate(lookupResult.quoteLead.created_at)}
                   </span>
                 )}
               </div>
@@ -233,7 +232,7 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
                     {sms.direction === 'outgoing' ? 'Sent' : 'Received'}
                   </span>
                   <span>•</span>
-                  <span>{format(new Date(sms.created_at), 'dd MMM yyyy HH:mm')}</span>
+                  <span>{formatLondonDateTime(sms.created_at)}</span>
                   {sms.direction === 'outgoing' && (
                     <>
                       <span>•</span>
@@ -268,7 +267,7 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{email.subject}</p>
                     <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{format(new Date(email.created_at), 'dd MMM yyyy HH:mm')}</span>
+                      <span>{formatLondonDateTime(email.created_at)}</span>
                       <span>•</span>
                       <Badge
                         variant={

@@ -6,6 +6,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Formats a genuine real-UTC "now" instant as a UK wall-clock date string
+// (DST-aware via Europe/London), so test-data stamps show UK time regardless
+// of the server's own clock/timezone.
+function formatLondonDateStr(date: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+  }).format(date);
+}
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
         customerName: 'Test Customer',
         bookingDetails: {
           service: 'Deep Cleaning Service',
-          date: new Date().toLocaleDateString(),
+          date: formatLondonDateStr(new Date()),
           address: '123 Test Street, Test City'
         }
       }

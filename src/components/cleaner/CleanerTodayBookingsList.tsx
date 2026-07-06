@@ -10,6 +10,9 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import LocationTracker from './LocationTracker';
 import CleaningPhotosUploadDialog from './CleaningPhotosUploadDialog';
+import { getUKTodayRange } from '@/lib/ukTime';
+import { formatUKTime } from '@/lib/ukTime';
+import { formatLondonLocale } from '@/lib/ukTime';
 
 interface CoCleaner {
   id: number;
@@ -83,10 +86,8 @@ const CleanerTodayBookingsList = () => {
       setLoading(true);
       setError(null);
 
-      // Get today's date range
-      const today = new Date();
-      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+      // Get today's date range (UK-anchored, since date_time stores UK wall-clock digits)
+      const { start: startOfDay, end: endOfDay } = getUKTodayRange();
 
       // SINGLE SOURCE OF TRUTH: Get all bookings where this cleaner is assigned via cleaner_payments
       const { data: cleanerAssignments, error: assignmentsError } = await supabase
@@ -115,8 +116,8 @@ const CleanerTodayBookingsList = () => {
         .select('*')
         .in('id', bookingIds)
         .or('booking_status.is.null,booking_status.neq.cancelled')
-        .gte('date_time', startOfDay.toISOString())
-        .lte('date_time', endOfDay.toISOString())
+        .gte('date_time', startOfDay)
+        .lte('date_time', endOfDay)
         .order('date_time', { ascending: true });
 
       if (bookingsError) {
@@ -324,11 +325,10 @@ const CleanerTodayBookingsList = () => {
     return trackingRecords.find(tr => tr.booking_id === bookingId);
   };
 
+  // check_in_time/check_out_time are real UTC timestamps of when the cleaner
+  // actually checked in/out, so they must be pinned to real Europe/London time.
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatLondonLocale(dateString, { hour: '2-digit', minute: '2-digit' }, 'en-US');
   };
 
   const formatDuration = (duration: unknown) => {
@@ -501,7 +501,7 @@ const CleanerTodayBookingsList = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <span className="font-medium">Time:</span>
-                    <div>{booking.date_time ? formatTime(booking.date_time) : 'N/A'}</div>
+                    <div>{booking.date_time ? formatUKTime(booking.date_time) : 'N/A'}</div>
                   </div>
                   <div>
                     <span className="font-medium">Duration:</span>

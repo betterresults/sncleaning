@@ -8,6 +8,7 @@ import { ArrowLeft, Calendar, DollarSign, Mail, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { formatUKDateTime, getUKNowAsStoredDate, getUKNowAsLocalDate } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -115,7 +116,7 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
   const calculateDaysUntilDue = () => {
     if (!dueDate) return 0;
     const due = new Date(dueDate);
-    const today = new Date();
+    const today = getUKNowAsStoredDate();
     const diffTime = due.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -123,7 +124,6 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
 
   if (!booking) return null;
 
-  const bookingDate = new Date(booking.date_time);
   const daysUntilDue = calculateDaysUntilDue();
 
   return (
@@ -165,7 +165,7 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
                 </div>
                 <div>
                   <p className="text-muted-foreground">Service Date</p>
-                  <p className="font-semibold">{format(bookingDate, 'dd MMM yyyy HH:mm')}</p>
+                  <p className="font-semibold">{formatUKDateTime(booking.date_time)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Amount</p>
@@ -202,7 +202,7 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
                     value={dueDate}
                     onChange={(e) => handleDueDateChange(e.target.value)}
                     className="h-12 rounded-xl pl-11 text-base"
-                    min={format(new Date(), 'yyyy-MM-dd')}
+                    min={format(getUKNowAsLocalDate(), 'yyyy-MM-dd')}
                   />
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>

@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TaskCommentDialog } from './TaskCommentDialog';
 import { ModernPropertyConfigDialog } from './ModernPropertyConfigDialog';
+import { formatUKDate } from '@/lib/ukTime';
 
 interface CleaningChecklistInterfaceProps {
   bookingId: number;
@@ -312,7 +313,7 @@ export function CleaningChecklistInterface({
     );
   }
 
-  const currentDate = new Date(bookingData?.date_time || new Date()).toLocaleDateString();
+  const currentDate = bookingData?.date_time ? formatUKDate(bookingData.date_time) : formatUKDate(new Date());
   const customerName = customerData ? 
     `${customerData.first_name || ''} ${customerData.last_name || ''}`.trim() || customerData.email : 
     'Unknown Customer';

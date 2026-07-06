@@ -10,7 +10,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { CalendarDays, DollarSign, TrendingUp, Clock, Calendar, CreditCard } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, subDays, isAfter, startOfYear } from 'date-fns';
 import { formatServiceType } from '@/utils/bookingFormatters';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate } from '@/lib/ukTime';
+
+// Boundaries are computed using UK-local-getter fields (via `getUKNowAsLocalDate()`)
+// then re-stamped into the naive-UK-frame `date_time` string convention (fake
+// `+00:00`) so the resulting `Date` objects are directly comparable to
+// `new Date(booking.date_time)`, regardless of the viewer's device timezone.
+const toStoredBoundaryStart = (d: Date) => new Date(format(d, "yyyy-MM-dd'T'00:00:00'+00:00'"));
+const toStoredBoundaryEnd = (d: Date) => new Date(format(d, "yyyy-MM-dd'T'23:59:59.999'+00:00'"));
 
 interface EarningsData {
   upcomingPayment: {
@@ -79,7 +86,7 @@ const CleanerEarnings = () => {
   const [error, setError] = useState<string | null>(null);
 
   const getPaymentPeriodInfo = () => {
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
@@ -108,55 +115,64 @@ const CleanerEarnings = () => {
       paymentDate: format(paymentDate, 'do MMMM yyyy'),
       periodStart: format(periodStart, 'do MMMM yyyy'),
       periodEnd: format(periodEnd, 'do MMMM yyyy'),
-      periodStartDate: periodStart,
-      periodEndDate: periodEnd
+      // Comparable-to-`date_time` boundaries (naive-UK-frame strings), distinct from
+      // the local-getter `periodStart`/`periodEnd` used above for display formatting.
+      periodStartDate: toStoredBoundaryStart(periodStart),
+      periodEndDate: toStoredBoundaryEnd(periodEnd)
     };
   };
 
   const calculatePeriodData = (bookings: BookingEarning[], period: string) => {
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     let filteredBookings: BookingEarning[] = [];
 
     switch (period) {
-      case 'current':
+      case 'current': {
         // Current month (1st to end of month)
-        const currentStart = startOfMonth(now);
-        const currentEnd = endOfMonth(now);
+        const currentStart = toStoredBoundaryStart(startOfMonth(now));
+        const currentEnd = toStoredBoundaryEnd(endOfMonth(now));
         filteredBookings = bookings.filter(booking => {
           const bookingDate = new Date(booking.date_time);
           return bookingDate >= currentStart && bookingDate <= currentEnd;
         });
         break;
-      case 'lastMonth':
-        const lastMonthStart = startOfMonth(subMonths(now, 1));
-        const lastMonthEnd = endOfMonth(subMonths(now, 1));
+      }
+      case 'lastMonth': {
+        const lastMonthStart = toStoredBoundaryStart(startOfMonth(subMonths(now, 1)));
+        const lastMonthEnd = toStoredBoundaryEnd(endOfMonth(subMonths(now, 1)));
         filteredBookings = bookings.filter(booking => {
           const bookingDate = new Date(booking.date_time);
           return bookingDate >= lastMonthStart && bookingDate <= lastMonthEnd;
         });
         break;
-      case 'last3Months':
-        const last3MonthsStart = startOfMonth(subMonths(now, 2));
+      }
+      case 'last3Months': {
+        const last3MonthsStart = toStoredBoundaryStart(startOfMonth(subMonths(now, 2)));
         filteredBookings = bookings.filter(booking => {
           const bookingDate = new Date(booking.date_time);
           return bookingDate >= last3MonthsStart;
         });
         break;
-      case 'last6Months':
-        const last6MonthsStart = startOfMonth(subMonths(now, 5));
+      }
+      case 'last6Months': {
+        const last6MonthsStart = toStoredBoundaryStart(startOfMonth(subMonths(now, 5)));
         filteredBookings = bookings.filter(booking => {
           const bookingDate = new Date(booking.date_time);
           return bookingDate >= last6MonthsStart;
         });
         break;
+      }
       case 'allTime':
         filteredBookings = bookings;
         break;
-      default:
+      default: {
+        const defaultStart = toStoredBoundaryStart(startOfMonth(now));
+        const defaultEnd = toStoredBoundaryEnd(endOfMonth(now));
         filteredBookings = bookings.filter(booking => {
           const bookingDate = new Date(booking.date_time);
-          return bookingDate >= startOfMonth(now) && bookingDate <= endOfMonth(now);
+          return bookingDate >= defaultStart && bookingDate <= defaultEnd;
         });
+      }
     }
 
     const totalEarnings = filteredBookings.reduce((sum, booking) => sum + (Number(booking.cleaner_pay) || 0), 0);

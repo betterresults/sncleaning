@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Search, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { formatLondonDateTime } from '@/lib/ukTime';
 
 interface BookingMatch {
   id: number;
@@ -201,7 +202,7 @@ export const MetaCapiBookingSelector: React.FC<MetaCapiBookingSelectorProps> = (
                       <span>•</span>
                       <span>
                         {b.date_submited
-                          ? new Date(b.date_submited).toLocaleString()
+                          ? formatLondonDateTime(b.date_submited)
                           : 'No date'}
                       </span>
                       {b.booking_status && (
