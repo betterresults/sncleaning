@@ -5,12 +5,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { devLog } from '@/lib/devLog';
 
 // Supabase fires these purely to keep the access token fresh — on the auto-refresh timer,
-// or when a tab regains focus/visibility. They don't represent an actual sign-in/sign-out
-// or a role/relationship change, so (for a user we've already loaded) they should update
+// or (per Supabase's own docs) a `SIGNED_IN` event any time a tab/window regains
+// visibility/focus, even when the session hasn't actually changed at all. See
+// https://github.com/supabase/auth-js/issues/634 and the "SIGNED_IN" entry in
+// https://supabase.com/docs/reference/javascript/auth-onauthstatechange ("this may occur even
+// when the user is already signed in"). None of these represent an actual sign-in/sign-out or a
+// role/relationship change, so (for a user we've already loaded) they should update
 // `session`/`user` quietly without flipping `loading`. Consumers like `ProtectedRoute` treat
 // `loading` as "unmount the routed page and show a spinner", which was wiping in-progress
-// form state every time a background token refresh fired while someone was mid-edit.
-const BACKGROUND_AUTH_EVENTS = new Set<AuthChangeEvent>(['TOKEN_REFRESHED', 'USER_UPDATED']);
+// form state every time someone switched tabs/apps and back while mid-edit.
+const BACKGROUND_AUTH_EVENTS = new Set<AuthChangeEvent>(['TOKEN_REFRESHED', 'USER_UPDATED', 'SIGNED_IN']);
 
 interface AuthContextType {
   user: User | null;
@@ -125,7 +129,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (isBackgroundRefreshForKnownUser) {
             // Same user we already have role/relationships for — session/user above are
-            // already up to date, nothing else needs to change.
+            // already up to date, nothing else needs to change. This is what makes a stray
+            // `SIGNED_IN` from a tab refocus (same user, unchanged session) a safe no-op instead
+            // of re-triggering the full loading/fetch cycle below.
             devLog('Auth state change is a background refresh for the current user, skipping role refetch');
             return;
           }
