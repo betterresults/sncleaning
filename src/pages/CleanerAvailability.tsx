@@ -1,5 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
+import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
 import CleanerAvailability from '@/components/cleaner/CleanerAvailability';
 import CleanerBottomNav from '@/components/cleaner/CleanerBottomNav';
 import CleanerTopNav from '@/components/cleaner/CleanerTopNav';
@@ -8,10 +10,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerAvailabilityPage = () => {
-  const { cleanerId, loading } = useAuth();
+  const { cleanerId, userRole, loading } = useAuth();
+  const { selectedCleanerId } = useAdminCleaner();
   const isMobile = useIsMobile();
 
   const isMobileView = isCapacitor() || isMobile;
+  const isAdminViewing = userRole === 'admin';
+  // Admins have no cleanerId of their own — they browse via the AdminCleanerSelector instead.
+  const effectiveCleanerId = isAdminViewing ? selectedCleanerId : cleanerId;
 
   if (loading) {
     return <ShellLoading />;
@@ -24,7 +30,12 @@ const CleanerAvailabilityPage = () => {
 
         <main className="pt-header-safe pb-20 content-bottom-spacer">
           <div className="p-4 pt-2">
-            <CleanerAvailability cleanerId={cleanerId} />
+            {isAdminViewing && (
+              <div className="mb-4">
+                <AdminCleanerSelector />
+              </div>
+            )}
+            <CleanerAvailability cleanerId={effectiveCleanerId} isAdminViewing={isAdminViewing} />
           </div>
         </main>
 
@@ -35,7 +46,12 @@ const CleanerAvailabilityPage = () => {
 
   return (
     <ShellPage width="wide">
-      <CleanerAvailability cleanerId={cleanerId} />
+      {isAdminViewing && (
+        <div className="mb-3 sm:mb-4">
+          <AdminCleanerSelector />
+        </div>
+      )}
+      <CleanerAvailability cleanerId={effectiveCleanerId} isAdminViewing={isAdminViewing} />
     </ShellPage>
   );
 };
