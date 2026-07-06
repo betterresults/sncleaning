@@ -23,7 +23,7 @@ import { BookingsPDF } from '@/components/bookings/BookingsPDF';
 import BookingsPagination from '@/components/cleaner/BookingsPagination';
 import TableControls from '@/components/cleaner/TableControls';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -193,14 +193,19 @@ const BulkEditBookings = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
+    // `filters.dateFrom`/`dateTo` are bare `YYYY-MM-DD` strings; build them into
+    // `date_time`-style boundary strings (naive UK digits + fake `+00:00`) so the
+    // comparison stays in the same naive-UK-frame convention as `booking.date_time`.
     if (filters.dateFrom) {
+      const fromBoundary = new Date(`${filters.dateFrom}T00:00:00+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= new Date(filters.dateFrom)
+        new Date(booking.date_time) >= fromBoundary
       );
     }
     if (filters.dateTo) {
+      const toBoundary = new Date(`${filters.dateTo}T23:59:59.999+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= new Date(filters.dateTo)
+        new Date(booking.date_time) <= toBoundary
       );
     }
 
@@ -402,7 +407,7 @@ const BulkEditBookings = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `past-bookings-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      link.download = `past-bookings-${format(getUKNowAsLocalDate(), 'yyyy-MM-dd')}.pdf`;
       link.click();
       URL.revokeObjectURL(url);
 

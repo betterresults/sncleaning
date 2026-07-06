@@ -19,7 +19,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import { useToast } from '@/hooks/use-toast';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate, getUKStoredAsLocalDate } from '@/lib/ukTime';
 
 const CustomerDashboard = () => {
   const { user, userRole, customerId, cleanerId, signOut, loading } = useAuth();
@@ -83,10 +83,10 @@ const CustomerDashboard = () => {
                     </p>
                     <div className="space-y-3">
                       {overdueInvoices.map((booking) => {
-                        const bookingDate = new Date(booking.date_time);
-                        const dueDate = new Date(bookingDate);
-                        dueDate.setDate(dueDate.getDate() + 8);
-                        const daysOverdue = Math.floor((new Date().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                        const bookingDate = getUKStoredAsLocalDate(booking.date_time);
+                        const dueDate = bookingDate ? new Date(bookingDate) : null;
+                        if (dueDate) dueDate.setDate(dueDate.getDate() + 8);
+                        const daysOverdue = dueDate ? Math.floor((getUKNowAsLocalDate().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
                         
                         return (
                           <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-white rounded border border-red-200">

@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString } from '@/lib/ukTime';
 
 interface AffectedBooking {
   id: number;
@@ -74,7 +74,7 @@ export default function UpdateBookingsCleanerDialog({
       }
 
       // Find ALL upcoming bookings from this recurring group
-      const now = new Date().toISOString();
+      const now = getUKNowAsStoredString();
       const { data: allBookings, error: allBookingsError } = await supabase
         .from('bookings')
         .select('id, date_time, address, cleaner')

@@ -55,14 +55,14 @@ export function PastBookingsFilters({ filters, onFiltersChange, cleaners, availa
   const handleDateFromChange = (date: Date | undefined) => {
     onFiltersChange({ 
       ...filters, 
-      dateFrom: date ? date.toISOString().split('T')[0] : '' 
+      dateFrom: date ? format(date, 'yyyy-MM-dd') : '' 
     });
   };
 
   const handleDateToChange = (date: Date | undefined) => {
     onFiltersChange({ 
       ...filters, 
-      dateTo: date ? date.toISOString().split('T')[0] : '' 
+      dateTo: date ? format(date, 'yyyy-MM-dd') : '' 
     });
   };
 

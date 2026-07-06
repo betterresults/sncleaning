@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Send, TestTube, Eye, Search, Calendar } from "lucide-react";
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, formatLondonDate } from '@/lib/ukTime';
 
 interface EmailTemplate {
   id: string;
@@ -196,7 +196,7 @@ export const NotificationTestInterface = () => {
             initialVariables[variable] = 'sample@example.com';
             break;
           case 'booking_date':
-            initialVariables[variable] = new Date().toLocaleDateString();
+            initialVariables[variable] = formatLondonDate(new Date());
             break;
           case 'booking_time':
             initialVariables[variable] = '10:00 AM';

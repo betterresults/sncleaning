@@ -8,7 +8,7 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Calendar, DollarSign, Clock, User, CreditCard } from 'lucide-react';
 import { CollectPaymentMethodDialog } from './CollectPaymentMethodDialog';
 import SyncPaymentMethodsButton from './SyncPaymentMethodsButton';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate, buildUKStoredString } from '@/lib/ukTime';
 
 interface Customer {
   id: number;
@@ -65,7 +65,10 @@ const CustomerPaymentsManager = () => {
   };
 
   const getDateRange = () => {
-    const now = new Date();
+    // `getUKNowAsLocalDate()`'s *local* getters equal UK digits, so it's safe to feed
+    // into date-fns `startOfMonth`/`endOfMonth`/`subMonths` (which operate on local
+    // getters) and get a UK-calendar-correct month boundary regardless of device timezone.
+    const now = getUKNowAsLocalDate();
     if (period === 'current_month') {
       return {
         start: startOfMonth(now),
@@ -98,8 +101,8 @@ const CustomerPaymentsManager = () => {
           payment_method
         `)
         .eq('customer', parseInt(selectedCustomerId))
-        .gte('date_time', start.toISOString())
-        .lte('date_time', end.toISOString())
+        .gte('date_time', buildUKStoredString(start, '00:00:00'))
+        .lte('date_time', buildUKStoredString(end, '23:59:59'))
         .order('date_time', { ascending: false });
 
       if (error) throw error;

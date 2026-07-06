@@ -49,14 +49,14 @@ export function UpcomingBookingsFilters({ filters, onFiltersChange, cleaners, av
   const handleDateFromChange = (date: Date | undefined) => {
     onFiltersChange({ 
       ...filters, 
-      dateFrom: date ? date.toISOString().split('T')[0] : '' 
+      dateFrom: date ? format(date, 'yyyy-MM-dd') : '' 
     });
   };
 
   const handleDateToChange = (date: Date | undefined) => {
     onFiltersChange({ 
       ...filters, 
-      dateTo: date ? date.toISOString().split('T')[0] : '' 
+      dateTo: date ? format(date, 'yyyy-MM-dd') : '' 
     });
   };
 

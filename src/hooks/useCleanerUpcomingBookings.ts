@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getUKNowAsStoredDate } from '@/lib/ukTime';
 
 export interface CleanerUpcomingBooking {
   id: number;
@@ -76,7 +77,7 @@ export const useCleanerUpcomingBookings = (cleanerId: number | null) => {
     queryKey: ['cleaner-upcoming-bookings', cleanerId],
     enabled: !!cleanerId,
     queryFn: async (): Promise<CleanerUpcomingBooking[]> => {
-      const now = new Date();
+      const now = getUKNowAsStoredDate();
       const until = new Date(now.getTime() + LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000);
       return fetchCleanerBookingsBetween(cleanerId as number, now.toISOString(), until.toISOString());
     },

@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Camera, Download, AlertTriangle, Calendar, MapPin, X, Link2 } from 'lucide-react';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatLondonDate } from '@/lib/ukTime';
 
 interface CleaningPhoto {
   id: string;
@@ -230,7 +231,7 @@ const CleaningPhotosViewDialog = ({ open, onOpenChange, booking }: CleaningPhoto
         )}
 
         <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
-          {new Date(photo.created_at).toLocaleDateString()}
+          {formatLondonDate(photo.created_at)}
         </p>
       </div>
     );

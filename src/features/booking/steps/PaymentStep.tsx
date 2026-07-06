@@ -22,6 +22,8 @@ import { User } from 'lucide-react';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 import { combineLocalDateAndTime, formatDateForStorage } from '@/lib/bookingDate';
 import { trackMetaEvent } from '@/lib/metaCapi';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
+import { format } from 'date-fns';
 
 // Simple auth check without using AuthContext
 const useSimpleAuth = () => {
@@ -563,7 +565,7 @@ useEffect(() => {
     
     const bookingDateTime = combineLocalDateAndTime(data.selectedDate, data.selectedTime);
     if (!bookingDateTime) return false;
-    const hoursUntilBooking = (bookingDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+    const hoursUntilBooking = (bookingDateTime.getTime() - getUKNowAsLocalDate().getTime()) / (1000 * 60 * 60);
     return hoursUntilBooking <= 48;
   }, [data.selectedDate, data.selectedTime]);
 
@@ -1033,7 +1035,7 @@ useEffect(() => {
         // Send SMS with bank transfer details
         try {
           const bookingDate = data.selectedDate 
-            ? new Date(data.selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+            ? format(new Date(data.selectedDate), 'EEEE, d MMMM yyyy')
             : 'your scheduled date';
           
           await supabase.functions.invoke('send-bank-transfer-sms', {
@@ -1923,7 +1925,7 @@ useEffect(() => {
                 <div className="flex-1 flex justify-between">
                   <div>
                     <span className="font-medium">Date & Time:</span>{' '}
-                    {data.selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}{' '}
+                    {format(data.selectedDate, 'EEEE, d MMMM')}{' '}
                     {data.selectedTime && `at ${data.selectedTime}`}
                   </div>
                   <Button 
@@ -1978,7 +1980,7 @@ useEffect(() => {
                 <Calendar className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="font-medium">Date & Time:</span>{' '}
-                  {data.selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}{' '}
+                  {format(data.selectedDate, 'EEEE, d MMMM')}{' '}
                   at {data.selectedTime}
                 </div>
               </div>

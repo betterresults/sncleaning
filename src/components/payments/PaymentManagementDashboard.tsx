@@ -29,7 +29,7 @@ import EmailStatusIndicator from './EmailStatusIndicator';
 import { useSendPaymentSMS } from '@/hooks/useSendPaymentSMS';
 import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
 import MessagePreviewDialog from './MessagePreviewDialog';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString, getUKNowAsStoredDate, getUKNowAsLocalDate, buildUKStoredString } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -151,7 +151,7 @@ const PaymentManagementDashboard = () => {
 
       // For upcoming bookings, filter for future dates
       if (showUpcoming) {
-        const now = new Date().toISOString();
+        const now = getUKNowAsStoredString();
         query = query.gte('date_time', now);
       }
 
@@ -190,13 +190,17 @@ const PaymentManagementDashboard = () => {
 
   const fetchCurrentMonthStats = async () => {
     try {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const now = getUKNowAsStoredDate();
+      // `getUKNowAsLocalDate()`'s *local* getters equal UK digits, so it's safe to build
+      // the calendar month-start via local getters (`.getFullYear()`/`.getMonth()`) —
+      // unlike `now` above, which only has correct digits on its *UTC* getters.
+      const nowLocal = getUKNowAsLocalDate();
+      const monthStart = new Date(nowLocal.getFullYear(), nowLocal.getMonth(), 1);
       
       const { data, error } = await supabase
         .from('past_bookings')
         .select('total_cost, payment_status, cleaner_pay, date_time, booking_status')
-        .gte('date_time', monthStart.toISOString())
+        .gte('date_time', buildUKStoredString(monthStart, '00:00:00'))
         .lte('date_time', now.toISOString())
         .or('booking_status.is.null,booking_status.neq.cancelled');
 

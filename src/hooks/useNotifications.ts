@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatUKLocaleDate } from '@/lib/ukTime';
 
 export interface Notification {
   id: string;
@@ -59,10 +60,10 @@ export const useNotifications = () => {
       const dateValue = details?.booking_date || details?.date_time;
       if (dateValue) {
         try {
-          return new Date(dateValue).toLocaleDateString('en-GB', { 
-            day: '2-digit', 
-            month: 'short', 
-            year: 'numeric' 
+          return formatUKLocaleDate(dateValue, {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
           });
         } catch {
           return 'unknown date';

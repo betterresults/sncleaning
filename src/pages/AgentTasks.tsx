@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns';
+import { formatLondonDate, formatUKDate } from '@/lib/ukTime';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const AgentTasks = () => {
@@ -231,7 +231,7 @@ const AgentTasks = () => {
                             {task.due_date && (
                               <div className="flex items-center gap-1.5 text-xs bg-slate-100 px-2.5 py-1.5 rounded-lg shrink-0">
                                 <Calendar className="h-3.5 w-3.5 text-slate-500" />
-                                <span className="font-medium text-slate-700">{format(new Date(task.due_date), 'dd MMM')}</span>
+                                <span className="font-medium text-slate-700">{formatLondonDate(task.due_date, 'dd MMM')}</span>
                               </div>
                             )}
                           </div>
@@ -287,7 +287,7 @@ const AgentTasks = () => {
                                   </div>
                                   <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
                                     {task.booking.date_only && (
-                                      <span>{format(new Date(task.booking.date_only), 'EEE, dd MMM yyyy')}</span>
+                                      <span>{formatUKDate(task.booking.date_only, 'EEE, dd MMM yyyy')}</span>
                                     )}
                                     {task.booking.date_only && task.booking.address && <span>•</span>}
                                     {task.booking.address && (

@@ -8,7 +8,8 @@ import BookingsTable from './BookingsTable';
 import BookingsPagination from './BookingsPagination';
 import BookingFilters from './BookingFilters';
 import { Booking, Stats } from './types';
-import { isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isWithinInterval } from 'date-fns';
+import { getUKTodayRange } from '@/lib/ukTime';
 
 const CleanerUpcomingBookings = () => {
   const { cleanerId, userRole, loading: authLoading } = useAuth();
@@ -78,7 +79,7 @@ const CleanerUpcomingBookings = () => {
         .select('*')
         .in('id', bookingIds)
         .or('booking_status.is.null,booking_status.neq.cancelled')
-        .gte('date_time', startOfDay(new Date()).toISOString())
+        .gte('date_time', getUKTodayRange().start)
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
@@ -159,21 +160,25 @@ const CleanerUpcomingBookings = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
-    // Date range filter
+    // Date range filter — build boundaries in the naive-UK-frame convention (fake
+    // `+00:00`) from the picker's local Y/M/D so they're directly comparable to
+    // `date_time`, instead of `startOfDay`/`endOfDay` Date objects compared directly
+    // against a mismatched (naive-UK-frame) `date_time` Date.
     if (dateFrom || dateTo) {
       filtered = filtered.filter(booking => {
         if (!booking.date_time) return false;
         const bookingDate = new Date(booking.date_time);
         
         if (dateFrom && dateTo) {
-          return isWithinInterval(bookingDate, {
-            start: startOfDay(dateFrom),
-            end: endOfDay(dateTo)
-          });
+          const start = new Date(`${format(dateFrom, 'yyyy-MM-dd')}T00:00:00+00:00`);
+          const end = new Date(`${format(dateTo, 'yyyy-MM-dd')}T23:59:59.999+00:00`);
+          return isWithinInterval(bookingDate, { start, end });
         } else if (dateFrom) {
-          return bookingDate >= startOfDay(dateFrom);
+          const start = new Date(`${format(dateFrom, 'yyyy-MM-dd')}T00:00:00+00:00`);
+          return bookingDate >= start;
         } else if (dateTo) {
-          return bookingDate <= endOfDay(dateTo);
+          const end = new Date(`${format(dateTo, 'yyyy-MM-dd')}T23:59:59.999+00:00`);
+          return bookingDate <= end;
         }
         return true;
       });

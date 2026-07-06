@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { Folder, Image, Search, Calendar, MapPin, User, ChevronRight, ArrowLeft, Download, Eye, Share2, Copy, Check } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { formatUKDate } from '@/lib/ukTime';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -139,7 +139,7 @@ const PhotoManagement = () => {
         // Get unique dates for this folder
         const uniqueDates = [...new Set(folderPhotos.map(p => {
           try {
-            return format(parseISO(p.booking_date), 'dd MMM');
+            return formatUKDate(p.booking_date, 'dd MMM');
           } catch {
             return p.booking_date;
           }
@@ -148,7 +148,7 @@ const PhotoManagement = () => {
         switch (groupBy) {
           case 'date':
             try {
-              label = format(parseISO(key), 'dd MMM yyyy');
+              label = formatUKDate(key, 'dd MMM yyyy');
             } catch {
               label = key;
             }

@@ -11,7 +11,7 @@ import {
   Check,
   Loader2
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { formatUKDate } from '@/lib/ukTime';
 import { AgentTask } from '@/hooks/useAgentTasks';
 
 interface SMSTemplate {
@@ -84,7 +84,7 @@ export const AgentSMSPanel: React.FC<AgentSMSPanelProps> = ({ task }) => {
       '{{last_name}}': task.customer?.last_name || '',
       '{{booking_id}}': task.booking_id?.toString() || '',
       '{{booking_date}}': task.booking?.date_only 
-        ? format(new Date(task.booking.date_only), 'EEEE, dd MMMM yyyy')
+        ? formatUKDate(task.booking.date_only, 'EEEE, dd MMMM yyyy')
         : '',
       '{{address}}': task.booking?.address || '',
       '{{postcode}}': task.booking?.postcode || '',

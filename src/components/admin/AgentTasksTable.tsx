@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select';
 import { MoreHorizontal, Eye, Trash2, XCircle, Calendar, X, Pencil } from 'lucide-react';
 import { AgentTask } from '@/hooks/useAgentTasks';
-import { format } from 'date-fns';
+import { formatLondonDate, formatUKDate } from '@/lib/ukTime';
 import {
   Popover,
   PopoverContent,
@@ -196,7 +196,7 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
                         #{task.booking.id}
                         {task.booking.date_only && (
                           <span className="ml-1 text-muted-foreground">
-                            {format(new Date(task.booking.date_only), 'dd MMM')}
+                            {formatUKDate(task.booking.date_only, 'dd MMM')}
                           </span>
                         )}
                       </Button>
@@ -206,7 +206,7 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
                         <div className="font-medium text-sm">Booking #{task.booking.id}</div>
                         {task.booking.date_only && (
                           <p className="text-sm text-muted-foreground">
-                            Date: {format(new Date(task.booking.date_only), 'dd MMM yyyy')}
+                            Date: {formatUKDate(task.booking.date_only, 'dd MMM yyyy')}
                           </p>
                         )}
                         {task.booking.service_type && (
@@ -261,7 +261,7 @@ export const AgentTasksTable: React.FC<AgentTasksTableProps> = ({
               <TableCell>{getStatusBadge(task.status)}</TableCell>
               <TableCell>
                 {task.due_date 
-                  ? format(new Date(task.due_date), 'dd MMM yyyy')
+                  ? formatLondonDate(task.due_date, 'dd MMM yyyy')
                   : '-'
                 }
               </TableCell>

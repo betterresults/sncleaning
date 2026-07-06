@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getUKNowAsLocalDate, formatUKDate } from '@/lib/ukTime';
 
 interface LinenOrder {
   id: string;
@@ -169,11 +170,11 @@ export const DuplicateLinenOrderDialog: React.FC<DuplicateLinenOrderDialogProps>
                 {order.customers?.first_name} {order.customers?.last_name}
               </p>
               <p className="text-gray-500 text-sm">
-                Order Date: {format(new Date(order.order_date), 'EEEE, MMMM do, yyyy')}
+                Order Date: {formatUKDate(order.order_date, 'EEEE, MMMM do, yyyy')}
               </p>
               {order.delivery_date && (
                 <p className="text-gray-500 text-sm">
-                  Delivery: {format(new Date(order.delivery_date), 'EEEE, MMMM do, yyyy')}
+                  Delivery: {formatUKDate(order.delivery_date, 'EEEE, MMMM do, yyyy')}
                 </p>
               )}
               <p className="text-gray-500 text-sm">
@@ -231,7 +232,7 @@ export const DuplicateLinenOrderDialog: React.FC<DuplicateLinenOrderDialogProps>
                   mode="single"
                   selected={deliveryDate}
                   onSelect={setDeliveryDate}
-                  disabled={(date) => date < new Date()}
+                  disabled={(date) => date < getUKNowAsLocalDate()}
                   initialFocus
                   className="p-4 pointer-events-auto rounded-xl"
                 />

@@ -28,6 +28,7 @@ import {
   useCleanerCoverageAreas,
   useSaveCleanerCoverageAreas,
 } from '@/hooks/useCoverageAreas';
+import { getUKNowAsStoredDate } from '@/lib/ukTime';
 
 type OpenHoursByDay = Map<number, Set<number>>;
 
@@ -527,7 +528,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({ cleanerId, is
   const [openHours, setOpenHours] = useState<OpenHoursByDay>(emptyOpenHours);
   const [isDirty, setIsDirty] = useState(false);
 
-  const today = useMemo(() => new Date(), []);
+  const today = useMemo(() => getUKNowAsStoredDate(), []);
   const currentWeekStart = useMemo(() => startOfWeekUTC(today), [today]);
   const [weekOffset, setWeekOffset] = useState(0);
   const weekStart = useMemo(() => addDaysUTC(currentWeekStart, weekOffset * 7), [currentWeekStart, weekOffset]);

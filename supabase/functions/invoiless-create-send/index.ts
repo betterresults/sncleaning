@@ -5,6 +5,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Formats a genuine real-UTC instant as a UK wall-clock calendar-date string
+// (DST-aware via Europe/London) in YYYY-MM-DD form, so invoice dates near UTC
+// midnight during BST always reflect the correct UK calendar day.
+function formatLondonDateISO(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/London',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(date);
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -32,11 +42,11 @@ serve(async (req) => {
 
     // Calculate invoice date (today) and due date from invoice term (default 1 day)
     const today = new Date();
-    const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dateString = formatLondonDateISO(today); // YYYY-MM-DD, UK calendar day
     const termDays = invoiceTerm ? parseInt(invoiceTerm) : 1;
     const dueDate = new Date(today);
     dueDate.setDate(dueDate.getDate() + termDays);
-    const dueDateString = dueDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dueDateString = formatLondonDateISO(dueDate); // YYYY-MM-DD, UK calendar day
 
     console.log('Computed invoice dates', { invoiceTerm: termDays, dateString, dueDateString });
 

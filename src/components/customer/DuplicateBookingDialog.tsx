@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
+import { getUKTodayDateString, getUKStoredAsLocalDate } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -72,17 +73,21 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
 
   React.useEffect(() => {
     if (booking && open) {
-      // Set default date to next week
-      const nextWeek = new Date(booking.date_time);
-      nextWeek.setDate(nextWeek.getDate() + 7);
-      setSelectedDate(nextWeek);
-      
-      // Set default time
-      const originalTime = new Date(booking.date_time);
-      const hour24 = originalTime.getHours();
-      const minutes = originalTime.getMinutes() >= 30 ? '30' : '00';
-      setSelectedHour(hour24.toString());
-      setSelectedMinute(minutes);
+      // Hydrate the stored (naive-mislabeled UTC+00:00) date_time into a Date whose
+      // local getters equal the UK digits, so day/hour math below is UK-correct.
+      const bookingDate = getUKStoredAsLocalDate(booking.date_time);
+      if (bookingDate) {
+        // Set default date to next week
+        const nextWeek = new Date(bookingDate);
+        nextWeek.setDate(nextWeek.getDate() + 7);
+        setSelectedDate(nextWeek);
+
+        // Set default time
+        const hour24 = bookingDate.getHours();
+        const minutes = bookingDate.getMinutes() >= 30 ? '30' : '00';
+        setSelectedHour(hour24.toString());
+        setSelectedMinute(minutes);
+      }
       
       setHours(booking.total_hours);
       setTotalCost(booking.total_cost);
@@ -303,7 +308,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                       selected={selectedDate}
                       onSelect={setSelectedDate}
                       initialFocus
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => format(date, 'yyyy-MM-dd') < getUKTodayDateString()}
                       className="pointer-events-auto"
                     />
                   </PopoverContent>

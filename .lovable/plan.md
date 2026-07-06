@@ -47,3 +47,12 @@ Goal: every date/time derived from `bookings.date_time` / `end_date_time` (and t
 - Changing how `date_time` is stored (still London wall-clock + `+00:00`).
 - Redesigning any component; only the formatting call changes.
 - Non-booking timestamps like `activity_logs.timestamp` or `sms.created_at`, which are real UTC and correctly shown in viewer-local time — unless the user later asks to force them to UK too.
+
+## Follow-up (2026-07-06): "today"/"now" comparison bugs + BST skew
+
+The original rollout above only covered *display* formatting. A second pass found two more bug classes stemming from the same naive-storage convention, both fixed without touching stored data:
+
+1. **"Today"/"now" comparisons used the viewer's/server's local clock.** Code computing "today" (`new Date(); today.setHours(0,0,0,0)`) or "now" (`new Date().toISOString()`) and filtering/comparing against `date_time` drifts for any viewer outside the UK (e.g. a dev in Manila gets a "today" range offset by up to 8 hours) — fixed by anchoring to new `getUKNowAsStoredString()` / `getUKNowAsStoredDate()` / `getUKTodayRange()` / `getUKTodayDateString()` / `getUKNowAsLocalDate()` helpers in `src/lib/ukTime.ts`, rolled out across ~40 call sites in hooks/api/pages/components and the booking-flow short-notice/hours-until-cleaning logic.
+2. **A real ~1 hour BST skew** for anything treating `date_time` as a true instant (it's always stored `+00:00` even when real London time is `+01:00` during BST): `auto-complete-bookings` and `stripe-process-payments` edge functions, and the `schedule_booking_notifications()` Postgres trigger that computes `notification_schedules.scheduled_for` — fixed by converting the naive digits to a true `Europe/London` instant (`AT TIME ZONE 'Europe/London'` in SQL, `toTrueUKInstant()` / the `nowInBookingTimeFrame()` inline helper in edge functions) before doing interval arithmetic or comparing to real `NOW()`.
+
+See `src/lib/ukTime.ts`'s module doc for the full convention going forward.

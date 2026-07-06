@@ -14,6 +14,7 @@ import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateForStorage } from '@/lib/bookingDate';
+import { format } from 'date-fns';
 
 interface CarpetCleaningItem {
   id: string;
@@ -722,7 +723,7 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500">Date:</span>
                       <span className="font-medium text-slate-700">
-                        {quoteData.selectedDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        {format(quoteData.selectedDate, 'EEE d MMM')}
                       </span>
                     </div>
                   )}

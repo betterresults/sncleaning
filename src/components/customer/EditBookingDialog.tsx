@@ -17,6 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCustomer } from '@/contexts/AdminCustomerContext';
 import SubCleanersList from '@/components/booking/SubCleanersList';
 import AddSubCleanerDialog from '@/components/booking/AddSubCleanerDialog';
+import { getUKTodayDateString, getUKStoredAsLocalDate } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -142,7 +143,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
 
   React.useEffect(() => {
     if (booking && open) {
-      const bookingDate = new Date(booking.date_time);
+      const bookingDate = getUKStoredAsLocalDate(booking.date_time) || new Date();
       setSelectedDate(bookingDate);
       
       // Set time
@@ -420,7 +421,7 @@ const EditBookingDialog: React.FC<EditBookingDialogProps> = ({
                       selected={selectedDate}
                       onSelect={setSelectedDate}
                       initialFocus
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => format(date, 'yyyy-MM-dd') < getUKTodayDateString()}
                       className="pointer-events-auto"
                     />
                   </PopoverContent>

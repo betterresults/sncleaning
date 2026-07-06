@@ -15,7 +15,7 @@ import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { AdjustPaymentAmountDialog } from '@/components/payments/AdjustPaymentAmountDialog';
 import { CollectPaymentMethodDialog } from '@/components/payments/CollectPaymentMethodDialog';
 import { formatServiceType } from '@/utils/bookingFormatters';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate } from '@/lib/ukTime';
 
 interface PastBooking {
   id: number;
@@ -78,27 +78,31 @@ const CleanerPastBookings = () => {
   const [collectPaymentDialogOpen, setCollectPaymentDialogOpen] = useState(false);
   const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<PastBooking | null>(null);
 
+  // Boundaries are computed using UK-local-getter fields (via `getUKNowAsLocalDate()`)
+  // then re-stamped into the naive-UK-frame `date_time` string convention (fake
+  // `+00:00`) so the resulting `Date` objects are directly comparable to
+  // `new Date(booking.date_time)`, regardless of the viewer's device timezone.
+  const toStoredBoundaryStart = (d: Date) => new Date(format(d, "yyyy-MM-dd'T'00:00:00'+00:00'"));
+  const toStoredBoundaryEnd = (d: Date) => new Date(format(d, "yyyy-MM-dd'T'23:59:59.999'+00:00'"));
+
   const getTimePeriodDates = (period: string) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    
+    const now = getUKNowAsLocalDate();
+
     switch (period) {
       case 'current-month':
-        // Set end of month to 23:59:59.999 to include all bookings on the last day
-        const endOfCurrentMonth = endOfMonth(now);
-        endOfCurrentMonth.setHours(23, 59, 59, 999);
-        return { from: startOfMonth(now), to: endOfCurrentMonth };
-      case 'last-month':
+        return { from: toStoredBoundaryStart(startOfMonth(now)), to: toStoredBoundaryEnd(endOfMonth(now)) };
+      case 'last-month': {
         const lastMonth = subMonths(now, 1);
-        const endOfLastMonth = endOfMonth(lastMonth);
-        endOfLastMonth.setHours(23, 59, 59, 999);
-        return { from: startOfMonth(lastMonth), to: endOfLastMonth };
-      case 'last-3-months':
+        return { from: toStoredBoundaryStart(startOfMonth(lastMonth)), to: toStoredBoundaryEnd(endOfMonth(lastMonth)) };
+      }
+      case 'last-3-months': {
         const last3Months = subMonths(now, 3);
-        return { from: startOfMonth(last3Months), to: today };
-      case 'last-6-months':
+        return { from: toStoredBoundaryStart(startOfMonth(last3Months)), to: toStoredBoundaryEnd(now) };
+      }
+      case 'last-6-months': {
         const last6Months = subMonths(now, 6);
-        return { from: startOfMonth(last6Months), to: today };
+        return { from: toStoredBoundaryStart(startOfMonth(last6Months)), to: toStoredBoundaryEnd(now) };
+      }
       default:
         return null;
     }
@@ -118,18 +122,20 @@ const CleanerPastBookings = () => {
       }
     }
 
-    // Date filters
+    // Date filters — build boundaries in the naive-UK-frame convention (fake `+00:00`)
+    // so they're comparable to `date_time` regardless of the viewer's device timezone,
+    // instead of using local `Date` setters (`.setHours()`) which drift on non-UK devices.
     if (filters.dateFrom) {
+      const fromBoundary = new Date(`${filters.dateFrom}T00:00:00+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= new Date(filters.dateFrom)
+        new Date(booking.date_time) >= fromBoundary
       );
     }
     if (filters.dateTo) {
-      // Set end of day to include all bookings on the selected date
-      const endDate = new Date(filters.dateTo);
-      endDate.setHours(23, 59, 59, 999);
+      // End of day to include all bookings on the selected date
+      const toBoundary = new Date(`${filters.dateTo}T23:59:59.999+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= endDate
+        new Date(booking.date_time) <= toBoundary
       );
     }
 

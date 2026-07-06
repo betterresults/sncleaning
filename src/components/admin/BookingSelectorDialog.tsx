@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import { formatUKDate } from '@/lib/ukTime';
 import { Search, Calendar, MapPin, Loader2 } from 'lucide-react';
 
 interface Booking {
@@ -162,7 +162,7 @@ export const BookingSelectorDialog: React.FC<BookingSelectorDialogProps> = ({
                         {booking.date_only && (
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {format(new Date(booking.date_only), 'dd MMM yyyy')}
+                            {formatUKDate(booking.date_only, 'dd MMM yyyy')}
                           </span>
                         )}
                         {booking.service_type && (

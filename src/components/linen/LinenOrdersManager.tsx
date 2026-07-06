@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { pdf } from '@react-pdf/renderer';
 import { LinenOrderPDF } from './LinenOrderPDF';
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { formatUKDate } from "@/lib/ukTime";
 import { EditOrderDialog } from "./EditOrderDialog";
 import { DuplicateLinenOrderDialog } from "./DuplicateLinenOrderDialog";
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
@@ -887,7 +887,7 @@ export const LinenOrdersManager = () => {
                     <div>
                       <p className="text-xs text-muted-foreground">Order Date</p>
                       <p className="text-sm font-medium">
-                        {format(new Date(order.order_date), 'MMM dd, yyyy')}
+                        {formatUKDate(order.order_date, 'MMM dd, yyyy')}
                       </p>
                     </div>
                   </div>
@@ -897,7 +897,7 @@ export const LinenOrdersManager = () => {
                       <p className="text-xs text-muted-foreground">Delivery</p>
                       <p className="text-sm font-medium">
                         {order.delivery_date 
-                          ? format(new Date(order.delivery_date), 'MMM dd, yyyy')
+                          ? formatUKDate(order.delivery_date, 'MMM dd, yyyy')
                           : 'Not set'
                         }
                       </p>

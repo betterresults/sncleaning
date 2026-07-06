@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Eye, Trash2, Send, Mail } from "lucide-react";
 import { VariablePicker, getVariableExample } from "./VariablePicker";
+import { formatLondonDate } from "@/lib/ukTime";
 
 interface EmailTemplate {
   id: string;
@@ -244,7 +245,7 @@ export const EmailTemplateManager = () => {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Last updated: {new Date(template.updated_at).toLocaleDateString()}
+                  Last updated: {formatLondonDate(template.updated_at)}
                 </p>
               </div>
             </CardContent>

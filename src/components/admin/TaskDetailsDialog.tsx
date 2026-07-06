@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { AgentTask } from '@/hooks/useAgentTasks';
-import { format } from 'date-fns';
+import { formatLondon, formatLondonDate, formatUKDate } from '@/lib/ukTime';
 import { User, Calendar, Clock, FileText, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
 
 interface TaskDetailsDialogProps {
@@ -156,7 +156,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
               </p>
               {task.booking.date_only && (
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(task.booking.date_only), 'dd MMM yyyy')}
+                  {formatUKDate(task.booking.date_only, 'dd MMM yyyy')}
                 </p>
               )}
               {task.booking.address && (
@@ -175,7 +175,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   Due Date
                 </div>
                 <p className="font-medium">
-                  {format(new Date(task.due_date), 'dd MMM yyyy')}
+                  {formatLondonDate(task.due_date, 'dd MMM yyyy')}
                 </p>
               </div>
             )}
@@ -187,7 +187,7 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
                   Completed
                 </div>
                 <p className="font-medium">
-                  {format(new Date(task.completed_at), 'dd MMM yyyy HH:mm')}
+                  {formatLondon(task.completed_at, 'dd MMM yyyy HH:mm')}
                 </p>
               </div>
             )}
@@ -206,8 +206,8 @@ export const TaskDetailsDialog: React.FC<TaskDetailsDialogProps> = ({
           )}
 
           <div className="text-xs text-muted-foreground pt-2 border-t">
-            <p>Created: {format(new Date(task.created_at), 'dd MMM yyyy HH:mm')}</p>
-            <p>Updated: {format(new Date(task.updated_at), 'dd MMM yyyy HH:mm')}</p>
+            <p>Created: {formatLondon(task.created_at, 'dd MMM yyyy HH:mm')}</p>
+            <p>Updated: {formatLondon(task.updated_at, 'dd MMM yyyy HH:mm')}</p>
           </div>
         </div>
       </DialogContent>

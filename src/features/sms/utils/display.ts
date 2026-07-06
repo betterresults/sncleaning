@@ -1,22 +1,27 @@
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isSameDay, subDays } from 'date-fns';
+import { getLondonWallClockDate, getUKNowAsLocalDate } from '@/lib/ukTime';
 
 export function formatMessageTime(dateStr: string) {
-  const date = new Date(dateStr);
-  if (isToday(date)) {
+  const date = getLondonWallClockDate(dateStr);
+  if (!date) return '';
+  const ukNow = getUKNowAsLocalDate();
+  if (isSameDay(date, ukNow)) {
     return format(date, 'HH:mm');
   }
-  if (isYesterday(date)) {
+  if (isSameDay(date, subDays(ukNow, 1))) {
     return `Yesterday ${format(date, 'HH:mm')}`;
   }
   return format(date, 'dd/MM/yyyy HH:mm');
 }
 
 export function formatThreadTime(dateStr: string) {
-  const date = new Date(dateStr);
-  if (isToday(date)) {
+  const date = getLondonWallClockDate(dateStr);
+  if (!date) return '';
+  const ukNow = getUKNowAsLocalDate();
+  if (isSameDay(date, ukNow)) {
     return format(date, 'HH:mm');
   }
-  if (isYesterday(date)) {
+  if (isSameDay(date, subDays(ukNow, 1))) {
     return 'Yesterday';
   }
   return format(date, 'dd/MM');

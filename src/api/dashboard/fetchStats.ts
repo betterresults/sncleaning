@@ -1,4 +1,6 @@
+import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { getUKNowAsStoredDate, getUKNowAsStoredString, getUKTodayDateString } from '@/lib/ukTime';
 import type {
   BookingPeriodStats,
   DashboardStatsFilters,
@@ -6,17 +8,20 @@ import type {
 } from './types';
 
 export async function fetchQuickStats(): Promise<QuickStatsData> {
-  const next30Days = new Date();
-  next30Days.setDate(next30Days.getDate() + 30);
+  // `getUKNowAsStoredDate()` returns a Date whose *UTC* fields equal UK wall-clock
+  // digits, so day-arithmetic must use the UTC setters/getters (not local ones) to
+  // stay correct regardless of the viewer's device timezone.
+  const next30Days = getUKNowAsStoredDate();
+  next30Days.setUTCDate(next30Days.getUTCDate() + 30);
 
   const { count: upcomingCount } = await supabase
     .from('bookings')
     .select('id', { count: 'exact', head: true })
-    .gte('date_time', new Date().toISOString())
+    .gte('date_time', getUKNowAsStoredString())
     .lte('date_time', next30Days.toISOString());
 
-  const last30Days = new Date();
-  last30Days.setDate(last30Days.getDate() - 30);
+  const last30Days = getUKNowAsStoredDate();
+  last30Days.setUTCDate(last30Days.getUTCDate() - 30);
 
   const { data: activeCleanersData } = await supabase
     .from('past_bookings')
@@ -58,7 +63,6 @@ export async function fetchQuickStats(): Promise<QuickStatsData> {
 export async function fetchDashboardStats(
   filters?: DashboardStatsFilters,
 ): Promise<BookingPeriodStats> {
-  const now = new Date();
   let dateFrom: string;
   let dateTo: string;
 
@@ -66,9 +70,12 @@ export async function fetchDashboardStats(
     dateFrom = filters.dateFrom;
     dateTo = filters.dateTo;
   } else {
+    // Anchor to UK "today" so the `date_only` slice below reflects the correct UK
+    // calendar date regardless of the viewer's device timezone.
+    const now = getUKNowAsStoredDate();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     dateFrom = thirtyDaysAgo.toISOString();
-    dateTo = now.toISOString();
+    dateTo = getUKTodayDateString();
   }
 
   let bookingsQuery = supabase
@@ -111,8 +118,12 @@ export async function fetchPastBookingsMonthlyStats(
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
 
-  const dateFrom = firstDay.toISOString().split('T')[0];
-  const dateTo = lastDay.toISOString().split('T')[0];
+  // `firstDay`/`lastDay` are built from local Y/M/D getters representing the intended
+  // UK month (no real timezone meaning) — use date-fns `format()` (local getters) here,
+  // not `.toISOString()`, which would convert through the device's real UTC offset and
+  // shift the day for non-UK viewers.
+  const dateFrom = format(firstDay, 'yyyy-MM-dd');
+  const dateTo = format(lastDay, 'yyyy-MM-dd');
 
   const { data: bookingsData, error: bookingsError } = await supabase
     .from('past_bookings')

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { getUKNowAsLocalDate, getUKNowAsStoredString, getUKStoredAsLocalDate } from '@/lib/ukTime';
 import type {
   CustomerOverdueInvoice,
   CustomerUpcomingBooking,
@@ -47,9 +48,10 @@ export async function fetchCustomerOverdueInvoices(
     throw error;
   }
 
-  const now = new Date();
+  const now = getUKNowAsLocalDate();
   return (data || []).filter((booking) => {
-    const bookingDate = new Date(booking.date_time);
+    const bookingDate = getUKStoredAsLocalDate(booking.date_time);
+    if (!bookingDate) return false;
     const dueDate = new Date(bookingDate);
     dueDate.setDate(dueDate.getDate() + 8);
     return now > dueDate;
@@ -90,7 +92,7 @@ export async function fetchCustomerUpcomingBookings(
       cleaner:cleaners(first_name, last_name)
     `)
     .eq('customer', customerId)
-    .gte('date_time', new Date().toISOString())
+    .gte('date_time', getUKNowAsStoredString())
     .or('booking_status.is.null,booking_status.neq.cancelled')
     .order('date_time', { ascending: true });
 

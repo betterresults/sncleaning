@@ -13,6 +13,7 @@ import { Upload, X, Camera, AlertTriangle, Trash2, Eye, Download, CheckSquare, S
 import { compressImage } from '@/utils/imageCompression';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { formatLondonDate } from '@/lib/ukTime';
 import { isCapacitor } from '@/utils/capacitor';
 import { savePhotoLocally, initPhotoStorage } from '@/utils/photoStorage';
 import { addToQueue } from '@/utils/photoQueue';
@@ -782,7 +783,7 @@ const PhotoCard = ({ photo, selected, selectMode, onSelect, onView, onDownload, 
             {photo.file_path.split('/').pop()}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            {new Date(photo.created_at).toLocaleDateString()}
+            {formatLondonDate(photo.created_at)}
           </p>
           {photo.damage_details && (
             <Badge variant="destructive" className="mt-2 text-xs">

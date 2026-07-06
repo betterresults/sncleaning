@@ -14,7 +14,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import DashboardStats from './DashboardStats';
 import EditBookingDialog from '../dashboard/EditBookingDialog';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -104,7 +104,7 @@ const BookingsTable = () => {
             last_name
           )
         `)
-        .gte('date_time', new Date().toISOString())
+        .gte('date_time', getUKNowAsStoredString())
         .order('date_time', { ascending: sortOrder === 'asc' });
 
       if (bookingsError) {
@@ -154,15 +154,19 @@ const BookingsTable = () => {
   const applyFilters = () => {
     let filtered = [...bookings];
 
-    // Date filters
+    // Date filters. `filters.dateFrom`/`dateTo` are bare `YYYY-MM-DD` strings; build them
+    // into `date_time`-style boundary strings (naive UK digits + fake `+00:00`) so the
+    // comparison stays in the same naive-UK-frame convention as `booking.date_time`.
     if (filters.dateFrom) {
+      const fromBoundary = new Date(`${filters.dateFrom}T00:00:00+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= new Date(filters.dateFrom)
+        new Date(booking.date_time) >= fromBoundary
       );
     }
     if (filters.dateTo) {
+      const toBoundary = new Date(`${filters.dateTo}T23:59:59.999+00:00`);
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= new Date(filters.dateTo)
+        new Date(booking.date_time) <= toBoundary
       );
     }
 

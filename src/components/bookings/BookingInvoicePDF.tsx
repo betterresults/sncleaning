@@ -1,7 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { format, subHours } from 'date-fns';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKStoredAsLocalDate } from '@/lib/ukTime';
 
 const styles = StyleSheet.create({
   page: {
@@ -315,8 +315,9 @@ export const BookingInvoicePDF: React.FC<BookingInvoicePDFProps> = ({ booking, c
   const invoiceNumber = `INV-${booking.id.toString().padStart(6, '0')}`;
 
   // Due date is 48 hours before the booking
-  const dueDate = booking.date_time 
-    ? format(subHours(new Date(booking.date_time), 48), 'dd MMMM yyyy')
+  const hydratedBookingDate = booking.date_time ? getUKStoredAsLocalDate(booking.date_time) : null;
+  const dueDate = hydratedBookingDate
+    ? format(subHours(hydratedBookingDate, 48), 'dd MMMM yyyy')
     : 'N/A';
 
   return (

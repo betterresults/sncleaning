@@ -5,7 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, subDays, startOfDay, endOfDay, subWeeks, subMonths, isWithinInterval } from 'date-fns';
+import { format, subDays, subWeeks, subMonths } from 'date-fns';
+import { formatLondon, getLondonWallClockDate } from '@/lib/ukTime';
 import { RefreshCw, Eye, MousePointerClick, TrendingUp, Trash2, Users, CheckCircle2, Home, Building, ChevronLeft, ChevronRight, Calendar, ArrowUpDown, Send, ClipboardList } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,20 +28,30 @@ const TIME_PERIODS: { value: TimePeriod; label: string }[] = [
   { value: 'all', label: 'All time' },
 ];
 
-const getDateRange = (period: TimePeriod): { start: Date; end: Date } | null => {
-  const now = new Date();
+// `created_at` on these tables is a GENUINE real-UTC timestamp (unlike the naive
+// `bookings.date_time` family), so period boundaries here must be anchored to the
+// UK calendar day (Europe/London), not the viewer's own device timezone/clock.
+// We compare `yyyy-MM-dd` day strings rather than `isWithinInterval` on raw device-local
+// `Date` objects so the result is identical for every viewer regardless of timezone.
+const getDateRange = (period: TimePeriod): { start: string; end: string } | null => {
+  // Local getters of `todayLondon` equal the real current UK wall-clock digits, so
+  // plain date-fns `format()`/`subDays`/`subWeeks`/`subMonths` (all local-getter based)
+  // can operate on it directly to get UK-calendar-correct day strings.
+  const todayLondon = getLondonWallClockDate(new Date())!;
+  const today = format(todayLondon, 'yyyy-MM-dd');
   switch (period) {
     case 'today':
-      return { start: startOfDay(now), end: endOfDay(now) };
-    case 'yesterday':
-      const yesterday = subDays(now, 1);
-      return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+      return { start: today, end: today };
+    case 'yesterday': {
+      const yesterday = format(subDays(todayLondon, 1), 'yyyy-MM-dd');
+      return { start: yesterday, end: yesterday };
+    }
     case 'last_week':
-      return { start: startOfDay(subWeeks(now, 1)), end: endOfDay(now) };
+      return { start: format(subWeeks(todayLondon, 1), 'yyyy-MM-dd'), end: today };
     case 'last_month':
-      return { start: startOfDay(subMonths(now, 1)), end: endOfDay(now) };
+      return { start: format(subMonths(todayLondon, 1), 'yyyy-MM-dd'), end: today };
     case 'last_3_months':
-      return { start: startOfDay(subMonths(now, 3)), end: endOfDay(now) };
+      return { start: format(subMonths(todayLondon, 3), 'yyyy-MM-dd'), end: today };
     case 'all':
     default:
       return null;
@@ -352,8 +363,8 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
     if (!range) return items;
     return items.filter(item => {
       if (!item.created_at) return false;
-      const date = new Date(item.created_at);
-      return isWithinInterval(date, { start: range.start, end: range.end });
+      const day = formatLondon(item.created_at, 'yyyy-MM-dd');
+      return day >= range.start && day <= range.end;
     });
   };
 
@@ -659,8 +670,8 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
                             <TableCell className="text-sm whitespace-nowrap">
                               {lead.created_at ? (
                                 <div>
-                                  <p className="font-medium text-gray-900">{format(new Date(lead.created_at), 'dd MMM yyyy')}</p>
-                                  <p className="text-gray-400 text-xs">{format(new Date(lead.created_at), 'HH:mm')}</p>
+                                  <p className="font-medium text-gray-900">{formatLondon(lead.created_at, 'dd MMM yyyy')}</p>
+                                  <p className="text-gray-400 text-xs">{formatLondon(lead.created_at, 'HH:mm')}</p>
                                 </div>
                               ) : '—'}
                             </TableCell>
@@ -915,8 +926,8 @@ const QuoteLeadsView = ({ agentUserId, isAgent = false, agentAssignedSources = [
                       <TableRow key={event.id} className="hover:bg-gray-50/50">
                         <TableCell className="text-sm">
                           <div>
-                            <p className="font-medium text-gray-900">{format(new Date(event.created_at), 'dd MMM')}</p>
-                            <p className="text-gray-400 text-xs">{format(new Date(event.created_at), 'HH:mm:ss')}</p>
+                            <p className="font-medium text-gray-900">{formatLondon(event.created_at, 'dd MMM')}</p>
+                            <p className="text-gray-400 text-xs">{formatLondon(event.created_at, 'HH:mm:ss')}</p>
                           </div>
                         </TableCell>
                         <TableCell>

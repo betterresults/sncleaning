@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EmailSentLogsDialog } from './EmailSentLogsDialog';
+import { formatUKLocaleDate } from '@/lib/ukTime';
 
 interface CollectPaymentMethodDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ interface CollectPaymentMethodDialogProps {
     total_cost: number;
     cleaning_type: string;
     address: string;
+    date_time?: string;
   };
   onPaymentMethodsUpdated?: () => void;
 }
@@ -186,11 +188,13 @@ export const CollectPaymentMethodDialog: React.FC<CollectPaymentMethodDialogProp
       const variables = {
         customer_name: `${customer.first_name} ${customer.last_name}`.trim(),
         has_booking_data: !isCollectOnly && booking ? 'true' : '',
-        booking_date: !isCollectOnly && booking ? new Date().toLocaleDateString('en-GB', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        // Use the booking's actual scheduled date (falls back to today only if the
+        // caller hasn't threaded a date_time through) rather than always "today".
+        booking_date: !isCollectOnly && booking ? formatUKLocaleDate(booking.date_time || new Date(), {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         }) : '',
         address: !isCollectOnly && booking?.address ? booking.address : '',
         total_cost: !isCollectOnly && booking?.total_cost ? booking.total_cost.toString() : '',

@@ -4,7 +4,8 @@ import { Bell, X, Calendar, User, CreditCard } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
 import { getNotificationRoute } from '@/lib/notificationRoutes';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, subDays } from 'date-fns';
+import { formatLondon, formatLondonTime, formatUKDate, formatUKTime, getUKNowAsLocalDate, getUKTodayDateString } from '@/lib/ukTime';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { ShellIconButton, ShellIconBadge } from '@/layouts/shell/ShellIconButton';
@@ -44,13 +45,37 @@ function getIconTone(severity: Notification['severity']): ShellListIconTone {
   }
 }
 
-function getTimeLabel(notification: Notification) {
-  const timestamp = notification.bookingTime || notification.timestamp;
-  const date = new Date(timestamp);
+// UK calendar day (`YYYY-MM-DD`) for a real UTC instant, DST-aware.
+function ukDayString(date: Date): string {
+  return formatLondon(date, 'yyyy-MM-dd');
+}
 
-  if (isToday(date)) return format(date, 'HH:mm');
-  if (isYesterday(date)) return 'Yesterday';
-  return format(date, 'MMM d');
+function getTimeLabel(notification: Notification) {
+  // `bookingTime` is a `date_time`-family value (naive UK digits + fake `+00:00`/`Z`),
+  // so "today"/"yesterday" must be judged against the UK calendar day, not the
+  // viewer's device day.
+  if (notification.bookingTime) {
+    const date = new Date(notification.bookingTime);
+    const todayStr = getUKTodayDateString();
+    const dateStr = formatUKDate(date, 'yyyy-MM-dd');
+    const yesterdayStr = format(subDays(getUKNowAsLocalDate(), 1), 'yyyy-MM-dd');
+
+    if (dateStr === todayStr) return formatUKTime(date);
+    if (dateStr === yesterdayStr) return 'Yesterday';
+    return formatUKDate(date, 'MMM d');
+  }
+
+  // `timestamp` (activity_logs.created_at) is a genuine UTC instant, so "today"/
+  // "yesterday" must be judged against the UK calendar day, not the viewer's device day.
+  const date = new Date(notification.timestamp);
+  const todayStr = ukDayString(new Date());
+  const dateStr = ukDayString(date);
+  const [y, m, d] = todayStr.split('-').map(Number);
+  const yesterdayStr = ukDayString(new Date(Date.UTC(y, m - 1, d - 1)));
+
+  if (dateStr === todayStr) return formatLondonTime(date);
+  if (dateStr === yesterdayStr) return 'Yesterday';
+  return formatLondon(date, 'MMM d');
 }
 
 function getTypeLabel(type: Notification['type']) {

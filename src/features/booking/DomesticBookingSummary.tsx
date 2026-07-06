@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useDomesticHardcodedCalculations } from '@/hooks/useDomesticHardcodedCalculations';
 import { Badge } from '@/components/ui/badge';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
+import { format } from 'date-fns';
 
 interface DomesticBookingSummaryProps {
   data: DomesticBookingData;
@@ -61,7 +63,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
     if (!data.selectedDate || calculations.shortNoticeCharge === 0) {
       return { charge: 0, notice: '', hoursUntil: 0 };
     }
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     const cleaningDate = new Date(data.selectedDate);
     const isToday = cleaningDate.getDate() === now.getDate() && 
                     cleaningDate.getMonth() === now.getMonth() && 
@@ -309,11 +311,7 @@ export const DomesticBookingSummary: React.FC<DomesticBookingSummaryProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Clean date</span>
             <span className="text-foreground font-medium">
-              {data.selectedDate.toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short'
-              })}
+              {format(data.selectedDate, 'EEE d MMM')}
             </span>
           </div>
           

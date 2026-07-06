@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, DollarSign, AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePastBookingsMonthlyStats } from '@/hooks/queries/useDashboardStats';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
 
 const PastBookingsStats = () => {
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
@@ -14,7 +15,7 @@ const PastBookingsStats = () => {
 
   const generateMonthOptions = () => {
     const options = [];
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     for (let i = 0; i < 12; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;

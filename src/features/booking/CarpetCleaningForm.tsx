@@ -246,7 +246,7 @@ const CarpetCleaningForm: React.FC = () => {
       
       // Parse date/time
       if (dateParam) {
-        updates.selectedDate = new Date(dateParam);
+        updates.selectedDate = parseDatePreserveLocalDay(dateParam);
       }
       if (timeParam) {
         updates.selectedTime = timeParam;

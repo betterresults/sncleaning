@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAirbnbHardcodedCalculations } from '@/hooks/useAirbnbHardcodedCalculations';
 import { useAirbnbPricingFormulas } from '@/hooks/useAirbnbPricingFormulas';
 import { useCustomerPricingOverride } from '@/hooks/useCustomerPricingOverride';
+import { getUKNowAsLocalDate } from '@/lib/ukTime';
+import { format } from 'date-fns';
 interface BookingSummaryProps {
   data: BookingData;
   isAdminMode?: boolean;
@@ -103,7 +105,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         hoursUntil: 0
       };
     }
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     const cleaningDate = new Date(data.selectedDate);
     const isToday = cleaningDate.getDate() === now.getDate() && cleaningDate.getMonth() === now.getMonth() && cleaningDate.getFullYear() === now.getFullYear();
     if (data.selectedTime) {
@@ -292,11 +294,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Clean date</span>
             <span className="text-foreground font-medium">
-              {data.selectedDate.toLocaleDateString('en-GB', {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short'
-          })}
+              {format(data.selectedDate, 'EEE d MMM')}
             </span>
           </div>
           

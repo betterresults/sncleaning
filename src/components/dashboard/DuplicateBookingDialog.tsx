@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKTodayDateString } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -339,7 +339,7 @@ const DuplicateBookingDialog: React.FC<DuplicateBookingDialogProps> = ({
                     mode="single"
                     selected={selectedDate}
                     onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => format(date, 'yyyy-MM-dd') < getUKTodayDateString()}
                     initialFocus
                     className="p-4 pointer-events-auto rounded-xl"
                   />

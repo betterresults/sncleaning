@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Calendar, Package, CheckCircle, Clock, Truck, XCircle, DollarSign, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useCustomerLinenOrders } from '@/hooks/useCustomerLinenOrders';
 import { CreateLinenOrderDialog } from './CreateLinenOrderDialog';
-import { format } from 'date-fns';
+import { formatUKLocaleDate } from '@/lib/ukTime';
 
 const LinenOrdersView = () => {
   const { orders, loading, refetch } = useCustomerLinenOrders();
@@ -124,7 +124,7 @@ const LinenOrdersView = () => {
               {order.delivery_date && (
                 <div className="flex items-center gap-2 text-[#185166] mb-4 text-sm">
                   <Calendar className="h-4 w-4 text-gray-600" />
-                  <span className="font-medium">Delivery: {new Date(order.delivery_date).toLocaleDateString('en-GB', { 
+                  <span className="font-medium">Delivery: {formatUKLocaleDate(order.delivery_date, { 
                     day: 'numeric', 
                     month: 'long', 
                     year: 'numeric' 

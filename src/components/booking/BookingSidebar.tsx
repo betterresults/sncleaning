@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Building, Bed, Bath, Home, Users, Calculator, Package2, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface BookingSidebarProps {
   formData: {
@@ -53,12 +54,7 @@ export function BookingSidebar({ formData }: BookingSidebarProps) {
 
   const formatDate = () => {
     if (!formData.selectedDate) return 'Not Selected';
-    const date = new Date(formData.selectedDate);
-    return date.toLocaleDateString('en-GB', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
-    });
+    return format(new Date(formData.selectedDate), 'EEEE, d MMMM yyyy');
   };
 
   const getTotalHours = () => {

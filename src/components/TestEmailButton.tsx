@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Mail } from 'lucide-react';
+import { formatLondonDate } from '@/lib/ukTime';
 
 export const TestEmailButton = () => {
   const [loading, setLoading] = useState(false);
@@ -60,7 +61,7 @@ export const TestEmailButton = () => {
           customerName: 'Test Customer',
           bookingDetails: {
             service: 'Deep Cleaning Service',
-            date: new Date().toLocaleDateString(),
+            date: formatLondonDate(new Date()),
             address: '123 Test Street, Test City'
           }
         }

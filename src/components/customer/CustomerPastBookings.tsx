@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useSearchParams } from 'react-router-dom';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate, getUKStoredAsLocalDate, getUKTodayDateString } from '@/lib/ukTime';
 
 interface PastBooking {
   id: number;
@@ -87,7 +87,7 @@ const CustomerPastBookings = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [serviceTypes, setServiceTypes] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'cards' | 'calendar'>('cards');
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(getUKNowAsLocalDate());
   const [currentPage, setCurrentPage] = useState(1);
   const bookingsPerPage = 10;
   const [cleanerFilter, setCleanerFilter] = useState('all');
@@ -136,7 +136,7 @@ const CustomerPastBookings = () => {
       return;
     }
 
-    const now = new Date();
+    const now = getUKNowAsLocalDate();
     const overdue = filteredBookings.filter(booking => {
       // Only check unpaid bookings with invoice links
       if (!booking.invoice_link || 
@@ -145,7 +145,8 @@ const CustomerPastBookings = () => {
       }
 
       // Calculate 8 days from booking date
-      const bookingDate = new Date(booking.date_time);
+      const bookingDate = getUKStoredAsLocalDate(booking.date_time);
+      if (!bookingDate) return false;
       const dueDate = new Date(bookingDate);
       dueDate.setDate(dueDate.getDate() + 8);
 
@@ -184,22 +185,30 @@ const CustomerPastBookings = () => {
     setTimePeriod('all');
   }, []);
 
+  // Convert a UK-local-getter Date's calendar day into a Date directly comparable
+  // to `new Date(booking.date_time)` (whose UTC getters, not local getters, equal
+  // the UK digits) — see ukTime.ts convention notes.
+  const toStoredDayStart = (date: Date) => new Date(`${format(date, 'yyyy-MM-dd')}T00:00:00+00:00`);
+  const toStoredDayEnd = (date: Date) => new Date(`${format(date, 'yyyy-MM-dd')}T23:59:59.999+00:00`);
+
   const getTimePeriodDates = (period: string) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+    const now = getUKNowAsLocalDate();
+
     switch (period) {
       case 'current-month':
-        return { from: startOfMonth(now), to: endOfMonth(now) };
-      case 'last-month':
+        return { from: toStoredDayStart(startOfMonth(now)), to: toStoredDayEnd(endOfMonth(now)) };
+      case 'last-month': {
         const lastMonth = subMonths(now, 1);
-        return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
-      case 'last-3-months':
+        return { from: toStoredDayStart(startOfMonth(lastMonth)), to: toStoredDayEnd(endOfMonth(lastMonth)) };
+      }
+      case 'last-3-months': {
         const last3Months = subMonths(now, 3);
-        return { from: startOfMonth(last3Months), to: today };
-      case 'last-6-months':
+        return { from: toStoredDayStart(startOfMonth(last3Months)), to: toStoredDayEnd(now) };
+      }
+      case 'last-6-months': {
         const last6Months = subMonths(now, 6);
-        return { from: startOfMonth(last6Months), to: today };
+        return { from: toStoredDayStart(startOfMonth(last6Months)), to: toStoredDayEnd(now) };
+      }
       default:
         return null;
     }
@@ -300,12 +309,12 @@ const CustomerPastBookings = () => {
 
     if (dateFrom) {
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= dateFrom
+        new Date(booking.date_time) >= toStoredDayStart(dateFrom)
       );
     }
     if (dateTo) {
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= dateTo
+        new Date(booking.date_time) <= toStoredDayEnd(dateTo)
       );
     }
 
@@ -363,12 +372,12 @@ const CustomerPastBookings = () => {
     // Date filters
     if (dateFrom) {
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) >= dateFrom
+        new Date(booking.date_time) >= toStoredDayStart(dateFrom)
       );
     }
     if (dateTo) {
       filtered = filtered.filter(booking => 
-        new Date(booking.date_time) <= dateTo
+        new Date(booking.date_time) <= toStoredDayEnd(dateTo)
       );
     }
 
@@ -869,16 +878,16 @@ const CustomerPastBookings = () => {
             </p>
             <div className="space-y-3">
               {overdueInvoices.map((booking) => {
-                const bookingDate = new Date(booking.date_time);
-                const dueDate = new Date(bookingDate);
-                dueDate.setDate(dueDate.getDate() + 8);
-                const daysOverdue = Math.floor((new Date().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                const bookingDate = getUKStoredAsLocalDate(booking.date_time);
+                const dueDate = bookingDate ? new Date(bookingDate) : null;
+                if (dueDate) dueDate.setDate(dueDate.getDate() + 8);
+                const daysOverdue = dueDate ? Math.floor((getUKNowAsLocalDate().getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
                 
                 return (
                   <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-white rounded border border-red-200">
                     <div className="space-y-1">
                       <p className="font-medium text-gray-900">
-                        {format(bookingDate, 'dd MMM yyyy')} - {booking.address}
+                        {formatUKDate(booking.date_time)} - {booking.address}
                       </p>
                       <p className="text-sm text-gray-600">
                         Amount: £{Number(booking.total_cost || 0).toFixed(2)} • {daysOverdue} days overdue
@@ -978,12 +987,11 @@ const CustomerPastBookings = () => {
                 
                 for (let day = new Date(startDate); day <= endDate; day.setDate(day.getDate() + 1)) {
                   const dayBookings = filteredBookings.filter(booking => {
-                    const bookingDate = new Date(booking.date_time);
-                    return bookingDate.toDateString() === day.toDateString();
+                    return formatUKDate(booking.date_time, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
                   });
                   
                   const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                  const isToday = day.toDateString() === new Date().toDateString();
+                  const isToday = format(day, 'yyyy-MM-dd') === getUKTodayDateString();
                   
                   days.push(
                     <div 
@@ -1390,7 +1398,8 @@ const CustomerPastBookings = () => {
           id: selectedBookingForPayment.id,
           total_cost: parseFloat(selectedBookingForPayment.total_cost) || 0,
           cleaning_type: selectedBookingForPayment.service_type,
-          address: selectedBookingForPayment.address
+          address: selectedBookingForPayment.address,
+          date_time: selectedBookingForPayment.date_time
         } : undefined}
       />
 

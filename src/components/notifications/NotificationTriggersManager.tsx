@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { toTrueUKInstant } from "@/lib/ukTime";
 import { Plus, Edit, Trash2, Clock, Users, Mail, Zap, MessageSquare, Filter } from "lucide-react";
 
 interface EmailTemplate {
@@ -215,8 +216,13 @@ export const NotificationTriggersManager = () => {
             continue;
           }
 
-          // Determine base time based on trigger event (booking_created uses date_submited, others use date_time)
-          const baseTime = booking.date_submited || booking.date_time;
+          // Determine base time based on trigger event (booking_created uses date_submited,
+          // which is a real UTC timestamp; others use date_time, which is naive London
+          // digits under a fake +00:00 — convert that one to a true instant before doing
+          // elapsed-time math, or the result drifts ~1h during BST).
+          const baseTime = booking.date_submited
+            ? new Date(booking.date_submited)
+            : toTrueUKInstant(booking.date_time);
           if (!baseTime) continue;
 
           const newScheduledFor = new Date(baseTime);

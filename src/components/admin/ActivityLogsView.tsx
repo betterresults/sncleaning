@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, formatLondon } from '@/lib/ukTime';
 
 interface ActivityLog {
   id: string;
@@ -285,7 +285,7 @@ const ActivityLogsView = () => {
                 {filteredLogs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell className="text-sm">
-                      {format(new Date(log.created_at), 'MMM dd, HH:mm:ss')}
+                      {formatLondon(log.created_at, 'MMM dd, HH:mm:ss')}
                     </TableCell>
                     <TableCell className="text-sm">{log.user_email || 'Unknown'}</TableCell>
                     <TableCell>

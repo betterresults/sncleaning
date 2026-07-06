@@ -239,7 +239,7 @@ async function sendConsolidatedNotification(supabase: any, booking_id: number, p
               <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #18A5A5;">
                 <h3 style="margin-top: 0; color: #185166;">Cleaning Summary:</h3>
                 <p style="margin: 5px 0;"><strong>Address:</strong> ${booking.address}</p>
-                <p style="margin: 5px 0;"><strong>Date:</strong> ${booking_date || new Date(booking.date_time).toLocaleDateString()}</p>
+                <p style="margin: 5px 0;"><strong>Date:</strong> ${booking_date || new Date(booking.date_time).toLocaleDateString('en-GB', { timeZone: 'UTC' })}</p>
                 <p style="margin: 5px 0;"><strong>Photos:</strong> ${photoCount} photo${photoCount !== 1 ? 's' : ''} uploaded</p>
                 <p style="margin: 5px 0;"><strong>Booking ID:</strong> ${booking_id}</p>
               </div>

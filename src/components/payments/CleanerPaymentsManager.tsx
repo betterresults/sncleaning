@@ -14,7 +14,7 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Calendar, DollarSign, Clock, User, Edit2, Check, X, MapPin, CalendarIcon, ChevronDown, Plus, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate, buildUKStoredString } from '@/lib/ukTime';
 
 // Helper to format service type for display
 const formatServiceType = (serviceType: string | null | undefined): string => {
@@ -356,7 +356,10 @@ const CleanerPaymentsManager = () => {
       };
     }
     
-    const now = new Date();
+    // Use LOCAL-getter "now" (not the UTC-getter `getUKNowAsStoredDate()`) since
+    // `startOfMonth`/`endOfMonth`/`subMonths` operate on local getters/setters —
+    // their output's local Y/M/D must represent the intended UK calendar day.
+    const now = getUKNowAsLocalDate();
     if (period === 'current_month') {
       return {
         start: startOfMonth(now),
@@ -383,6 +386,14 @@ const CleanerPaymentsManager = () => {
     setLoading(true);
     try {
       const { start, end } = getDateRange();
+      // `start`/`end` (whether from the calendar picker or from `getDateRange()`'s
+      // `startOfMonth`/`endOfMonth` math) are plain Dates whose LOCAL Y/M/D represent
+      // the intended UK day (no real timezone meaning), same convention as NewBookingForm.
+      // `date_time`/`payment_date` are naive-mislabeled UK digits + fake UTC offset, so they
+      // must be compared against boundaries built the same way (UTC-getter digits = UK digits),
+      // not against the raw local-getter Dates directly.
+      const filterStart = new Date(buildUKStoredString(start, '00:00:00'));
+      const filterEnd = new Date(buildUKStoredString(end, '23:59:59'));
       const newPaymentData: { [cleanerId: string]: PaymentData } = {};
       
       // Fetch data for each selected cleaner
@@ -458,7 +469,7 @@ const CleanerPaymentsManager = () => {
 
             // Filter by date range
             const paymentDate = new Date(paymentDateTime);
-            if (paymentDate < start || paymentDate > end) {
+            if (paymentDate < filterStart || paymentDate > filterEnd) {
               return null;
             }
 

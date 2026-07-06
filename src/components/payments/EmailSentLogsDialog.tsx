@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { formatLondon } from '@/lib/ukTime';
 import { Mail, Eye, RefreshCw } from 'lucide-react';
 
 interface EmailLog {
@@ -189,8 +189,8 @@ export const EmailSentLogsDialog: React.FC<EmailSentLogsDialogProps> = ({
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {log.sent_at 
-                              ? format(new Date(log.sent_at), 'MMM dd, yyyy HH:mm')
-                              : format(new Date(log.created_at), 'MMM dd, yyyy HH:mm')
+                              ? formatLondon(log.sent_at, 'MMM dd, yyyy HH:mm')
+                              : formatLondon(log.created_at, 'MMM dd, yyyy HH:mm')
                             }
                           </TableCell>
                           <TableCell>
@@ -244,8 +244,8 @@ export const EmailSentLogsDialog: React.FC<EmailSentLogsDialogProps> = ({
                   <p className="text-sm font-medium">Sent:</p>
                   <p className="text-sm text-muted-foreground">
                     {selectedLog.sent_at 
-                      ? format(new Date(selectedLog.sent_at), 'MMM dd, yyyy HH:mm:ss')
-                      : format(new Date(selectedLog.created_at), 'MMM dd, yyyy HH:mm:ss')
+                      ? formatLondon(selectedLog.sent_at, 'MMM dd, yyyy HH:mm:ss')
+                      : formatLondon(selectedLog.created_at, 'MMM dd, yyyy HH:mm:ss')
                     }
                   </p>
                 </div>

@@ -17,6 +17,7 @@ import { trackMetaEvent, MetaEventName } from '@/lib/metaCapi';
 import { useQuoteLeadTracking } from '@/hooks/useQuoteLeadTracking';
 import { CarpetCleaningItem } from './CarpetCleaningForm';
 import { parseDatePreserveLocalDay } from '@/lib/bookingDate';
+import { format } from 'date-fns';
 
 // Helper function to convert bedroom string to number (studio = 0)
 const parseBedroomsToNumber = (bedrooms: string | undefined): number | undefined => {
@@ -752,7 +753,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Date</p>
                 <p className="font-semibold text-foreground">
-                  {bookingData.selectedDate ? bookingData.selectedDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : 'Flexible'}
+                  {bookingData.selectedDate ? format(bookingData.selectedDate, 'EEE d MMM') : 'Flexible'}
                 </p>
               </div>
               <div>

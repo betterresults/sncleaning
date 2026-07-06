@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { getUKNowAsLocalDate, ukPickerDateToInstant } from "@/lib/ukTime";
 
 interface PostponeDialogProps {
   serviceId: number;
@@ -37,7 +38,7 @@ export function PostponeDialog({ serviceId, isPostponed, onUpdate, children }: P
         .from('recurring_services')
         .update({ 
           postponed: true,
-          resume_date: resumeDate?.toISOString() || null
+          resume_date: resumeDate ? ukPickerDateToInstant(resumeDate)?.toISOString() ?? null : null
         })
         .eq('id', serviceId);
 
@@ -143,7 +144,7 @@ export function PostponeDialog({ serviceId, isPostponed, onUpdate, children }: P
                     mode="single"
                     selected={resumeDate}
                     onSelect={setResumeDate}
-                    disabled={(date) => date < new Date()}
+                    disabled={(date) => date < getUKNowAsLocalDate()}
                     initialFocus
                   />
                 </PopoverContent>
