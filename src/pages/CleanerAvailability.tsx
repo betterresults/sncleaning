@@ -35,7 +35,7 @@ const CleanerAvailabilityPage = () => {
                 <AdminCleanerSelector />
               </div>
             )}
-            <CleanerAvailability cleanerId={effectiveCleanerId} isAdminViewing={isAdminViewing} />
+            <CleanerAvailability cleanerId={effectiveCleanerId} isAdminViewing={isAdminViewing} isMobileView />
           </div>
         </main>
 
