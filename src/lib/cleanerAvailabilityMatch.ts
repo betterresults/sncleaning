@@ -12,9 +12,17 @@ export interface WorkingHourBlock {
 }
 
 export interface BookingTimeWindow {
+  dateKey?: string; // YYYY-MM-DD in the booking wall-clock convention
   dayOfWeek: number; // 0=Sunday .. 6=Saturday
   startMinutes: number;
   endMinutes: number;
+}
+
+export interface CalendarBusyBlock {
+  dateKey: string;
+  startMinutes: number;
+  endMinutes: number;
+  isAllDay?: boolean;
 }
 
 export const timeToMinutes = (value: string): number => {
@@ -101,6 +109,7 @@ export const computeBookingTimeWindow = (
   }
 
   return {
+    dateKey: `${start.year}-${String(start.month).padStart(2, '0')}-${String(start.day).padStart(2, '0')}`,
     dayOfWeek: dayOfWeekFor(start),
     startMinutes,
     endMinutes,
@@ -129,6 +138,19 @@ export const cleanerCoversTime = (
     const blockStart = timeToMinutes(block.start_time);
     const blockEnd = timeToMinutes(block.end_time);
     return blockStart <= window.startMinutes && blockEnd >= window.endMinutes;
+  });
+};
+
+export const cleanerHasCalendarConflict = (
+  busyBlocks: CalendarBusyBlock[],
+  window: BookingTimeWindow | null
+): boolean => {
+  if (!window?.dateKey) return false;
+
+  return busyBlocks.some((block) => {
+    if (block.dateKey !== window.dateKey) return false;
+    if (block.isAllDay) return true;
+    return block.startMinutes < window.endMinutes && block.endMinutes > window.startMinutes;
   });
 };
 

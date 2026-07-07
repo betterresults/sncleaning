@@ -35,6 +35,7 @@ interface Cleaner {
   offersService: boolean;
   coversArea: boolean;
   coversTime: boolean;
+  hasCalendarConflict: boolean;
   coverageAreaIds: string[];
 }
 
@@ -151,6 +152,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         offersService: c.offersService,
         coversArea: c.coversArea,
         coversTime: c.coversTime,
+        hasCalendarConflict: c.hasCalendarConflict,
         coverageAreaIds: c.coverageAreaIds,
       })));
     }
@@ -244,6 +246,14 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       });
       return;
     }
+    if (newCleaner?.hasCalendarConflict) {
+      toast({
+        title: "Google Calendar conflict",
+        description: `${newCleaner.full_name} is busy in Google Calendar${bookingTimeWindow ? ` ${describeTimeWindow(bookingTimeWindow)}` : ' this time'}.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
     setAddingSubCleaner(true);
     try {
@@ -313,6 +323,14 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         });
         return;
       }
+      if (cleaner?.hasCalendarConflict) {
+        toast({
+          title: "Google Calendar conflict",
+          description: `${cleaner.full_name} is busy in Google Calendar${bookingTimeWindow ? ` ${describeTimeWindow(bookingTimeWindow)}` : ' this time'}. Choose another cleaner or update their calendar first.`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -371,9 +389,17 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         parseFloat(customHours) || undefined
       );
 
+      const { error: calendarSyncError } = await supabase.functions.invoke('sync-booking-to-google-calendar', {
+        body: { bookingId, cleanerId: parseInt(selectedCleaner) },
+      });
+
+      if (calendarSyncError) {
+        console.warn('Booking was assigned but Google Calendar sync failed:', calendarSyncError);
+      }
+
       toast({
         title: "Success",
-        description: `Cleaner assigned${calculatedCleanerPay ? ` with £${calculatedCleanerPay.toFixed(2)} pay` : ''}`,
+        description: `Cleaner assigned${calculatedCleanerPay ? ` with £${calculatedCleanerPay.toFixed(2)} pay` : ''}${calendarSyncError ? '. Google Calendar sync needs attention.' : ''}`,
       });
 
       onSuccess();
@@ -447,7 +473,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 {cleaners.map((cleaner) => {
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim() || 'Unnamed';
                   return (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!cleaner.coversTime}>
+                    <SelectItem
+                      key={cleaner.id}
+                      value={cleaner.id.toString()}
+                      disabled={!cleaner.coversTime || cleaner.hasCalendarConflict}
+                    >
                       <div className="flex items-center justify-between w-full gap-2">
                         <span className="flex items-center gap-2">
                           {displayName}
@@ -469,6 +499,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                           {!cleaner.coversTime && (
                             <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
                               Outside working hours
+                            </Badge>
+                          )}
+                          {cleaner.hasCalendarConflict && (
+                            <Badge variant="outline" className="text-[10px] text-violet-700 border-violet-300 bg-violet-50">
+                              Google Calendar busy
                             </Badge>
                           )}
                         </span>
@@ -618,7 +653,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                       </SelectTrigger>
                       <SelectContent>
                         {availableCleanersForAdditional.map((cleaner) => (
-                          <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!cleaner.coversTime}>
+                          <SelectItem
+                            key={cleaner.id}
+                            value={cleaner.id.toString()}
+                            disabled={!cleaner.coversTime || cleaner.hasCalendarConflict}
+                          >
                             <span className="flex items-center gap-2">
                               {cleaner.full_name}
                               {!cleaner.offersService && bookingServiceType && (
@@ -639,6 +678,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                               {!cleaner.coversTime && (
                                 <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
                                   Outside hours
+                                </Badge>
+                              )}
+                              {cleaner.hasCalendarConflict && (
+                                <Badge variant="outline" className="text-[10px] text-violet-700 border-violet-300 bg-violet-50">
+                                  Google busy
                                 </Badge>
                               )}
                             </span>

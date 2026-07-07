@@ -1,13 +1,16 @@
 export type OpenHoursByDay = Map<number, Set<number>>;
 
 export interface BookingBlock {
-  id: number;
+  id: string;
+  bookingId?: number;
+  source: 'booking' | 'google';
   dayOfWeek: number;
   topPx: number;
   heightPx: number;
   label: string;
   timeLabel: string;
   outsideHours: boolean;
+  allDay?: boolean;
 }
 
 export interface AvailabilityGridSharedProps {

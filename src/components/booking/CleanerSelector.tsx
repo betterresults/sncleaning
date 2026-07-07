@@ -19,6 +19,7 @@ interface Cleaner {
   email: string;
   phone: number;
   coversTime?: boolean;
+  hasCalendarConflict?: boolean;
   offersService?: boolean;
   coversArea?: boolean;
   coverageAreaIds?: string[];
@@ -79,6 +80,7 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
         email: '',
         phone: 0,
         coversTime: c.coversTime,
+        hasCalendarConflict: c.hasCalendarConflict,
         offersService: c.offersService,
         coversArea: c.coversArea,
         coverageAreaIds: c.coverageAreaIds,
@@ -87,7 +89,10 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
   }, [linkedCleaners]);
 
   const isAssignable = (cleaner: Cleaner) =>
-    cleaner.coversTime !== false && cleaner.offersService !== false && cleaner.coversArea !== false;
+    cleaner.coversTime !== false &&
+    cleaner.hasCalendarConflict !== true &&
+    cleaner.offersService !== false &&
+    cleaner.coversArea !== false;
 
   // If the booking's time window or service type changes (e.g. the date/time or
   // service is edited after a cleaner was already selected) and the selected cleaner
@@ -151,10 +156,15 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
                 cleaners.map((cleaner) => {
                   const displayName = cleaner.full_name || `${cleaner.first_name || ''} ${cleaner.last_name || ''}`.trim();
                   const coversTime = cleaner.coversTime !== false;
+                  const hasCalendarConflict = cleaner.hasCalendarConflict === true;
                   const offersService = cleaner.offersService !== false;
                   const coversArea = cleaner.coversArea !== false;
                   return (
-                    <SelectItem key={cleaner.id} value={cleaner.id.toString()} disabled={!coversTime || !offersService || !coversArea}>
+                    <SelectItem
+                      key={cleaner.id}
+                      value={cleaner.id.toString()}
+                      disabled={!coversTime || hasCalendarConflict || !offersService || !coversArea}
+                    >
                       <span className="flex items-center gap-2">
                         {displayName} {cleaner.email && `- ${cleaner.email}`}
                         {!offersService && serviceType && (
@@ -175,6 +185,11 @@ const CleanerSelector = ({ onCleanerSelect, bookingTimeWindow, serviceType, post
                         {!coversTime && (
                           <Badge variant="outline" className="text-[10px] text-red-700 border-red-300 bg-red-50">
                             Outside working hours
+                          </Badge>
+                        )}
+                        {hasCalendarConflict && (
+                          <Badge variant="outline" className="text-[10px] text-violet-700 border-violet-300 bg-violet-50">
+                            Google Calendar busy
                           </Badge>
                         )}
                       </span>

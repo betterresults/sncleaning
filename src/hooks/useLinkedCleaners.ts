@@ -3,10 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { cleanerOffersService } from '@/hooks/useCleanerServiceTypes';
 import { cleanerCoversArea } from '@/hooks/useCoverageAreas';
 import {
+  cleanerHasCalendarConflict,
   cleanerCoversTime,
+  type CalendarBusyBlock,
   type BookingTimeWindow,
   type WorkingHourBlock,
 } from '@/lib/cleanerAvailabilityMatch';
+import { getLondonWallClockDate } from '@/lib/ukTime';
 
 export interface LinkedCleaner {
   id: number;
@@ -27,10 +30,20 @@ export interface LinkedCleaner {
   workingHours: WorkingHourBlock[];
   /** Whether this cleaner's working hours cover the `bookingTimeWindow` passed into the hook (always true if none was passed). Unlike service/area, this is enforced as a hard block in assignment UIs. */
   coversTime: boolean;
+  /** Date-specific busy blocks imported from Google Calendar. */
+  calendarBusyBlocks: CalendarBusyBlock[];
+  /** Whether the exact booking window overlaps an imported Google Calendar busy block. */
+  hasCalendarConflict: boolean;
   /** Whether this cleaner brings their own cleaning equipment. A simple toggle for now (no equipment-type breakdown). */
   hasEquipment: boolean;
   /** Whether this cleaner meets the `requiresEquipment` flag passed into the hook (always true if not passed/false). Soft signal, same treatment as service/area. */
   meetsEquipment: boolean;
+}
+
+interface RawCalendarBusyBlock {
+  starts_at: string;
+  ends_at: string;
+  is_all_day?: boolean;
 }
 
 /**
@@ -81,10 +94,28 @@ export const useLinkedCleaners = (
         throw rpcError;
       }
 
+      const pad2 = (value: number) => String(value).padStart(2, '0');
+      const toCalendarBusyBlock = (block: RawCalendarBusyBlock): CalendarBusyBlock | null => {
+        const start = getLondonWallClockDate(block.starts_at);
+        const end = getLondonWallClockDate(block.ends_at);
+        if (!start || !end || end <= start) return null;
+
+        return {
+          dateKey: `${start.getFullYear()}-${pad2(start.getMonth() + 1)}-${pad2(start.getDate())}`,
+          startMinutes: block.is_all_day ? 0 : start.getHours() * 60 + start.getMinutes(),
+          endMinutes: block.is_all_day ? 24 * 60 : end.getHours() * 60 + end.getMinutes(),
+          isAllDay: block.is_all_day,
+        };
+      };
+
       const enriched: LinkedCleaner[] = (data || []).map((c) => {
         const serviceTypeKeys = c.service_type_keys || [];
         const coverageAreaIds = c.coverage_area_ids || [];
         const workingHours = (c.working_hours || []) as unknown as WorkingHourBlock[];
+        const calendarBusyBlocks = ((c.calendar_busy_blocks || []) as RawCalendarBusyBlock[])
+          .map(toCalendarBusyBlock)
+          .filter((block): block is CalendarBusyBlock => Boolean(block));
+        const hasCalendarConflict = cleanerHasCalendarConflict(calendarBusyBlocks, bookingTimeWindow ?? null);
         return {
           id: c.id,
           first_name: c.first_name,
@@ -98,6 +129,8 @@ export const useLinkedCleaners = (
           coversArea: cleanerCoversArea(coverageAreaIds, boroughId),
           workingHours,
           coversTime: cleanerCoversTime(workingHours, bookingTimeWindow ?? null),
+          calendarBusyBlocks,
+          hasCalendarConflict,
           hasEquipment: c.has_equipment ?? true,
           meetsEquipment: !requiresEquipment || (c.has_equipment ?? true),
         };
@@ -109,13 +142,15 @@ export const useLinkedCleaners = (
       enriched.sort(
         (a, b) =>
           Number(b.offersService) + Number(b.coversArea) + Number(b.coversTime) + Number(b.meetsEquipment) -
-          (Number(a.offersService) + Number(a.coversArea) + Number(a.coversTime) + Number(a.meetsEquipment))
+          Number(b.hasCalendarConflict) -
+          (Number(a.offersService) + Number(a.coversArea) + Number(a.coversTime) + Number(a.meetsEquipment) -
+            Number(a.hasCalendarConflict))
       );
 
       setCleaners(enriched);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error in useLinkedCleaners:', err);
-      setError(err.message || 'Failed to fetch cleaners');
+      setError(err instanceof Error ? err.message : 'Failed to fetch cleaners');
     } finally {
       setLoading(false);
     }
