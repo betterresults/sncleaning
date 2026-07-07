@@ -161,6 +161,11 @@ export const findFirstConflictBlock = (
 export const isBookingOutsideSavedHours = (
   booking: CleanerUpcomingBooking,
   savedBlocksByDay: Map<number, CleanerWorkingHour[]>
+): boolean => !isBookingCoveredBySavedBlocks(booking, savedBlocksByDay);
+
+export const isBookingCoveredBySavedBlocks = (
+  booking: CleanerUpcomingBooking,
+  savedBlocksByDay: Map<number, CleanerWorkingHour[]>
 ): boolean => {
   const start = new Date(booking.date_time);
   const end = getBookingEnd(booking);
@@ -168,7 +173,28 @@ export const isBookingOutsideSavedHours = (
   const endMinutes = end ? end.getUTCHours() * 60 + end.getUTCMinutes() : startMinutes;
 
   const dayBlocks = savedBlocksByDay.get(booking.day_of_week) || [];
-  return !dayBlocks.some(
+  return dayBlocks.some(
     (block) => timeToMinutes(block.start_time) <= startMinutes && timeToMinutes(block.end_time) >= endMinutes
   );
 };
+
+export const isBookingCoveredByOpenHours = (
+  booking: CleanerUpcomingBooking,
+  openHours: OpenHoursByDay
+): boolean => {
+  const start = new Date(booking.date_time);
+  const end = getBookingEnd(booking);
+  const startMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
+  const endMinutes = end ? end.getUTCHours() * 60 + end.getUTCMinutes() : startMinutes + 60;
+
+  const daySet = openHours.get(booking.day_of_week) ?? new Set<number>();
+  const runs = runsFromHourSet(daySet);
+
+  return runs.some((run) => run.start * 60 <= startMinutes && run.end * 60 >= endMinutes);
+};
+
+export const findBookingsOutsideOpenHours = (
+  bookings: CleanerUpcomingBooking[],
+  openHours: OpenHoursByDay
+): CleanerUpcomingBooking[] =>
+  bookings.filter((booking) => !isBookingCoveredByOpenHours(booking, openHours));

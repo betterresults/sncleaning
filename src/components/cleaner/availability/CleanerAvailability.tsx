@@ -26,6 +26,7 @@ import AvailabilityServicesPanel from './AvailabilityServicesPanel';
 import AvailabilityAreasPanel from './AvailabilityAreasPanel';
 import AvailabilityAgenda from './AvailabilityAgenda';
 import AvailabilityLeaveDialog from './AvailabilityLeaveDialog';
+import AvailabilitySaveConflictDialog from './AvailabilitySaveConflictDialog';
 import { useAvailabilityUnsavedGuard } from './useAvailabilityUnsavedGuard';
 import {
   addDaysUTC,
@@ -34,6 +35,7 @@ import {
   dayIndexForDayOfWeek,
   DESKTOP_ROW_HEIGHT_PX,
   emptyOpenHours,
+  findBookingsOutsideOpenHours,
   findFirstConflictBlock,
   findTodayIndexInWeek,
   formatBookingTime,
@@ -113,6 +115,8 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
   const [isDirty, setIsDirty] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
   const [highlightedBookingId, setHighlightedBookingId] = useState<number | null>(null);
+  const [saveConflictDialogOpen, setSaveConflictDialogOpen] = useState(false);
+  const [pendingSaveConflicts, setPendingSaveConflicts] = useState<CleanerUpcomingBooking[]>([]);
   const gridCardRef = useRef<HTMLDivElement>(null);
   const navigationBlocker = useAvailabilityUnsavedGuard(isDirty);
 
@@ -257,9 +261,11 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
   const handleCancelChanges = () => {
     setOpenHours(buildOpenHoursFromBlocks(workingHours));
     setIsDirty(false);
+    setSaveConflictDialogOpen(false);
+    setPendingSaveConflicts([]);
   };
 
-  const handleSave = () => {
+  const performSave = useCallback(() => {
     if (!cleanerId) return;
 
     const blocks: WeeklyBlockInput[] = [];
@@ -273,7 +279,29 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
       });
     });
 
-    saveWeek.mutate({ cleanerId, blocks }, { onSuccess: () => setIsDirty(false) });
+    saveWeek.mutate(
+      { cleanerId, blocks },
+      {
+        onSuccess: () => {
+          setIsDirty(false);
+          setSaveConflictDialogOpen(false);
+          setPendingSaveConflicts([]);
+        },
+      }
+    );
+  }, [cleanerId, openHours, saveWeek]);
+
+  const handleSave = () => {
+    if (!cleanerId) return;
+
+    const outsideHours = findBookingsOutsideOpenHours(upcomingBookings, openHours);
+    if (outsideHours.length > 0) {
+      setPendingSaveConflicts(outsideHours);
+      setSaveConflictDialogOpen(true);
+      return;
+    }
+
+    performSave();
   };
 
   if (!cleanerId) {
@@ -404,6 +432,17 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
         open={navigationBlocker.state === 'blocked'}
         onStay={() => navigationBlocker.reset?.()}
         onLeave={() => navigationBlocker.proceed?.()}
+      />
+
+      <AvailabilitySaveConflictDialog
+        open={saveConflictDialogOpen}
+        conflicts={pendingSaveConflicts}
+        isSaving={saveWeek.isPending}
+        onCancel={() => {
+          setSaveConflictDialogOpen(false);
+          setPendingSaveConflicts([]);
+        }}
+        onConfirm={performSave}
       />
     </div>
   );
