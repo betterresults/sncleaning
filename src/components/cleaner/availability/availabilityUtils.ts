@@ -1,7 +1,7 @@
 import { DAYS_OF_WEEK } from '@/hooks/useCleanerWorkingHours';
 import type { CleanerWorkingHour } from '@/hooks/useCleanerWorkingHours';
 import type { CleanerUpcomingBooking } from '@/hooks/useCleanerUpcomingBookings';
-import type { OpenHoursByDay } from './types';
+import type { OpenHoursByDay, BookingBlock } from './types';
 
 export const DESKTOP_ROW_HEIGHT_PX = 38;
 export const MOBILE_ROW_HEIGHT_PX = 48;
@@ -136,3 +136,65 @@ export const findTodayIndexInWeek = (weekDates: Date[], today: Date): number => 
   const idx = weekDates.findIndex((d) => isSameUTCDate(d, today));
   return idx >= 0 ? idx : 0;
 };
+
+export const dayIndexForDayOfWeek = (dayOfWeek: number): number => {
+  const idx = DAYS_OF_WEEK.findIndex((day) => day.value === dayOfWeek);
+  return idx >= 0 ? idx : 0;
+};
+
+export const weekOffsetForBooking = (dateTime: string, ukTodayWeekStart: Date): number => {
+  const bookingWeekStart = startOfWeekUTC(new Date(dateTime));
+  const diffDays = Math.round((bookingWeekStart.getTime() - ukTodayWeekStart.getTime()) / 86400000);
+  return Math.round(diffDays / 7);
+};
+
+export const findFirstConflictBlock = (
+  bookingBlocksByDay: Map<number, BookingBlock[]>
+): BookingBlock | null => {
+  for (const day of DAYS_OF_WEEK) {
+    const conflict = (bookingBlocksByDay.get(day.value) ?? []).find((block) => block.outsideHours);
+    if (conflict) return conflict;
+  }
+  return null;
+};
+
+export const isBookingOutsideSavedHours = (
+  booking: CleanerUpcomingBooking,
+  savedBlocksByDay: Map<number, CleanerWorkingHour[]>
+): boolean => !isBookingCoveredBySavedBlocks(booking, savedBlocksByDay);
+
+export const isBookingCoveredBySavedBlocks = (
+  booking: CleanerUpcomingBooking,
+  savedBlocksByDay: Map<number, CleanerWorkingHour[]>
+): boolean => {
+  const start = new Date(booking.date_time);
+  const end = getBookingEnd(booking);
+  const startMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
+  const endMinutes = end ? end.getUTCHours() * 60 + end.getUTCMinutes() : startMinutes;
+
+  const dayBlocks = savedBlocksByDay.get(booking.day_of_week) || [];
+  return dayBlocks.some(
+    (block) => timeToMinutes(block.start_time) <= startMinutes && timeToMinutes(block.end_time) >= endMinutes
+  );
+};
+
+export const isBookingCoveredByOpenHours = (
+  booking: CleanerUpcomingBooking,
+  openHours: OpenHoursByDay
+): boolean => {
+  const start = new Date(booking.date_time);
+  const end = getBookingEnd(booking);
+  const startMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
+  const endMinutes = end ? end.getUTCHours() * 60 + end.getUTCMinutes() : startMinutes + 60;
+
+  const daySet = openHours.get(booking.day_of_week) ?? new Set<number>();
+  const runs = runsFromHourSet(daySet);
+
+  return runs.some((run) => run.start * 60 <= startMinutes && run.end * 60 >= endMinutes);
+};
+
+export const findBookingsOutsideOpenHours = (
+  bookings: CleanerUpcomingBooking[],
+  openHours: OpenHoursByDay
+): CleanerUpcomingBooking[] =>
+  bookings.filter((booking) => !isBookingCoveredByOpenHours(booking, openHours));

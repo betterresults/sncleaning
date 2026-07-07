@@ -17,6 +17,7 @@ export interface AvailabilityGridSharedProps {
   weekDates: Date[];
   bookingBlocksByDay: Map<number, BookingBlock[]>;
   today: Date;
+  highlightedBookingId?: number | null;
   onToggleCell: (day: number, hour: number) => void;
   onToggleDay: (day: number) => void;
   onSelectBooking: (bookingId: number) => void;

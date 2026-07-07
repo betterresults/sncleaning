@@ -18,6 +18,7 @@ const AvailabilityWeekGrid: React.FC<AvailabilityGridSharedProps> = ({
   weekDates,
   bookingBlocksByDay,
   today,
+  highlightedBookingId,
   onToggleCell,
   onToggleDay,
   onSelectBooking,
@@ -125,6 +126,7 @@ const AvailabilityWeekGrid: React.FC<AvailabilityGridSharedProps> = ({
               <div key={day.value} className="relative border-l border-transparent">
                 <AvailabilityBookingOverlay
                   blocks={bookingBlocksByDay.get(day.value) ?? []}
+                  highlightedBookingId={highlightedBookingId}
                   onSelectBooking={onSelectBooking}
                 />
               </div>

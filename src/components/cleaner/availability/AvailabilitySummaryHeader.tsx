@@ -12,6 +12,7 @@ interface AvailabilitySummaryHeaderProps {
   ready: boolean;
   onSave: () => void;
   onCancel: () => void;
+  onViewConflicts?: () => void;
   showSaveButton?: boolean;
 }
 
@@ -24,6 +25,7 @@ const AvailabilitySummaryHeader: React.FC<AvailabilitySummaryHeaderProps> = ({
   ready,
   onSave,
   onCancel,
+  onViewConflicts,
   showSaveButton = true,
 }) => (
   <div className="space-y-3">
@@ -47,10 +49,15 @@ const AvailabilitySummaryHeader: React.FC<AvailabilitySummaryHeaderProps> = ({
               {activeDays}/7 days
             </span>
             {conflicts > 0 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700">
+              <button
+                type="button"
+                onClick={onViewConflicts}
+                className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-700 transition-colors hover:border-amber-300 hover:bg-amber-100"
+                title="Jump to the first job outside your set hours this week"
+              >
                 <AlertTriangle className="h-3.5 w-3.5" />
                 {conflicts} outside hours
-              </span>
+              </button>
             )}
           </>
         )}
