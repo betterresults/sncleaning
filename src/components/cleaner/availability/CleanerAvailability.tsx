@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,12 +25,16 @@ import AvailabilityDayGrid from './AvailabilityDayGrid';
 import AvailabilityServicesPanel from './AvailabilityServicesPanel';
 import AvailabilityAreasPanel from './AvailabilityAreasPanel';
 import AvailabilityAgenda from './AvailabilityAgenda';
+import AvailabilityLeaveDialog from './AvailabilityLeaveDialog';
+import { useAvailabilityUnsavedGuard } from './useAvailabilityUnsavedGuard';
 import {
   addDaysUTC,
   buildOpenHoursFromBlocks,
   countActiveDays,
+  dayIndexForDayOfWeek,
   DESKTOP_ROW_HEIGHT_PX,
   emptyOpenHours,
+  findFirstConflictBlock,
   findTodayIndexInWeek,
   formatBookingTime,
   getBookingEnd,
@@ -39,6 +43,7 @@ import {
   runsFromHourSet,
   startOfWeekUTC,
   timeToMinutes,
+  weekOffsetForBooking,
 } from './availabilityUtils';
 import type { BookingBlock, OpenHoursByDay } from './types';
 import { getUKNowAsStoredDate } from '@/lib/ukTime';
@@ -106,6 +111,10 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
 
   const [openHours, setOpenHours] = useState<OpenHoursByDay>(emptyOpenHours);
   const [isDirty, setIsDirty] = useState(false);
+  const [activeTab, setActiveTab] = useState('schedule');
+  const [highlightedBookingId, setHighlightedBookingId] = useState<number | null>(null);
+  const gridCardRef = useRef<HTMLDivElement>(null);
+  const navigationBlocker = useAvailabilityUnsavedGuard(isDirty);
 
   const today = useMemo(() => getUKNowAsStoredDate(), []);
   const currentWeekStart = useMemo(() => startOfWeekUTC(today), [today]);
@@ -165,6 +174,37 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
     });
     return count;
   }, [bookingBlocksByDay]);
+
+  const focusBookingOnGrid = useCallback(
+    (booking: CleanerUpcomingBooking) => {
+      setActiveTab('schedule');
+      setWeekOffset(weekOffsetForBooking(booking.date_time, currentWeekStart));
+      setSelectedDayIndex(dayIndexForDayOfWeek(booking.day_of_week));
+      setHighlightedBookingId(booking.id);
+      window.setTimeout(() => {
+        gridCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 0);
+    },
+    [currentWeekStart]
+  );
+
+  const handleViewConflicts = useCallback(() => {
+    const conflict = findFirstConflictBlock(bookingBlocksByDay);
+    if (!conflict) return;
+
+    setActiveTab('schedule');
+    setSelectedDayIndex(dayIndexForDayOfWeek(conflict.dayOfWeek));
+    setHighlightedBookingId(conflict.id);
+    window.setTimeout(() => {
+      gridCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  }, [bookingBlocksByDay]);
+
+  useEffect(() => {
+    if (!highlightedBookingId) return;
+    const timeout = window.setTimeout(() => setHighlightedBookingId(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [highlightedBookingId]);
 
   const mutateHours = (updater: (next: OpenHoursByDay) => void) => {
     setOpenHours((prev) => {
@@ -255,6 +295,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
     weekDates,
     bookingBlocksByDay,
     today,
+    highlightedBookingId,
     onToggleCell: handleToggleCell,
     onToggleDay: handleToggleDay,
     onSelectBooking: setSelectedBookingId,
@@ -271,10 +312,11 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
         ready={ready}
         onSave={handleSave}
         onCancel={handleCancelChanges}
+        onViewConflicts={conflicts > 0 ? handleViewConflicts : undefined}
         showSaveButton={!isMobileView}
       />
 
-      <Tabs defaultValue="schedule" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl bg-muted/70 p-1 sm:max-w-md">
           <TabsTrigger value="schedule">Schedule</TabsTrigger>
           <TabsTrigger value="preferences">Services &amp; areas</TabsTrigger>
@@ -282,7 +324,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
 
         <TabsContent value="schedule" className="mt-0 space-y-4">
           {ready ? (
-            <Card className="overflow-hidden shadow-sm">
+            <Card ref={gridCardRef} className="overflow-hidden shadow-sm">
               <AvailabilityPresetsBar
                 weekStart={weekStart}
                 weekOffset={weekOffset}
@@ -318,6 +360,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
             savedBlocksByDay={savedBlocksByDay}
             isLoading={isLoadingBookings}
             onSelectBooking={setSelectedBookingId}
+            onViewBookingOnGrid={focusBookingOnGrid}
             defaultOpen={isMobileView && upcomingBookings.length > 0}
           />
         </TabsContent>
@@ -355,6 +398,12 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
         open={!!selectedBookingId}
         onOpenChange={(open) => !open && setSelectedBookingId(null)}
         booking={selectedBooking}
+      />
+
+      <AvailabilityLeaveDialog
+        open={navigationBlocker.state === 'blocked'}
+        onStay={() => navigationBlocker.reset?.()}
+        onLeave={() => navigationBlocker.proceed?.()}
       />
     </div>
   );

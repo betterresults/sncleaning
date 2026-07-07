@@ -4,10 +4,15 @@ import type { BookingBlock } from './types';
 
 interface AvailabilityBookingOverlayProps {
   blocks: BookingBlock[];
+  highlightedBookingId?: number | null;
   onSelectBooking: (bookingId: number) => void;
 }
 
-const AvailabilityBookingOverlay: React.FC<AvailabilityBookingOverlayProps> = ({ blocks, onSelectBooking }) => (
+const AvailabilityBookingOverlay: React.FC<AvailabilityBookingOverlayProps> = ({
+  blocks,
+  highlightedBookingId,
+  onSelectBooking,
+}) => (
   <>
     {blocks.map((block) => (
       <button
@@ -19,7 +24,8 @@ const AvailabilityBookingOverlay: React.FC<AvailabilityBookingOverlayProps> = ({
           'pointer-events-auto absolute inset-x-1 overflow-hidden rounded-md border-l-[3px] bg-card px-1.5 py-0.5 text-left text-[10px] font-medium leading-tight shadow-sm transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1',
           block.outsideHours
             ? 'border-l-amber-500 text-amber-900'
-            : 'border-l-primary text-foreground'
+            : 'border-l-primary text-foreground',
+          highlightedBookingId === block.id && 'z-10 ring-2 ring-amber-400 ring-offset-1 animate-pulse'
         )}
         style={{ top: block.topPx, height: Math.max(block.heightPx, 18) }}
       >

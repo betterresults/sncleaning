@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { CalendarClock, AlertTriangle, ChevronDown } from 'lucide-react';
+import { CalendarClock, AlertTriangle, ChevronDown, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 import type { CleanerWorkingHour } from '@/hooks/useCleanerWorkingHours';
 import type { CleanerUpcomingBooking } from '@/hooks/useCleanerUpcomingBookings';
 import {
   formatBookingDay,
   formatBookingTime,
   getBookingEnd,
-  timeToMinutes,
+  isBookingOutsideSavedHours,
 } from './availabilityUtils';
 
 interface AvailabilityAgendaProps {
@@ -16,6 +17,7 @@ interface AvailabilityAgendaProps {
   savedBlocksByDay: Map<number, CleanerWorkingHour[]>;
   isLoading: boolean;
   onSelectBooking: (bookingId: number) => void;
+  onViewBookingOnGrid?: (booking: CleanerUpcomingBooking) => void;
   defaultOpen?: boolean;
 }
 
@@ -24,9 +26,13 @@ const AvailabilityAgenda: React.FC<AvailabilityAgendaProps> = ({
   savedBlocksByDay,
   isLoading,
   onSelectBooking,
+  onViewBookingOnGrid,
   defaultOpen = false,
 }) => {
   const [open, setOpen] = useState(defaultOpen);
+  const conflictCount = bookings.filter((booking) =>
+    isBookingOutsideSavedHours(booking, savedBlocksByDay)
+  ).length;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="rounded-xl border border-border bg-card">
@@ -38,6 +44,11 @@ const AvailabilityAgenda: React.FC<AvailabilityAgendaProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {!isLoading && conflictCount > 0 && (
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+              {conflictCount} outside hours
+            </span>
+          )}
           {!isLoading && bookings.length > 0 && (
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {bookings.length}
@@ -55,31 +66,28 @@ const AvailabilityAgenda: React.FC<AvailabilityAgendaProps> = ({
         ) : (
           <div className="space-y-2">
             {bookings.map((booking) => {
-              const start = new Date(booking.date_time);
               const end = getBookingEnd(booking);
-              const startMinutes = start.getUTCHours() * 60 + start.getUTCMinutes();
-              const endMinutes = end ? end.getUTCHours() * 60 + end.getUTCMinutes() : startMinutes;
-
-              const dayBlocks = savedBlocksByDay.get(booking.day_of_week) || [];
-              const isCovered = dayBlocks.some(
-                (block) => timeToMinutes(block.start_time) <= startMinutes && timeToMinutes(block.end_time) >= endMinutes
-              );
-
+              const isOutsideHours = isBookingOutsideSavedHours(booking, savedBlocksByDay);
               const customerName = [booking.first_name, booking.last_name].filter(Boolean).join(' ') || 'Customer';
               const service = booking.service_type || booking.cleaning_type || 'Cleaning';
 
               return (
-                <button
+                <div
                   key={booking.id}
-                  type="button"
-                  onClick={() => onSelectBooking(booking.id)}
-                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-background p-3 text-left transition-colors hover:bg-muted/40"
+                  className={cn(
+                    'rounded-lg border border-border bg-background p-3',
+                    isOutsideHours && 'border-amber-200/80 bg-amber-50/30'
+                  )}
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onSelectBooking(booking.id)}
+                    className="flex w-full items-start gap-3 text-left transition-colors hover:opacity-90"
+                  >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <CalendarClock className="h-4 w-4" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">
                         {formatBookingDay(booking.date_time)} · {formatBookingTime(booking.date_time)}
                         {end ? ` – ${formatBookingTime(end.toISOString())}` : ''}
@@ -88,15 +96,27 @@ const AvailabilityAgenda: React.FC<AvailabilityAgendaProps> = ({
                         {service} · {customerName}
                       </p>
                     </div>
-                  </div>
+                  </button>
 
-                  {!isCovered && (
-                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-700">
-                      <AlertTriangle className="h-3 w-3" />
-                      Outside hours
-                    </span>
+                  {isOutsideHours && onViewBookingOnGrid && (
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-amber-200/60 pt-2">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+                        <AlertTriangle className="h-3 w-3" />
+                        Outside your set hours
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-7 border-amber-200 bg-background text-xs text-amber-800 hover:bg-amber-50"
+                        onClick={() => onViewBookingOnGrid(booking)}
+                      >
+                        <MapPin className="mr-1 h-3 w-3" />
+                        View on grid
+                      </Button>
+                    </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
