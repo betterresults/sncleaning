@@ -16,10 +16,15 @@ import {
   useCleanerBookingsForWeek,
   type CleanerUpcomingBooking,
 } from '@/hooks/useCleanerUpcomingBookings';
+import {
+  useCleanerCalendarBusyBlocks,
+  type CleanerCalendarBusyBlock,
+} from '@/hooks/useCleanerGoogleCalendar';
 import BookingDetailsSheet from '../BookingDetailsSheet';
 import AvailabilitySummaryHeader from './AvailabilitySummaryHeader';
 import AvailabilityPresetsBar from './AvailabilityPresetsBar';
 import AvailabilityLegend from './AvailabilityLegend';
+import AvailabilityGoogleCalendarPanel from './AvailabilityGoogleCalendarPanel';
 import AvailabilityWeekGrid from './AvailabilityWeekGrid';
 import AvailabilityDayGrid from './AvailabilityDayGrid';
 import AvailabilityServicesPanel from './AvailabilityServicesPanel';
@@ -48,7 +53,7 @@ import {
   weekOffsetForBooking,
 } from './availabilityUtils';
 import type { BookingBlock, OpenHoursByDay } from './types';
-import { getUKNowAsStoredDate } from '@/lib/ukTime';
+import { getLondonWallClockDate, getUKNowAsStoredDate } from '@/lib/ukTime';
 
 interface CleanerAvailabilityProps {
   cleanerId: number | null;
@@ -88,13 +93,83 @@ const buildBookingBlocksByDay = (
     const service = booking.service_type || booking.cleaning_type || 'Cleaning';
 
     map.get(booking.day_of_week)?.push({
-      id: booking.id,
+      id: `booking-${booking.id}`,
+      bookingId: booking.id,
+      source: 'booking',
       dayOfWeek: booking.day_of_week,
       topPx: ((clippedStart - gridStartMinutes) / 60) * rowHeightPx,
       heightPx: ((clippedEnd - clippedStart) / 60) * rowHeightPx,
       label: `${service} · ${customerName}`,
       timeLabel: `${formatBookingTime(booking.date_time)}${end ? ` – ${formatBookingTime(end.toISOString())}` : ''}`,
       outsideHours: !isCovered,
+    });
+  });
+
+  return map;
+};
+
+const buildGoogleBusyBlocksByDay = (
+  busyBlocks: CleanerCalendarBusyBlock[],
+  weekDates: Date[],
+  startHour: number,
+  endHour: number,
+  rowHeightPx: number
+): Map<number, BookingBlock[]> => {
+  const map = new Map<number, BookingBlock[]>();
+  DAYS_OF_WEEK.forEach((day) => map.set(day.value, []));
+
+  const gridStartMinutes = startHour * 60;
+  const gridEndMinutes = endHour * 60;
+  const pad2 = (value: number) => String(value).padStart(2, '0');
+  const formatDateKey = (date: Date) => `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  const formatWeekDateKey = (date: Date) =>
+    `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
+
+  busyBlocks.forEach((block) => {
+    const startWall = getLondonWallClockDate(block.starts_at);
+    const endWall = getLondonWallClockDate(block.ends_at);
+    if (!startWall || !endWall || endWall <= startWall) return;
+
+    weekDates.forEach((weekDate) => {
+      const dayStart = new Date(
+        weekDate.getUTCFullYear(),
+        weekDate.getUTCMonth(),
+        weekDate.getUTCDate(),
+        0,
+        0,
+        0,
+        0
+      );
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      const segmentStart = new Date(Math.max(startWall.getTime(), dayStart.getTime()));
+      const segmentEnd = new Date(Math.min(endWall.getTime(), dayEnd.getTime()));
+      if (segmentEnd <= segmentStart) return;
+
+      const dayKey = formatWeekDateKey(weekDate);
+      if (formatDateKey(segmentStart) !== dayKey && formatDateKey(segmentEnd) !== dayKey) return;
+
+      const rawStartMinutes = block.is_all_day
+        ? gridStartMinutes
+        : segmentStart.getHours() * 60 + segmentStart.getMinutes();
+      const rawEndMinutes = block.is_all_day ? gridEndMinutes : segmentEnd.getHours() * 60 + segmentEnd.getMinutes();
+      const clippedStart = Math.max(rawStartMinutes, gridStartMinutes);
+      const clippedEnd = Math.min(Math.max(rawEndMinutes, clippedStart + 15), gridEndMinutes);
+      if (clippedStart >= gridEndMinutes || clippedEnd <= gridStartMinutes) return;
+
+      const dayOfWeek = weekDate.getUTCDay();
+      map.get(dayOfWeek)?.push({
+        id: `google-${block.id}-${dayKey}`,
+        source: 'google',
+        dayOfWeek,
+        topPx: ((clippedStart - gridStartMinutes) / 60) * rowHeightPx,
+        heightPx: ((clippedEnd - clippedStart) / 60) * rowHeightPx,
+        label: block.summary || 'Google Calendar busy',
+        timeLabel: block.is_all_day
+          ? 'All day'
+          : `${pad2(Math.floor(clippedStart / 60))}:${pad2(clippedStart % 60)} - ${pad2(Math.floor(clippedEnd / 60))}:${pad2(clippedEnd % 60)}`,
+        outsideHours: false,
+        allDay: block.is_all_day,
+      });
     });
   });
 
@@ -124,6 +199,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
   const currentWeekStart = useMemo(() => startOfWeekUTC(today), [today]);
   const [weekOffset, setWeekOffset] = useState(0);
   const weekStart = useMemo(() => addDaysUTC(currentWeekStart, weekOffset * 7), [currentWeekStart, weekOffset]);
+  const weekEnd = useMemo(() => addDaysUTC(weekStart, 7), [weekStart]);
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDaysUTC(weekStart, i)), [weekStart]);
 
   const [selectedDayIndex, setSelectedDayIndex] = useState(() => findTodayIndexInWeek(weekDates, today));
@@ -133,6 +209,11 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
   }, [weekOffset, weekDates, today]);
 
   const { data: weekBookings = [], isLoading: isLoadingWeekBookings } = useCleanerBookingsForWeek(cleanerId, weekStart);
+  const { data: googleBusyBlocks = [], isLoading: isLoadingGoogleBusy } = useCleanerCalendarBusyBlocks(
+    cleanerId,
+    weekStart.toISOString(),
+    weekEnd.toISOString()
+  );
 
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const selectedBooking = useMemo(
@@ -169,6 +250,23 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
     [weekBookings, savedBlocksByDay, startHour, endHour, rowHeightPx]
   );
 
+  const googleBlocksByDay = useMemo(
+    () => buildGoogleBusyBlocksByDay(googleBusyBlocks, weekDates, startHour, endHour, rowHeightPx),
+    [googleBusyBlocks, weekDates, startHour, endHour, rowHeightPx]
+  );
+
+  const calendarBlocksByDay = useMemo(() => {
+    const map = new Map<number, BookingBlock[]>();
+    DAYS_OF_WEEK.forEach((day) => {
+      const blocks = [...(bookingBlocksByDay.get(day.value) ?? []), ...(googleBlocksByDay.get(day.value) ?? [])];
+      map.set(
+        day.value,
+        blocks.sort((a, b) => a.topPx - b.topPx || b.heightPx - a.heightPx)
+      );
+    });
+    return map;
+  }, [bookingBlocksByDay, googleBlocksByDay]);
+
   const conflicts = useMemo(() => {
     let count = 0;
     bookingBlocksByDay.forEach((blocks) => {
@@ -198,7 +296,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
 
     setActiveTab('schedule');
     setSelectedDayIndex(dayIndexForDayOfWeek(conflict.dayOfWeek));
-    setHighlightedBookingId(conflict.id);
+    setHighlightedBookingId(conflict.bookingId ?? null);
     window.setTimeout(() => {
       gridCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 0);
@@ -321,7 +419,7 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
     startHour,
     endHour,
     weekDates,
-    bookingBlocksByDay,
+    bookingBlocksByDay: calendarBlocksByDay,
     today,
     highlightedBookingId,
     onToggleCell: handleToggleCell,
@@ -362,6 +460,11 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
                 onNextWeek={() => setWeekOffset((w) => w + 1)}
                 onToday={() => setWeekOffset(0)}
               />
+              <AvailabilityGoogleCalendarPanel
+                cleanerId={cleanerId}
+                weekStartIso={weekStart.toISOString()}
+                weekEndIso={weekEnd.toISOString()}
+              />
               <AvailabilityLegend />
               {isMobileView ? (
                 <div className="p-3">
@@ -379,8 +482,8 @@ const CleanerAvailability: React.FC<CleanerAvailabilityProps> = ({
             <p className="text-sm text-muted-foreground">Loading...</p>
           )}
 
-          {ready && isLoadingWeekBookings && (
-            <p className="text-xs text-muted-foreground">Loading bookings for this week...</p>
+          {ready && (isLoadingWeekBookings || isLoadingGoogleBusy) && (
+            <p className="text-xs text-muted-foreground">Loading calendar blocks for this week...</p>
           )}
 
           <AvailabilityAgenda

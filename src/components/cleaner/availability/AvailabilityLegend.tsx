@@ -14,6 +14,10 @@ const AvailabilityLegend: React.FC = () => (
       <span className="h-3 w-3 rounded-sm border-l-[3px] border-l-amber-500 bg-card ring-1 ring-border" aria-hidden />
       Outside hours
     </span>
+    <span className="inline-flex items-center gap-1.5">
+      <span className="h-3 w-3 rounded-sm border-l-[3px] border-l-violet-500 bg-violet-50 ring-1 ring-violet-200" aria-hidden />
+      Google busy
+    </span>
   </div>
 );
 
