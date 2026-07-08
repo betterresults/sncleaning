@@ -25,6 +25,7 @@ import { useLinkedCleaners } from '@/hooks/useLinkedCleaners';
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import { resolvePostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { computeBookingTimeWindow, describeTimeWindow } from '@/lib/cleanerAvailabilityMatch';
+import { trySyncBookingGoogleCalendar } from '@/lib/googleCalendarSync';
 import MetaCapiReportButton from '@/components/admin/MetaCapiReportButton';
 
 interface EditBookingDialogProps {
@@ -487,11 +488,13 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         }
       }
 
+      const calendarSyncError = await trySyncBookingGoogleCalendar(booking.id, 'booking update');
+
       toast({
         title: "✅ Booking Updated",
         description: needsPaymentAdjustment 
-          ? "Booking and payment updated successfully!" 
-          : "Booking updated successfully!",
+          ? `Booking and payment updated successfully!${calendarSyncError ? ' Google Calendar sync needs attention.' : ''}` 
+          : `Booking updated successfully!${calendarSyncError ? ' Google Calendar sync needs attention.' : ''}`,
         className: "bg-green-50 border-green-200 text-green-800",
         duration: 3000,
       });

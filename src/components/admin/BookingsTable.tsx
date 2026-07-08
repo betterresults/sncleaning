@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import DashboardStats from './DashboardStats';
 import EditBookingDialog from '../dashboard/EditBookingDialog';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString } from '@/lib/ukTime';
+import { tryDeleteBookingGoogleCalendar, trySyncBookingGoogleCalendar } from '@/lib/googleCalendarSync';
 
 interface Booking {
   id: number;
@@ -238,6 +239,8 @@ const BookingsTable = () => {
   const handleDelete = async (bookingId: number) => {
     if (window.confirm('Are you sure you want to delete this booking?')) {
       try {
+        await tryDeleteBookingGoogleCalendar(bookingId, 'admin table deletion');
+
         const { error } = await supabase
           .from('bookings')
           .delete()
@@ -295,6 +298,8 @@ const BookingsTable = () => {
         console.error('Error cancelling booking:', error);
         return;
       }
+
+      await trySyncBookingGoogleCalendar(bookingId, 'admin table cancellation');
 
       toast({
         title: "Success",

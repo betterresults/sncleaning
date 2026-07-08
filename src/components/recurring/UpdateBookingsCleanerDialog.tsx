@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredString } from '@/lib/ukTime';
+import { trySyncBookingGoogleCalendar } from '@/lib/googleCalendarSync';
 
 interface AffectedBooking {
   id: number;
@@ -161,6 +162,26 @@ export default function UpdateBookingsCleanerDialog({
         .in('id', bookingIds);
 
       if (updateError) throw updateError;
+
+      for (const bookingId of bookingIds) {
+        const { data: existingEntry, error: existingError } = await supabase
+          .from('cleaner_payments')
+          .select('id')
+          .eq('booking_id', bookingId)
+          .eq('is_primary', true)
+          .maybeSingle();
+        if (existingError) throw existingError;
+
+        if (existingEntry?.id) {
+          const { error } = await supabase
+            .from('cleaner_payments')
+            .update({ cleaner_id: parseInt(newCleanerId), hourly_rate: newCleaner.hourly_rate })
+            .eq('id', existingEntry.id);
+          if (error) throw error;
+        }
+
+        await trySyncBookingGoogleCalendar(bookingId, 'recurring cleaner update');
+      }
 
       toast({
         title: 'Success',

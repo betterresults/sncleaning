@@ -516,3 +516,159 @@ export const createOrUpdateBookingEvent = async (
 
   return { synced: true, googleEventId: body.id };
 };
+
+export const deleteBookingCalendarEvent = async (
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  bookingId: number,
+  cleanerId: number,
+) => {
+  const { data: eventRow, error: eventError } = await supabase
+    .from('booking_calendar_events')
+    .select('id, google_event_id, connection_id')
+    .eq('booking_id', bookingId)
+    .eq('cleaner_id', cleanerId)
+    .maybeSingle();
+
+  if (eventError) throw eventError;
+  if (!eventRow?.google_event_id) return { deleted: false, skipped: 'No Google Calendar event tracked' };
+
+  const connection = await getConnection(supabase, eventRow.connection_id);
+  const accessToken = await getValidAccessToken(supabase, connection);
+  const calendarId = encodeURIComponent(connection.google_calendar_id || 'primary');
+  const response = await fetch(
+    `${GOOGLE_CALENDAR_API}/calendars/${calendarId}/events/${encodeURIComponent(eventRow.google_event_id)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  );
+
+  if (!response.ok && response.status !== 404 && response.status !== 410) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error?.message || 'Failed to delete booking from Google Calendar');
+  }
+
+  const { error: deleteError } = await supabase
+    .from('booking_calendar_events')
+    .delete()
+    .eq('booking_id', bookingId)
+    .eq('cleaner_id', cleanerId);
+  if (deleteError) throw deleteError;
+
+  return { deleted: true, googleEventId: eventRow.google_event_id };
+};
+
+export const deleteAllBookingCalendarEvents = async (
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  bookingId: number,
+) => {
+  const { data: rows, error } = await supabase
+    .from('booking_calendar_events')
+    .select('cleaner_id')
+    .eq('booking_id', bookingId);
+  if (error) throw error;
+
+  const results = [];
+  for (const row of rows ?? []) {
+    try {
+      results.push({
+        bookingId,
+        cleanerId: Number(row.cleaner_id),
+        ...(await deleteBookingCalendarEvent(supabase, bookingId, Number(row.cleaner_id))),
+      });
+    } catch (error) {
+      results.push({
+        bookingId,
+        cleanerId: Number(row.cleaner_id),
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return {
+    deleted: results.filter((result) => result.deleted).length,
+    total: results.length,
+    results,
+  };
+};
+
+export const getAssignedCleanerIdsForBooking = async (
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  bookingId: number,
+) => {
+  const assignedCleanerIds = new Set<number>();
+
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .select('cleaner, booking_status')
+    .eq('id', bookingId)
+    .maybeSingle();
+  if (bookingError) throw bookingError;
+
+  if (!booking || booking.booking_status?.toLowerCase() === 'cancelled') {
+    return assignedCleanerIds;
+  }
+
+  if (booking.cleaner) assignedCleanerIds.add(Number(booking.cleaner));
+
+  const { data: paymentAssignments, error: paymentError } = await supabase
+    .from('cleaner_payments')
+    .select('cleaner_id')
+    .eq('booking_id', bookingId);
+  if (paymentError) throw paymentError;
+
+  (paymentAssignments ?? []).forEach((assignment) => {
+    const cleanerId = Number(assignment.cleaner_id);
+    if (cleanerId) assignedCleanerIds.add(cleanerId);
+  });
+
+  return assignedCleanerIds;
+};
+
+export const syncBookingCalendarEvents = async (
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  bookingId: number,
+) => {
+  const assignedCleanerIds = await getAssignedCleanerIdsForBooking(supabase, bookingId);
+  const { data: trackedRows, error: trackedError } = await supabase
+    .from('booking_calendar_events')
+    .select('cleaner_id')
+    .eq('booking_id', bookingId);
+  if (trackedError) throw trackedError;
+
+  const trackedCleanerIds = new Set((trackedRows ?? []).map((row) => Number(row.cleaner_id)).filter(Boolean));
+  const results = [];
+
+  for (const cleanerId of trackedCleanerIds) {
+    if (!assignedCleanerIds.has(cleanerId)) {
+      try {
+        results.push({
+          bookingId,
+          cleanerId,
+          ...(await deleteBookingCalendarEvent(supabase, bookingId, cleanerId)),
+        });
+      } catch (error) {
+        results.push({ bookingId, cleanerId, error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+  }
+
+  for (const cleanerId of assignedCleanerIds) {
+    try {
+      results.push({
+        bookingId,
+        cleanerId,
+        ...(await createOrUpdateBookingEvent(supabase, bookingId, cleanerId)),
+      });
+    } catch (error) {
+      results.push({ bookingId, cleanerId, error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
+  return {
+    synced: results.filter((result) => result.synced).length,
+    deleted: results.filter((result) => result.deleted).length,
+    total: results.length,
+    results,
+  };
+};

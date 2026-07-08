@@ -24,6 +24,7 @@ import BookingsPagination from '@/components/cleaner/BookingsPagination';
 import TableControls from '@/components/cleaner/TableControls';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate } from '@/lib/ukTime';
+import { trySyncBookingGoogleCalendar } from '@/lib/googleCalendarSync';
 
 interface Booking {
   id: number;
@@ -187,6 +188,44 @@ const BulkEditBookings = () => {
       setCleaners(data || []);
     } catch (error) {
       console.error('Error fetching cleaners:', error);
+    }
+  };
+
+  const syncBulkCleanerPaymentRows = async (updatedBookings: Booking[], cleanerId: number) => {
+    for (const booking of updatedBookings) {
+      const paymentPayload = {
+        cleaner_id: cleanerId,
+        calculated_pay: booking.cleaner_pay || 0,
+        hours_assigned: booking.total_hours || booking.cleaning_time || null,
+        percentage_rate: booking.cleaner_percentage || null,
+        hourly_rate: booking.cleaner_rate || null,
+      };
+
+      const { data: existingEntry, error: existingError } = await supabase
+        .from('cleaner_payments')
+        .select('id')
+        .eq('booking_id', booking.id)
+        .eq('is_primary', true)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      if (existingEntry?.id) {
+        const { error } = await supabase
+          .from('cleaner_payments')
+          .update(paymentPayload)
+          .eq('id', existingEntry.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('cleaner_payments').insert({
+          booking_id: booking.id,
+          is_primary: true,
+          payment_type: booking.cleaner_percentage ? 'percentage' : 'hourly',
+          status: 'assigned',
+          ...paymentPayload,
+        });
+        if (error) throw error;
+      }
     }
   };
 
@@ -358,6 +397,33 @@ const BulkEditBookings = () => {
           variant: "destructive",
         });
         return;
+      }
+
+      if (bookingType === 'upcoming') {
+        if (editType === 'cleaner') {
+          await syncBulkCleanerPaymentRows(data as Booking[], parseInt(newValue));
+        }
+
+        const calendarRelevantFields = new Set([
+          'cleaner',
+          'booking_status',
+          'service_type',
+          'cleaning_type',
+          'first_name',
+          'last_name',
+          'address',
+          'postcode',
+          'total_hours',
+          'cleaning_time',
+        ]);
+
+        if (calendarRelevantFields.has(editType)) {
+          await Promise.all(
+            (data as Booking[]).map((booking) =>
+              trySyncBookingGoogleCalendar(booking.id, 'bulk booking update')
+            )
+          );
+        }
       }
 
       toast({

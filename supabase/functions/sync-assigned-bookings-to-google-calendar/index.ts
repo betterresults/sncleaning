@@ -1,9 +1,9 @@
 import {
   corsHeaders,
-  createOrUpdateBookingEvent,
   errorResponse,
   getSupabaseAdmin,
   jsonResponse,
+  syncBookingCalendarEvents,
 } from '../_shared/googleCalendar.ts';
 
 Deno.serve(async (req) => {
@@ -25,15 +25,12 @@ Deno.serve(async (req) => {
     const connectedCleanerIds = [...new Set((connections ?? []).map((row) => Number(row.cleaner_id)).filter(Boolean))];
     if (connectedCleanerIds.length === 0) return jsonResponse({ synced: 0, skipped: 'No connected cleaners' });
 
-    const assignments = new Map<string, { bookingId: number; cleanerId: number }>();
+    const bookingIds = new Set<number>();
     const addAssignment = (bookingId: unknown, cleanerId: unknown) => {
       const parsedBookingId = Number(bookingId);
       const parsedCleanerId = Number(cleanerId);
       if (!parsedBookingId || !parsedCleanerId || !connectedCleanerIds.includes(parsedCleanerId)) return;
-      assignments.set(`${parsedBookingId}:${parsedCleanerId}`, {
-        bookingId: parsedBookingId,
-        cleanerId: parsedCleanerId,
-      });
+      bookingIds.add(parsedBookingId);
     };
 
     const { data: primaryBookings, error: primaryError } = await supabase
@@ -72,22 +69,23 @@ Deno.serve(async (req) => {
     }
 
     const results = [];
-    for (const assignment of assignments.values()) {
+    for (const bookingId of bookingIds) {
       try {
         results.push({
-          ...assignment,
-          ...(await createOrUpdateBookingEvent(supabase, assignment.bookingId, assignment.cleanerId)),
+          bookingId,
+          ...(await syncBookingCalendarEvents(supabase, bookingId)),
         });
       } catch (error) {
         results.push({
-          ...assignment,
+          bookingId,
           error: error instanceof Error ? error.message : String(error),
         });
       }
     }
 
     return jsonResponse({
-      synced: results.filter((result) => result.synced).length,
+      synced: results.reduce((total, result) => total + Number(result.synced ?? 0), 0),
+      deleted: results.reduce((total, result) => total + Number(result.deleted ?? 0), 0),
       total: results.length,
       results,
     });

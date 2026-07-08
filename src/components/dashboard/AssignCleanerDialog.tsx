@@ -16,6 +16,7 @@ import { useServiceTypes, getServiceTypeLabel } from '@/hooks/useCompanySettings
 import { normalizeServiceTypeKey } from '@/hooks/useCleanerServiceTypes';
 import { resolvePostcodeToBorough, isAreaUnverified } from '@/lib/postcodeCoverage';
 import { computeBookingTimeWindow, describeTimeWindow, type BookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
+import { trySyncBookingGoogleCalendar } from '@/lib/googleCalendarSync';
 import { 
   fetchAdditionalCleaners, 
   addBookingCleaner, 
@@ -273,8 +274,12 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
 
       // Update primary cleaner pay
       await recalculatePrimaryCleanerPay(bookingId, newSubCleanerHours);
+      const calendarSyncError = await trySyncBookingGoogleCalendar(bookingId, 'adding additional cleaner');
 
-      toast({ title: "Success", description: "Additional cleaner added" });
+      toast({
+        title: "Success",
+        description: `Additional cleaner added${calendarSyncError ? '. Google Calendar sync needs attention.' : ''}`,
+      });
       
       // Reset form and refresh list
       setNewCleanerId('');
@@ -301,8 +306,12 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       
       // Update primary cleaner pay
       await recalculatePrimaryCleanerPay(bookingId!, -removedHours);
+      const calendarSyncError = await trySyncBookingGoogleCalendar(bookingId!, 'removing additional cleaner');
       
-      toast({ title: "Success", description: "Additional cleaner removed" });
+      toast({
+        title: "Success",
+        description: `Additional cleaner removed${calendarSyncError ? '. Google Calendar sync needs attention.' : ''}`,
+      });
       fetchSubCleaners();
     } catch (error) {
       console.error('Error removing sub cleaner:', error);
@@ -366,9 +375,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
           throw bookingError;
         }
 
+        const calendarSyncError = await trySyncBookingGoogleCalendar(bookingId, 'unassigning cleaner');
+
         toast({
           title: "Success",
-          description: "Cleaner unassigned from booking",
+          description: `Cleaner unassigned from booking${calendarSyncError ? '. Google Calendar sync needs attention.' : ''}`,
         });
 
         onSuccess();
@@ -389,13 +400,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         parseFloat(customHours) || undefined
       );
 
-      const { error: calendarSyncError } = await supabase.functions.invoke('sync-booking-to-google-calendar', {
-        body: { bookingId, cleanerId: parseInt(selectedCleaner) },
-      });
-
-      if (calendarSyncError) {
-        console.warn('Booking was assigned but Google Calendar sync failed:', calendarSyncError);
-      }
+      const calendarSyncError = await trySyncBookingGoogleCalendar(bookingId, 'assigning cleaner');
 
       toast({
         title: "Success",

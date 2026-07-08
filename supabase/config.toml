@@ -150,23 +150,27 @@ verify_jwt = false
 [functions.check-abandoned-leads]
 verify_jwt = false
 
+# Gateway JWT verification is disabled for these functions because they authenticate
+# the caller in-code via getAuthenticatedUser() (validates the token with auth.getUser()
+# and enforces admin/owner checks). Leaving gateway verify_jwt on caused Supabase to
+# reject client-sent tokens with 401 UNAUTHORIZED_LEGACY_JWT before our code could run.
 [functions.google-calendar-connect]
-verify_jwt = true
+verify_jwt = false
 
 [functions.google-calendar-callback]
 verify_jwt = false
 
 [functions.google-calendar-sync]
-verify_jwt = true
+verify_jwt = false
 
 [functions.google-calendar-disconnect]
-verify_jwt = true
+verify_jwt = false
 
 [functions.google-calendar-webhook]
 verify_jwt = false
 
 [functions.sync-booking-to-google-calendar]
-verify_jwt = true
+verify_jwt = false
 
 [functions.sync-assigned-bookings-to-google-calendar]
 verify_jwt = false
