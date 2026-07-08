@@ -30,6 +30,8 @@ import {
   Sparkles
 } from 'lucide-react';
 import { CleanerAccountActions } from './admin/CleanerAccountActions';
+import { CleanerCalendarStatus } from './admin/CleanerCalendarStatus';
+import { useAllCleanerCalendarConnections } from '@/hooks/useCleanerGoogleCalendar';
 import { useQueryClient } from '@tanstack/react-query';
 import { useServiceTypes } from '@/hooks/useCompanySettings';
 import { useAllCleanerServiceTypes, allCleanerServiceTypesQueryKey } from '@/hooks/useCleanerServiceTypes';
@@ -139,6 +141,7 @@ const EnhancedCleanerManagement = () => {
   const { data: cleanerServiceTypeMap = new Map<number, string[]>() } = useAllCleanerServiceTypes();
   const { data: areaOptions = [] } = useCoverageAreaOptions();
   const { data: cleanerCoverageAreaMap = new Map<number, string[]>() } = useAllCleanerCoverageAreas();
+  const { data: cleanerCalendarConnectionMap = new Map() } = useAllCleanerCalendarConnections();
 
   const toggleServiceTypeKey = (keys: string[], setKeys: (keys: string[]) => void, key: string) => {
     setKeys(keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]);
@@ -720,6 +723,8 @@ const EnhancedCleanerManagement = () => {
                           </Badge>
                         )}
                       </div>
+
+                      <CleanerCalendarStatus connection={cleanerCalendarConnectionMap.get(cleaner.id)} />
 
                       {cleaner.services && (
                         <div className="text-sm text-muted-foreground">
