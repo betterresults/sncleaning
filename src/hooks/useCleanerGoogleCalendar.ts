@@ -60,6 +60,32 @@ export const useCleanerCalendarConnection = (cleanerId: number | null) =>
     },
   });
 
+export const allCleanerCalendarConnectionsQueryKey = ['cleaner-calendar-connections', 'all'];
+
+// Admin-only: RLS grants admins full access to cleaner_calendar_connections, so this
+// returns every cleaner's Google connection keyed by cleaner_id for at-a-glance health.
+export const useAllCleanerCalendarConnections = (enabled = true) =>
+  useQuery({
+    queryKey: allCleanerCalendarConnectionsQueryKey,
+    enabled,
+    queryFn: async (): Promise<Map<number, CleanerCalendarConnection>> => {
+      const { data, error } = await supabase
+        .from('cleaner_calendar_connections' as never)
+        .select(
+          'id, cleaner_id, provider, google_calendar_id, google_calendar_email, status, last_synced_at, last_error, created_at, updated_at'
+        )
+        .eq('provider', 'google');
+
+      if (error) throw error;
+
+      const map = new Map<number, CleanerCalendarConnection>();
+      (data as CleanerCalendarConnection[] | null)?.forEach((connection) => {
+        map.set(connection.cleaner_id, connection);
+      });
+      return map;
+    },
+  });
+
 export const useCleanerCalendarBusyBlocks = (
   cleanerId: number | null,
   rangeStartIso: string | null,
