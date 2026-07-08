@@ -10,6 +10,7 @@ import BookingFilters from './BookingFilters';
 import { Booking, Stats } from './types';
 import { format, isWithinInterval } from 'date-fns';
 import { getUKTodayRange } from '@/lib/ukTime';
+import { tryDeleteBookingGoogleCalendar } from '@/lib/googleCalendarSync';
 
 const CleanerUpcomingBookings = () => {
   const { cleanerId, userRole, loading: authLoading } = useAuth();
@@ -105,7 +106,7 @@ const CleanerUpcomingBookings = () => {
         .in('booking_id', bookingIds);
 
       // Enrich bookings with cleaner assignment data and co-cleaners
-      let allBookings = (bookingsData || []).map(booking => {
+      const allBookings = (bookingsData || []).map(booking => {
         // Find this cleaner's assignment for the booking
         const myAssignment = cleanerAssignments.find(a => a.booking_id === booking.id);
         const isPrimary = myAssignment?.is_primary || false;
@@ -226,15 +227,54 @@ const CleanerUpcomingBookings = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ cleaner: null, cleaner_pay: null })
-        .eq('id', bookingId)
-        .eq('cleaner', effectiveCleanerId);
+      await tryDeleteBookingGoogleCalendar(bookingId, 'dropping cleaner service', effectiveCleanerId);
 
-      if (error) {
-        console.error('Error dropping off booking:', error);
+      const { data: assignment, error: assignmentError } = await supabase
+        .from('cleaner_payments')
+        .select('id, is_primary')
+        .eq('booking_id', bookingId)
+        .eq('cleaner_id', effectiveCleanerId)
+        .maybeSingle();
+
+      if (assignmentError) {
+        console.error('Error finding cleaner assignment:', assignmentError);
         return;
+      }
+
+      if (assignment?.id) {
+        const { error: paymentError } = await supabase
+          .from('cleaner_payments')
+          .delete()
+          .eq('id', assignment.id);
+
+        if (paymentError) {
+          console.error('Error removing cleaner assignment:', paymentError);
+          return;
+        }
+      }
+
+      if (assignment?.is_primary) {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ cleaner: null, cleaner_pay: null })
+          .eq('id', bookingId)
+          .eq('cleaner', effectiveCleanerId);
+
+        if (error) {
+          console.error('Error dropping off booking:', error);
+          return;
+        }
+      } else if (!assignment) {
+        const { error } = await supabase
+          .from('bookings')
+          .update({ cleaner: null, cleaner_pay: null })
+          .eq('id', bookingId)
+          .eq('cleaner', effectiveCleanerId);
+
+        if (error) {
+          console.error('Error dropping off booking:', error);
+          return;
+        }
       }
 
       fetchData();

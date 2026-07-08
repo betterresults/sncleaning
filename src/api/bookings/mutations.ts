@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { tryDeleteBookingGoogleCalendar, trySyncBookingGoogleCalendar } from '@/lib/googleCalendarSync';
 
 export async function cancelBooking(bookingId: number): Promise<void> {
   const { error } = await supabase
@@ -10,6 +11,8 @@ export async function cancelBooking(bookingId: number): Promise<void> {
     throw error;
   }
 
+  await trySyncBookingGoogleCalendar(bookingId, 'booking cancellation');
+
   // Allow DB trigger to move booking to past_bookings
   await new Promise((resolve) => setTimeout(resolve, 1000));
 }
@@ -20,6 +23,8 @@ export async function deleteBooking(bookingId: number): Promise<void> {
     .select('*, customers(first_name, last_name, email)')
     .eq('id', bookingId)
     .single();
+
+  await tryDeleteBookingGoogleCalendar(bookingId, 'booking deletion');
 
   const { error } = await supabase.from('bookings').delete().eq('id', bookingId);
 
