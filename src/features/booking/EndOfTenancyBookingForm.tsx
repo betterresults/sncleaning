@@ -602,6 +602,9 @@ const EndOfTenancyBookingForm: React.FC = () => {
             onUpdate={updateBookingData as any}
             onNext={nextStep}
             onBack={prevStep}
+            serviceTypeLabel="End of Tenancy Cleaning"
+            durationHours={bookingData.estimatedHours}
+            postcode={bookingData.postcode || null}
           />
         );
       case 4:

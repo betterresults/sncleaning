@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookingData } from '../AirbnbBookingForm';
-import { CalendarDays, Clock, Mic, AlertTriangle, Info } from 'lucide-react';
+import { CalendarDays, AlertTriangle, Info, Loader2 } from 'lucide-react';
 import { useAirbnbFieldConfigs } from '@/hooks/useAirbnbFieldConfigs';
-import { SelectionCard } from '@/components/ui/selection-card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAssignableCleanersCatalog } from '@/hooks/useAssignableCleanersCatalog';
+import { useBusinessHoursRange } from '@/hooks/useSchedulingRules';
+import {
+  filterSlotsByCleanerAvailability,
+  generateCandidateSlotLabels,
+} from '@/lib/customerSlotAvailability';
 import { getUKNowAsLocalDate } from '@/lib/ukTime';
 import { format } from 'date-fns';
 
@@ -17,11 +21,23 @@ interface ScheduleStepProps {
   onUpdate: (updates: Partial<BookingData>) => void;
   onNext: () => void;
   onBack: () => void;
+  /** company_settings service label, e.g. "Domestic", "Air BnB" */
+  serviceTypeLabel?: string | null;
+  /** Job duration in hours — used to ensure the full job fits a cleaner's shift. */
+  durationHours?: number | null;
+  /** When known (quote URL prefill), filters slots to cleaners covering the area. */
+  postcode?: string | null;
 }
 
-const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onBack }) => {
-  const [isRecording, setIsRecording] = useState(false);
-  
+const ScheduleStep: React.FC<ScheduleStepProps> = ({
+  data,
+  onUpdate,
+  onNext,
+  onBack,
+  serviceTypeLabel,
+  durationHours,
+  postcode,
+}) => {
   // Fetch dynamic time flexibility configs from Supabase
   const { data: timeFlexConfigs = [] } = useAirbnbFieldConfigs('Time Flexibility', true);
   
@@ -38,42 +54,51 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   // Calendar always opens on the current month so customers see today's date first.
   const getDefaultMonth = () => getUKNowAsLocalDate();
 
-  // Generate time slots based on current time for same-day booking
-  // Format: Simple arrival times like "9:00 AM" instead of confusing windows
-  const generateTimeSlots = () => {
-    const now = getUKNowAsLocalDate();
-    const selectedDate = data.selectedDate;
-    const isToday = selectedDate && 
-      selectedDate.getDate() === now.getDate() &&
-      selectedDate.getMonth() === now.getMonth() &&
-      selectedDate.getFullYear() === now.getFullYear();
+  const { startHour, endHour, isLoading: businessHoursLoading } = useBusinessHoursRange();
+  const {
+    cleaners,
+    loading: cleanersLoading,
+    error: cleanersError,
+    areaUnverified,
+  } = useAssignableCleanersCatalog(true, serviceTypeLabel, postcode);
 
-    // All available arrival times (hour values)
-    const allHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-    
-    // Format hour to display string like "9:00 AM"
-    const formatTime = (hour: number) => {
-      if (hour < 12) return `${hour}:00 AM`;
-      if (hour === 12) return '12:00 PM';
-      return `${hour - 12}:00 PM`;
-    };
+  const candidateSlots = useMemo(
+    () =>
+      generateCandidateSlotLabels({
+        startHour,
+        endHour,
+        durationHours,
+        selectedDate: data.selectedDate,
+      }),
+    [startHour, endHour, durationHours, data.selectedDate]
+  );
 
-    if (isToday) {
-      // For same-day booking, only show times that are at least 2 hours from now
-      const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      const minHour = twoHoursFromNow.getHours() + (twoHoursFromNow.getMinutes() > 0 ? 1 : 0);
-      
-      return allHours
-        .filter(hour => hour >= minHour)
-        .map(formatTime);
+  const timeSlots = useMemo(() => {
+    if (!data.selectedDate || cleanersLoading || businessHoursLoading || cleanersError) {
+      return candidateSlots;
     }
+    return filterSlotsByCleanerAvailability(cleaners, data.selectedDate, candidateSlots, durationHours);
+  }, [
+    candidateSlots,
+    cleaners,
+    cleanersError,
+    cleanersLoading,
+    businessHoursLoading,
+    data.selectedDate,
+    durationHours,
+  ]);
 
-    // For future dates, show all time slots
-    return allHours.map(formatTime);
-  };
-
-  const timeSlots = generateTimeSlots();
+  const slotsLoading = businessHoursLoading || cleanersLoading;
+  const hasAvailabilityOnSelectedDate = timeSlots.length > 0;
   const isFlexible = data.flexibility === 'flexible-time';
+
+  // Clear a previously picked time if it falls outside the newly filtered list.
+  React.useEffect(() => {
+    if (!data.selectedTime || slotsLoading) return;
+    if (!timeSlots.includes(data.selectedTime)) {
+      onUpdate({ selectedTime: undefined });
+    }
+  }, [data.selectedTime, onUpdate, slotsLoading, timeSlots]);
   
   // Calculate short notice charges using dynamic configs
   const calculateShortNoticeCharge = () => {
@@ -143,15 +168,12 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
   const requiresAccessNotes = ['collect', 'keybox', 'other'].includes(data.propertyAccess);
   const hasRequiredAccessNotes = !requiresAccessNotes || (data.accessNotes && data.accessNotes.trim() !== '');
   
-  const canContinue = data.selectedDate && 
-                      (isFlexible || data.selectedTime) && 
-                      data.propertyAccess && 
-                      hasRequiredAccessNotes;
-
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    // In a real implementation, you would handle voice recording here
-  };
+  const canContinue =
+    data.selectedDate &&
+    hasAvailabilityOnSelectedDate &&
+    (isFlexible || data.selectedTime) &&
+    data.propertyAccess &&
+    hasRequiredAccessNotes;
 
   return (
     <div className="space-y-4">
@@ -216,25 +238,56 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
             />
           </div>
 
+          {!postcode && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                Times shown reflect cleaner availability. Area matching is applied when your postcode is known.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {areaUnverified && postcode && (
+            <Alert className="border-amber-200 bg-amber-50">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                We could not verify coverage for postcode {postcode}. Available times may change once your address is confirmed.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Time Selection - Only show if not flexible */}
           {!isFlexible && (
             <>
               <p className="text-sm text-muted-foreground mb-3">
-                Select your preferred arrival time. Our team will arrive at this time.
+                Select your preferred arrival time. Only times with an available cleaner are shown.
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                {timeSlots.map((time) => (
-                  <Button
-                    key={time}
-                    variant={data.selectedTime === time ? 'default' : 'outline'}
-                    className="h-12 text-xl font-semibold"
-                    onClick={() => onUpdate({ selectedTime: data.selectedTime === time ? undefined : time })}
-                  >
-                    {time}
-                  </Button>
-                ))}
-              </div>
+              {slotsLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground py-4">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Checking cleaner availability…
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {timeSlots.map((time) => (
+                    <Button
+                      key={time}
+                      variant={data.selectedTime === time ? 'default' : 'outline'}
+                      className="h-12 text-xl font-semibold"
+                      onClick={() => onUpdate({ selectedTime: data.selectedTime === time ? undefined : time })}
+                    >
+                      {time}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </>
+          )}
+
+          {isFlexible && hasAvailabilityOnSelectedDate && !slotsLoading && (
+            <p className="text-sm text-muted-foreground">
+              {timeSlots.length} arrival {timeSlots.length === 1 ? 'window' : 'windows'} available on this date. We will confirm the exact start time with you.
+            </p>
           )}
 
           {/* Same Day Turnaround - Only show for check-in/checkout when time is selected */}
@@ -280,27 +333,26 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({ data, onUpdate, onNext, onB
         </Alert>
       )}
 
-      {/* Same Day Booking - No Available Times Warning */}
-      {data.selectedDate && (
+      {/* No available times on selected date */}
+      {data.selectedDate && !slotsLoading && timeSlots.length === 0 && (
         (() => {
           const now = getUKNowAsLocalDate();
           const selectedDate = data.selectedDate;
-          const isToday = selectedDate.getDate() === now.getDate() &&
+          const isToday =
+            selectedDate.getDate() === now.getDate() &&
             selectedDate.getMonth() === now.getMonth() &&
             selectedDate.getFullYear() === now.getFullYear();
-          
-          if (isToday && timeSlots.length === 0) {
-            return (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertTriangle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  No available time slots for today. Same-day cleaning requires at least 2 hours notice.
-                </AlertDescription>
-              </Alert>
-            );
-          }
-          
-          return null;
+
+          return (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                {isToday
+                  ? 'No available time slots for today. Same-day cleaning requires at least 2 hours notice and a cleaner who is free for your job.'
+                  : 'No cleaners are available on this date for your booking. Please try another date or contact us for help.'}
+              </AlertDescription>
+            </Alert>
+          );
         })()
       )}
 

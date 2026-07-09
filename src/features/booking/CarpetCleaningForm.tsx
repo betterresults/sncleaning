@@ -484,6 +484,9 @@ const CarpetCleaningForm: React.FC = () => {
             onUpdate={updateBookingData as any}
             onNext={nextStep}
             onBack={prevStep}
+            serviceTypeLabel="Carpet Cleaning"
+            durationHours={bookingData.estimatedHours}
+            postcode={bookingData.postcode || null}
           />
         );
       case 4:
