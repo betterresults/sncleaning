@@ -1,3 +1,3 @@
 export * from './types';
-export * from './fetchUsers';
+export * from './fetchCleaners';
 export * from './mutations';
