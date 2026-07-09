@@ -6,4 +6,7 @@ export { UsersListFilters } from './UsersListFilters';
 export { UsersListBulkEditBar } from './UsersListBulkEditBar';
 export { UsersListLoading, UsersListLoadingRows } from './UsersListStates';
 export { UsersTableRow } from './UsersTableRow';
+export { UsersListStaffUtilities } from './UsersListStaffUtilities';
+export { UsersListTable } from './UsersListTable';
 export { UsersListDialogs } from './UsersListDialogs';
+export { useModernUsersTable } from './useModernUsersTable';
