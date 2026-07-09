@@ -962,6 +962,9 @@ const DomesticBookingForm: React.FC = () => {
             onUpdate={updateBookingData as any}
             onNext={nextStep}
             onBack={prevStep}
+            serviceTypeLabel="Domestic"
+            durationHours={displayHours}
+            postcode={bookingData.postcode || null}
           />
         );
       case 3:

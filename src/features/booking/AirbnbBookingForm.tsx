@@ -467,6 +467,9 @@ const AirbnbBookingForm: React.FC = () => {
             onUpdate={updateBookingData}
             onNext={nextStep}
             onBack={prevStep}
+            serviceTypeLabel="Air BnB"
+            durationHours={(bookingData.estimatedHours ?? 0) + (bookingData.extraHours ?? 0) || null}
+            postcode={bookingData.postcode || null}
           />
         );
       case 4:
