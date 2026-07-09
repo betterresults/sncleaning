@@ -48,14 +48,17 @@ export const buildBookingDateTimeStr = (date: Date, slotLabel: string): string |
 };
 
 /**
- * Hard-block predicate — mirrors CleanerSelector.isAssignable so customers only see
- * slots where at least one cleaner can actually take the job.
+ * Customer-facing hard-block predicate — stricter than admin assignment UIs.
+ * Mirrors CleanerSelector.isAssignable for service/area/calendar, but unlike
+ * assignment UIs we do NOT treat empty working_hours as a wildcard: a cleaner
+ * must have configured availability before they can open a customer slot.
  */
 export const isCleanerAssignableForWindow = (
   cleaner: AssignableCleanerCatalogEntry,
   window: BookingTimeWindow | null
 ): boolean => {
   if (!window) return true;
+  if (cleaner.workingHours.length === 0) return false;
   return (
     cleaner.offersService &&
     cleaner.coversArea &&
