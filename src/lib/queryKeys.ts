@@ -12,6 +12,8 @@ export const queryKeys = {
     list: (params: PastBookingsListParams) => ['past-bookings', 'list', params] as const,
   },
   cleaners: {
+    all: ['cleaners'] as const,
+    list: ['cleaners', 'list'] as const,
     options: ['cleaners', 'options'] as const,
   },
   customers: {

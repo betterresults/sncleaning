@@ -29,3 +29,6 @@ jobs:
           VITE_SUPABASE_PROJECT_ID: placeholder
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: placeholder
+
+      - name: Test
+        run: npm test
