@@ -23,6 +23,8 @@ interface ChatOverviewSectionProps {
   recentMessages: RecentChatMessage[];
   chats: ChatWithLastMessage[];
   loading: boolean;
+  error?: string | null;
+  onRetry?: () => void;
   onStatClick: (filter: ChatTypeFilter) => void;
   onRecentMessageClick: (chat: ChatWithLastMessage) => void;
 }
@@ -62,11 +64,29 @@ export function ChatOverviewSection({
   recentMessages,
   chats,
   loading,
+  error,
+  onRetry,
   onStatClick,
   onRecentMessageClick,
 }: ChatOverviewSectionProps) {
   return (
     <div className="flex flex-col gap-shell-block">
+      {error && (
+        <ShellEmpty>
+          <div className="flex flex-col items-center gap-3">
+            <span>{error}</span>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="text-sm font-medium text-shell-brand underline-offset-2 hover:underline"
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        </ShellEmpty>
+      )}
       <ShellStatGrid>
         <ClickableStat
           label="Total chats"
@@ -139,7 +159,7 @@ export function ChatOverviewSection({
               </ShellListItem>
             );
           })}
-          {!loading && recentMessages.length === 0 && (
+          {!loading && !error && recentMessages.length === 0 && (
             <ShellEmpty>No recent messages</ShellEmpty>
           )}
         </ShellList>

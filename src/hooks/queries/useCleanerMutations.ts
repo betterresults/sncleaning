@@ -60,8 +60,17 @@ export function useCleanerMutations() {
       invalidate();
       if (variables.password && !result.accountCreated) {
         toast({
-          title: 'Partial Success',
-          description: 'Cleaner created but failed to create user account. You can create it later.',
+          title: 'Cleaner saved — login not created',
+          description:
+            'The cleaner profile was created, but the login account failed. Use Create Account on their card to try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (variables.password && result.accountCreated) {
+        toast({
+          title: 'Success',
+          description: 'Cleaner and login account created successfully!',
         });
         return;
       }

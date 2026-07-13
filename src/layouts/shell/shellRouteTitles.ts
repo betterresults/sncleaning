@@ -12,7 +12,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/admin-sms-messages': 'SMS Messages',
   '/admin-quote-requests': 'Quote Requests',
   '/admin-quote-leads': 'Quote Leads',
-  '/create-customer-accounts': 'Create Customer Accounts',
+  '/create-customer-accounts': 'Account Utilities',
   '/recurring-bookings': 'Recurring Bookings',
   '/recurring-bookings/add': 'Add Recurring Booking',
   '/users/cleaners': 'Cleaners',

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdminCleaner } from '@/contexts/AdminCleanerContext';
 import AdminCleanerSelector from '@/components/admin/AdminCleanerSelector';
@@ -11,13 +12,25 @@ import { ShellLoading, ShellPage } from '@/layouts/shell';
 
 const CleanerAvailabilityPage = () => {
   const { cleanerId, userRole, loading } = useAuth();
-  const { selectedCleanerId } = useAdminCleaner();
+  const { selectedCleanerId, setSelectedCleanerId } = useAdminCleaner();
+  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
 
   const isMobileView = isCapacitor() || isMobile;
   const isAdminViewing = userRole === 'admin';
   // Admins have no cleanerId of their own — they browse via the AdminCleanerSelector instead.
   const effectiveCleanerId = isAdminViewing ? selectedCleanerId : cleanerId;
+
+  // Deep-link from cleaners ops: /cleaner-availability?cleanerId=23
+  useEffect(() => {
+    if (!isAdminViewing) return;
+    const raw = searchParams.get('cleanerId');
+    if (!raw) return;
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return;
+    if (selectedCleanerId === parsed) return;
+    setSelectedCleanerId(parsed);
+  }, [isAdminViewing, searchParams, selectedCleanerId, setSelectedCleanerId]);
 
   if (loading) {
     return <ShellLoading />;

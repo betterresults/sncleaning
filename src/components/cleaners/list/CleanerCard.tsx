@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -9,8 +10,8 @@ import {
   MapPin,
   DollarSign,
   Percent,
-  CheckCircle,
   Sparkles,
+  Clock,
 } from 'lucide-react';
 import { CleanerAccountActions } from '@/components/admin/CleanerAccountActions';
 import { CleanerCalendarStatus } from '@/components/admin/CleanerCalendarStatus';
@@ -92,12 +93,6 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
             <h3 className="font-semibold text-lg text-primary">
               {cleaner.first_name} {cleaner.last_name}
             </h3>
-            {cleaner.has_account && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800 gap-1">
-                <CheckCircle className="h-3 w-3" />
-                Has Account
-              </Badge>
-            )}
             <Badge variant="outline" className="text-xs">
               ID: {cleaner.id}
             </Badge>
@@ -204,6 +199,12 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
 
         <div className="flex flex-col sm:flex-row gap-2">
           <CleanerAccountActions cleaner={cleaner} onAccountCreated={onAccountCreated} />
+          <Button asChild variant="outline" size="sm">
+            <Link to={`/cleaner-availability?cleanerId=${cleaner.id}`}>
+              <Clock className="h-4 w-4 mr-2" />
+              Availability
+            </Link>
+          </Button>
           <Button onClick={onStartEdit} variant="outline" size="sm">
             <Edit2 className="h-4 w-4 mr-2" />
             Edit

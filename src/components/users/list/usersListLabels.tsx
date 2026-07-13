@@ -56,7 +56,7 @@ export function getTypeTitle(userType: UsersTableUserType): string {
     case 'office':
       return 'Office Staff';
     case 'cleaner':
-      return 'Cleaner Users';
+      return 'Cleaner Logins';
     case 'customer':
       return 'Customers';
     default:
@@ -71,7 +71,7 @@ export function getAddButtonText(userType: UsersTableUserType): string {
     case 'customer':
       return 'Add Customer';
     case 'cleaner':
-      return 'Add Cleaner';
+      return 'Add cleaner login';
     case 'admin':
       return 'Add Admin';
     default:

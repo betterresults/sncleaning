@@ -27,7 +27,8 @@ export function ChatManagementView({
   const [activeTab, setActiveTab] = useState<ChatManagementTab>('overview');
   const [selectedChatType, setSelectedChatType] = useState<ChatTypeFilter>(null);
 
-  const { chatStats, recentMessages, loading: statsLoading } = useChatManagementStats(chats);
+  const { chatStats, recentMessages, loading: statsLoading, error: statsError, refresh: refreshStats } =
+    useChatManagementStats(chats);
 
   const handleSelectChat = useCallback(
     async (chat: typeof activeChat) => {
@@ -89,6 +90,8 @@ export function ChatManagementView({
           recentMessages={recentMessages}
           chats={chats}
           loading={statsLoading}
+          error={statsError}
+          onRetry={refreshStats}
           onStatClick={handleStatClick}
           onRecentMessageClick={handleRecentMessageClick}
         />

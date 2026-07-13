@@ -204,8 +204,34 @@ export const adminNavigation = [
   },
   {
     title: "Users",
-    url: "/users",
     icon: Users,
+    subItems: [
+      {
+        title: "Directory",
+        url: "/users",
+        icon: Users,
+      },
+      {
+        title: "Customers",
+        url: "/users/customers",
+        icon: UserPlus,
+      },
+      {
+        title: "Cleaners",
+        url: "/users/cleaners",
+        icon: UserCheck,
+      },
+      {
+        title: "Admins",
+        url: "/users/admins",
+        icon: Shield,
+      },
+      {
+        title: "Account Utilities",
+        url: "/create-customer-accounts",
+        icon: UserPlus,
+      },
+    ],
   },
   {
     title: "Payments",
