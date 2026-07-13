@@ -15,11 +15,15 @@ import {
   type UsersTableUserType,
 } from '@/components/users/list';
 
+/** Stable empty list — inline `= []` creates a new reference every render and can infinite-loop effects. */
+const EMPTY_USERS: UserData[] = [];
+
 export function useModernUsersTable({
   userType = 'all',
   openCustomerId,
 }: ModernUsersTableProps) {
-  const { data: users = [], isLoading: loading, error: usersError } = useUsersList(userType);
+  const { data, isLoading: loading, error: usersError } = useUsersList(userType);
+  const users = data ?? EMPTY_USERS;
   const invalidateUsersList = useInvalidateUsersList();
   const refreshUsers = () => invalidateUsersList();
   const { toast } = useToast();
@@ -33,7 +37,6 @@ export function useModernUsersTable({
     bulkUpdateMutation,
   } = useUserMutations(userType, refreshUsers);
 
-  const [filteredUsers, setFilteredUsers] = useState<UserData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editData, setEditData] = useState<Record<string, unknown>>({});
@@ -82,15 +85,13 @@ export function useModernUsersTable({
   const isCustomerView = userType === 'customer';
   const showBulkEdit = isCustomerView && selectedBusinessIds.length > 0;
 
-  const runFilters = (term: string) => {
-    setFilteredUsers(
-      applyUsersListFilters(users, term, userType, customerTypeFilter, addressFilter)
-    );
-  };
+  const filteredUsers = useMemo(
+    () => applyUsersListFilters(users, searchTerm, userType, customerTypeFilter, addressFilter),
+    [users, searchTerm, userType, customerTypeFilter, addressFilter]
+  );
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    runFilters(term);
   };
 
   useEffect(() => {
@@ -110,10 +111,6 @@ export function useModernUsersTable({
       });
     }
   }, [usersError, toast]);
-
-  useEffect(() => {
-    runFilters(searchTerm);
-  }, [users, customerTypeFilter, addressFilter]);
 
   const handleAddUser = async () => {
     if (!newUserData.first_name || !newUserData.last_name || !newUserData.email) {
