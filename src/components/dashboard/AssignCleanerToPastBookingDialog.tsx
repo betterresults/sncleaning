@@ -61,6 +61,7 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
 
   useEffect(() => {
     if (open && bookingId) {
+      resetForm();
       fetchBookingDetails();
     }
   }, [open, bookingId]);
@@ -114,10 +115,14 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
       
       if (data.cleaner) {
         setSelectedCleaner(data.cleaner.toString());
+      } else {
+        setSelectedCleaner('');
       }
       
-      if (data.cleaner_pay) {
+      if (data.cleaner_pay != null) {
         setCleanerPay(data.cleaner_pay.toString());
+      } else {
+        setCleanerPay('');
       }
     } catch (error) {
       console.error('Error fetching booking details:', error);
@@ -245,8 +250,13 @@ const AssignCleanerToPastBookingDialog: React.FC<AssignCleanerToPastBookingDialo
     setCustomPercentageRate('');
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) resetForm();
+    onOpenChange(nextOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Assign Cleaner & Pay</DialogTitle>

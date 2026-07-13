@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { PostcodePrefixEntry } from '@/lib/postcodeCoverage';
+import { saveCleanerCoverageAreas } from '@/api/cleaners/mutations';
 
 export interface CoverageAreaOption {
   boroughId: string;
@@ -104,23 +105,13 @@ export const useAllCleanerCoverageAreas = () => {
   });
 };
 
-// Replaces a cleaner's entire set of configured coverage areas in one go.
+// Diff-based replace so a failed insert cannot wipe existing coverage areas.
 export const useSaveCleanerCoverageAreas = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ cleanerId, boroughIds }: { cleanerId: number; boroughIds: string[] }) => {
-      const { error: deleteError } = await supabase
-        .from('cleaner_coverage_areas')
-        .delete()
-        .eq('cleaner_id', cleanerId);
-      if (deleteError) throw deleteError;
-
-      if (boroughIds.length === 0) return;
-
-      const rows = boroughIds.map((boroughId) => ({ cleaner_id: cleanerId, borough_id: boroughId }));
-      const { error: insertError } = await supabase.from('cleaner_coverage_areas').insert(rows);
-      if (insertError) throw insertError;
+      await saveCleanerCoverageAreas(cleanerId, boroughIds);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cleanerCoverageAreasQueryKey(variables.cleanerId) });

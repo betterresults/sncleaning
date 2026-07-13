@@ -44,6 +44,17 @@ describe('applyUsersListFilters', () => {
     expect(result[0].id).toBe('u1');
   });
 
+  it('matches full first + last name', () => {
+    const result = applyUsersListFilters(users, 'Jane Doe', 'customer', 'all', 'all');
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('u1');
+  });
+
+  it('does not match unrelated full names', () => {
+    const result = applyUsersListFilters(users, 'Jane Smith', 'customer', 'all', 'all');
+    expect(result).toHaveLength(0);
+  });
+
   it('filters business customers by client type', () => {
     const result = applyUsersListFilters(users, '', 'customer', 'residential', 'all');
     expect(result.map((u) => u.id)).toEqual(['u1']);

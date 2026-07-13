@@ -60,21 +60,50 @@ export const useSaveWeeklyAvailability = () => {
 
   return useMutation({
     mutationFn: async ({ cleanerId, blocks }: { cleanerId: number; blocks: WeeklyBlockInput[] }) => {
-      const { error: deleteError } = await supabase.from('cleaner_working_hours').delete().eq('cleaner_id', cleanerId);
-      if (deleteError) throw deleteError;
+      // Upsert by day so a failed write cannot wipe the whole week first.
+      const { data: existing, error: fetchError } = await supabase
+        .from('cleaner_working_hours')
+        .select('id, day_of_week')
+        .eq('cleaner_id', cleanerId);
+      if (fetchError) throw fetchError;
 
-      if (blocks.length === 0) return;
+      const byDay = new Map((existing || []).map((row) => [row.day_of_week, row.id]));
+      const desiredDays = new Set(blocks.map((b) => b.dayOfWeek));
 
-      const rows = blocks.map((b) => ({
-        cleaner_id: cleanerId,
-        day_of_week: b.dayOfWeek,
-        start_time: b.startTime,
-        end_time: b.endTime,
-        is_active: true,
-      }));
+      for (const block of blocks) {
+        const existingId = byDay.get(block.dayOfWeek);
+        if (existingId) {
+          const { error: updateError } = await supabase
+            .from('cleaner_working_hours')
+            .update({
+              start_time: block.startTime,
+              end_time: block.endTime,
+              is_active: true,
+            })
+            .eq('id', existingId);
+          if (updateError) throw updateError;
+        } else {
+          const { error: insertError } = await supabase.from('cleaner_working_hours').insert({
+            cleaner_id: cleanerId,
+            day_of_week: block.dayOfWeek,
+            start_time: block.startTime,
+            end_time: block.endTime,
+            is_active: true,
+          });
+          if (insertError) throw insertError;
+        }
+      }
 
-      const { error: insertError } = await supabase.from('cleaner_working_hours').insert(rows);
-      if (insertError) throw insertError;
+      const toDelete = (existing || [])
+        .filter((row) => !desiredDays.has(row.day_of_week))
+        .map((row) => row.id);
+      if (toDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('cleaner_working_hours')
+          .delete()
+          .in('id', toDelete);
+        if (deleteError) throw deleteError;
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: workingHoursQueryKey(variables.cleanerId) });

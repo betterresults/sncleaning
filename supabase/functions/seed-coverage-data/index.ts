@@ -67,84 +67,107 @@ serve(async (req) => {
       "Sheffield": ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S17", "S18", "S20", "S21", "S25", "S26"]
     };
 
-    const results: any = { regions: [], boroughs: [], postcodes: [] };
+    const results: {
+      regions: string[];
+      boroughs: string[];
+      postcodes: string[];
+      skipped: string[];
+    } = { regions: [], boroughs: [], postcodes: [], skipped: [] };
 
-    // Delete all existing data to start fresh
-    console.log("Deleting existing data...");
-    await supabase.from("postcode_prefixes").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("coverage_boroughs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-    await supabase.from("coverage_regions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    // Additive only — never wipe. A full delete cascades into cleaner_coverage_areas
+    // and destroys per-cleaner area assignments.
+    const { data: existingRegions } = await supabase
+      .from("coverage_regions")
+      .select("id, name, display_order");
+    const regionByName = new Map((existingRegions || []).map((r: any) => [r.name, r]));
 
-    // Process each region
-    let displayOrder = 1;
+    const maxOrder = Math.max(0, ...(existingRegions || []).map((r: any) => r.display_order || 0));
+    let displayOrder = maxOrder + 1;
+
     for (const [regionName, postcodes] of Object.entries(coverageData)) {
-      console.log(`Creating region: ${regionName}`);
-      
-      // Create region
-      const { data: region, error: regionError } = await supabase
-        .from("coverage_regions")
-        .insert({ name: regionName, display_order: displayOrder })
-        .select("id")
-        .single();
+      console.log(`Ensuring region: ${regionName}`);
 
-      if (regionError) {
-        console.error(`Error creating region ${regionName}:`, regionError);
-        continue;
+      let region = regionByName.get(regionName);
+      if (!region) {
+        const { data: created, error: regionError } = await supabase
+          .from("coverage_regions")
+          .insert({ name: regionName, display_order: displayOrder })
+          .select("id, name, display_order")
+          .single();
+
+        if (regionError || !created) {
+          console.error(`Error creating region ${regionName}:`, regionError);
+          continue;
+        }
+        region = created;
+        regionByName.set(regionName, created);
+        results.regions.push(regionName);
+        displayOrder++;
       }
-      results.regions.push(regionName);
 
-      // Create a "General" borough for each region
-      const { data: borough, error: boroughError } = await supabase
+      let { data: borough } = await supabase
         .from("coverage_boroughs")
-        .insert({ 
-          region_id: region.id, 
-          name: "General",
-          display_order: 1
-        })
         .select("id")
-        .single();
+        .eq("region_id", region.id)
+        .eq("name", "General")
+        .maybeSingle();
 
-      if (boroughError) {
-        console.error(`Error creating borough for ${regionName}:`, boroughError);
-        continue;
-      }
-      results.boroughs.push(`${regionName} - General`);
+      if (!borough) {
+        const { data: createdBorough, error: boroughError } = await supabase
+          .from("coverage_boroughs")
+          .insert({
+            region_id: region.id,
+            name: "General",
+            display_order: 1,
+          })
+          .select("id")
+          .single();
 
-      // Add postcodes
-      const postcodeRecords = postcodes.map(prefix => ({
-        borough_id: borough.id,
-        prefix: prefix,
-        domestic_cleaning: true,
-        airbnb_cleaning: true,
-        end_of_tenancy: true,
-        is_active: true
-      }));
-
-      const { error: postcodeError } = await supabase
-        .from("postcode_prefixes")
-        .insert(postcodeRecords);
-
-      if (postcodeError) {
-        console.error(`Error creating postcodes for ${regionName}:`, postcodeError);
-      } else {
-        results.postcodes.push(...postcodes);
-        console.log(`Added ${postcodes.length} postcodes to ${regionName}`);
+        if (boroughError || !createdBorough) {
+          console.error(`Error creating borough for ${regionName}:`, boroughError);
+          continue;
+        }
+        borough = createdBorough;
+        results.boroughs.push(`${regionName} - General`);
       }
 
-      displayOrder++;
+      // Insert prefixes one-by-one so a duplicate prefix (UNIQUE) does not
+      // abort the whole borough batch and leave the region with 0 postcodes.
+      let added = 0;
+      for (const prefix of postcodes) {
+        const { error: postcodeError } = await supabase
+          .from("postcode_prefixes")
+          .insert({
+            borough_id: borough.id,
+            prefix,
+            domestic_cleaning: true,
+            airbnb_cleaning: true,
+            end_of_tenancy: true,
+            is_active: true,
+          });
+
+        if (postcodeError) {
+          results.skipped.push(`${prefix}@${regionName}`);
+          continue;
+        }
+        results.postcodes.push(prefix);
+        added += 1;
+      }
+      console.log(`Added ${added}/${postcodes.length} postcodes to ${regionName}`);
     }
 
     console.log("Coverage data seeding complete!");
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Coverage data seeded successfully",
+      JSON.stringify({
+        success: true,
+        message: "Coverage data ensured (additive; existing rows preserved)",
         created: {
           regions: results.regions.length,
           boroughs: results.boroughs.length,
-          postcodes: results.postcodes.length
-        }
+          postcodes: results.postcodes.length,
+          skipped: results.skipped.length,
+        },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

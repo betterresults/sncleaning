@@ -86,6 +86,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
 
   useEffect(() => {
     if (open && bookingId) {
+      resetForm();
       fetchBookingDetails();
       fetchSubCleaners();
     }
@@ -131,6 +132,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       
       if (data.cleaner) {
         setSelectedCleaner(data.cleaner.toString());
+      } else {
+        setSelectedCleaner('');
       }
     } catch (error) {
       console.error('Error fetching booking details:', error);
@@ -433,6 +436,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     setSubCleaners([]);
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) resetForm();
+    onOpenChange(nextOpen);
+  };
+
   // Get available cleaners for additional (excluding main cleaner and already added)
   const availableCleanersForAdditional = cleaners.filter(c => 
     c.id.toString() !== selectedCleaner && 
@@ -452,7 +460,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Assign Cleaners</DialogTitle>

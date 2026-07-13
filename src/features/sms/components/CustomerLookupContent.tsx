@@ -45,7 +45,9 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
               variant="outline"
               size="sm"
               className="mt-2"
-              onClick={() => navigate(`/admin-customers?id=${lookupResult.customer?.id}`)}
+              onClick={() =>
+                navigate(`/users/customers?customerId=${lookupResult.customer?.id}`)
+              }
             >
               <ExternalLink className="mr-1 h-3 w-3" />
               View Customer
@@ -123,7 +125,7 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
               variant="outline"
               size="sm"
               className="mt-2"
-              onClick={() => navigate('/admin-dashboard?tab=leads')}
+              onClick={() => navigate('/admin-quote-leads')}
             >
               <ExternalLink className="mr-1 h-3 w-3" />
               View Quote Leads
@@ -193,7 +195,13 @@ export function CustomerLookupContent({ lookupResult }: CustomerLookupContentPro
                     variant="ghost"
                     size="icon"
                     className="shrink-0"
-                    onClick={() => navigate(`/admin-bookings?booking=${booking.id}`)}
+                    onClick={() =>
+                      navigate(
+                        booking.booking_status === 'completed'
+                          ? `/past-bookings?bookingId=${booking.id}`
+                          : `/upcoming-bookings?bookingId=${booking.id}`,
+                      )
+                    }
                   >
                     <ExternalLink className="h-4 w-4" />
                   </Button>
