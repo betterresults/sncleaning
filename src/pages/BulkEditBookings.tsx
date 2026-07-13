@@ -91,6 +91,8 @@ const BulkEditBookings = () => {
   const bookingType = searchParams.get('type') || 'upcoming';
 
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [selectedBookings, setSelectedBookings] = useState<number[]>([]);
@@ -145,6 +147,8 @@ const BulkEditBookings = () => {
   }, [bookings, filters]);
 
   const fetchBookings = async () => {
+    setInitialLoading(true);
+    setLoadError(null);
     try {
       const tableName = bookingType === 'past' ? 'past_bookings' : 'bookings';
       const foreignKey = bookingType === 'past' ? 'past_bookings_cleaner_fkey' : 'bookings_cleaner_fkey';
@@ -161,15 +165,21 @@ const BulkEditBookings = () => {
         `)
         .order('date_time', { ascending: bookingType === 'upcoming' });
 
-      if (error) {
-        console.error('Error fetching bookings:', error);
-        return;
-      }
+      if (error) throw error;
 
       // Type assertion to handle differences between bookings and past_bookings tables
       setBookings((data || []) as Booking[]);
     } catch (error) {
       console.error('Error fetching bookings:', error);
+      setBookings([]);
+      setLoadError('Failed to load bookings');
+      toast({
+        title: 'Error',
+        description: 'Failed to load bookings. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -180,14 +190,17 @@ const BulkEditBookings = () => {
         .select('id, first_name, last_name')
         .order('first_name');
 
-      if (error) {
-        console.error('Error fetching cleaners:', error);
-        return;
-      }
+      if (error) throw error;
 
       setCleaners(data || []);
     } catch (error) {
       console.error('Error fetching cleaners:', error);
+      setCleaners([]);
+      toast({
+        title: 'Error',
+        description: 'Failed to load cleaners. Cleaner assignment may be unavailable.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -1044,11 +1057,30 @@ const BulkEditBookings = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredBookings.length === 0 ? (
+                          {initialLoading ? (
+                            <TableRow>
+                              <TableCell colSpan={editType ? 7 : 6} className="text-center py-12">
+                                <div className="text-muted-foreground">Loading bookings...</div>
+                              </TableCell>
+                            </TableRow>
+                          ) : loadError ? (
+                            <TableRow>
+                              <TableCell colSpan={editType ? 7 : 6} className="text-center py-12">
+                                <div className="space-y-3">
+                                  <div className="text-muted-foreground">{loadError}</div>
+                                  <Button variant="outline" size="sm" onClick={() => { fetchBookings(); fetchCleaners(); }}>
+                                    Retry
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : filteredBookings.length === 0 ? (
                             <TableRow>
                               <TableCell colSpan={editType ? 7 : 6} className="text-center py-12">
                                 <div className="text-muted-foreground">
-                                  {Object.values(filters).some(f => f && f !== 'all') ? 'No bookings match your filters' : 'No upcoming bookings found'}
+                                  {Object.values(filters).some(f => f && f !== 'all')
+                                    ? 'No bookings match your filters'
+                                    : `No ${bookingType === 'past' ? 'past' : 'upcoming'} bookings found`}
                                 </div>
                               </TableCell>
                             </TableRow>

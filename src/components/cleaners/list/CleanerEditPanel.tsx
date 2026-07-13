@@ -2,12 +2,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Save, X } from 'lucide-react';
 import type { CleanerData } from './types';
-import { AreaCoverageSelector } from './AreaCoverageSelector';
-import { toggleSelectionKey } from './types';
+import { CleanerScopeFields } from './CleanerScopeFields';
 
 interface ServiceTypeOption {
   key: string;
@@ -122,42 +120,16 @@ export const CleanerEditPanel: React.FC<CleanerEditPanelProps> = ({
         />
       </div>
     </div>
-    <div>
-      <Label className="text-xs font-medium text-muted-foreground mb-2 block">Services offered</Label>
-      <p className="text-xs text-muted-foreground mb-2">
-        {serviceTypeKeys.length === 0
-          ? 'No services selected — this cleaner is treated as offering every service.'
-          : 'This cleaner will only be flagged as a match for the selected services below.'}
-      </p>
-      <div className="flex flex-wrap gap-3">
-        {serviceTypes.map((st) => (
-          <label
-            key={st.key}
-            className="flex items-center gap-2 text-sm bg-white/60 border rounded-md px-2 py-1.5 cursor-pointer"
-          >
-            <Checkbox
-              checked={serviceTypeKeys.includes(st.key)}
-              onCheckedChange={() =>
-                toggleSelectionKey(serviceTypeKeys, onServiceTypeKeysChange, st.key)
-              }
-            />
-            {st.label}
-          </label>
-        ))}
-      </div>
-    </div>
-    <div>
-      <Label className="text-xs font-medium text-muted-foreground mb-2 block">Areas covered</Label>
-      <p className="text-xs text-muted-foreground mb-2">
-        {areaIds.length === 0
-          ? 'No areas selected — this cleaner is treated as covering every area.'
-          : 'This cleaner will only be flagged as a match for bookings in the selected areas below.'}
-      </p>
-      <AreaCoverageSelector
-        selectedIds={areaIds}
-        onToggle={(boroughId) => toggleSelectionKey(areaIds, onAreaIdsChange, boroughId)}
-      />
-    </div>
+
+    <CleanerScopeFields
+      serviceTypes={serviceTypes}
+      serviceTypeKeys={serviceTypeKeys}
+      onServiceTypeKeysChange={onServiceTypeKeysChange}
+      areaIds={areaIds}
+      onAreaIdsChange={onAreaIdsChange}
+      chipClassName="flex items-center gap-2 text-sm bg-white/60 border rounded-md px-2 py-1.5 cursor-pointer"
+    />
+
     <div className="flex items-center justify-between bg-white/60 border rounded-md px-3 py-2">
       <div>
         <Label className="text-xs font-medium text-muted-foreground">Has own equipment</Label>

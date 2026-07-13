@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, formatLondon } from '@/lib/ukTime';
+import { useToast } from '@/hooks/use-toast';
 
 interface ActivityLog {
   id: string;
@@ -34,8 +36,10 @@ interface ActivityLog {
 }
 
 const ActivityLogsView = () => {
+  const { toast } = useToast();
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionFilter, setActionFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -47,6 +51,7 @@ const ActivityLogsView = () => {
   const fetchLogs = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const { data, error } = await supabase
         .from('activity_logs')
         .select('*')
@@ -198,6 +203,13 @@ const ActivityLogsView = () => {
       setLogs(enhancedLogs);
     } catch (error) {
       console.error('Error fetching activity logs:', error);
+      setLogs([]);
+      setLoadError('Failed to load activity logs');
+      toast({
+        title: 'Error',
+        description: 'Failed to load activity logs. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -266,6 +278,13 @@ const ActivityLogsView = () => {
       <CardContent>
         {loading ? (
           <div className="text-center py-4">Loading activity logs...</div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+            <p className="text-muted-foreground">{loadError}</p>
+            <Button variant="outline" size="sm" onClick={fetchLogs}>
+              Retry
+            </Button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <Table>

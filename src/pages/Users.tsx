@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, UserCheck, UserPlus } from 'lucide-react';
+import { Building2, Shield, UserCheck, UserPlus } from 'lucide-react';
 import ModernUsersTable from '@/components/ModernUsersTable';
 import { ShellPage, ShellSegment } from '@/layouts/shell';
 
@@ -15,8 +15,8 @@ const USER_TABS = [
   {
     value: 'cleaners',
     userType: 'cleaner' as const,
-    label: 'Cleaners',
-    shortLabel: 'Cleaners',
+    label: 'Cleaner logins',
+    shortLabel: 'Logins',
     icon: UserCheck,
   },
   {
@@ -25,6 +25,13 @@ const USER_TABS = [
     label: 'Office Staff',
     shortLabel: 'Office',
     icon: Building2,
+  },
+  {
+    value: 'admins',
+    userType: 'admin' as const,
+    label: 'Admins',
+    shortLabel: 'Admins',
+    icon: Shield,
   },
 ] as const;
 

@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { AreaCoverageSelector } from './AreaCoverageSelector';
-import { createEmptyNewCleanerData, toggleSelectionKey } from './types';
+import { CleanerScopeFields } from './CleanerScopeFields';
+import { createEmptyNewCleanerData } from './types';
 
 interface ServiceTypeOption {
   key: string;
@@ -20,7 +19,7 @@ export interface AddCleanerDialogProps {
   onOpenChange: (open: boolean) => void;
   serviceTypes: ServiceTypeOption[];
   onSubmit: (data: {
-    cleaner: ReturnType<typeof createEmptyNewCleanerData>;
+    cleaner: Omit<ReturnType<typeof createEmptyNewCleanerData>, 'password'>;
     password?: string;
     serviceTypeKeys: string[];
     areaIds: string[];
@@ -55,20 +54,25 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
   const handleSubmit = () => {
     const { password, ...cleaner } = newCleanerData;
     onSubmit({
-      cleaner: newCleanerData,
-      password: password || undefined,
+      cleaner,
+      password: password.trim() || undefined,
       serviceTypeKeys: newServiceTypeKeys,
       areaIds: newAreaIds,
     });
   };
 
+  // Unmount when closed. Radix Presence can leave a visible shell if the exit
+  // animation never fires animationend (seen with this tall dialog layout).
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+    <Dialog open onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 gap-0">
+        <div className="flex max-h-[90vh] flex-col">
+        <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
           <DialogTitle>Add New Cleaner</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto px-6 flex-1 min-h-0">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="firstName">First Name *</Label>
@@ -182,39 +186,13 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
             </div>
           </div>
 
-          <div>
-            <Label className="mb-2 block">Services offered</Label>
-            <p className="text-xs text-gray-500 mb-2">
-              Leave all unchecked to treat this cleaner as offering every service (default).
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {serviceTypes.map((st) => (
-                <label
-                  key={st.key}
-                  className="flex items-center gap-2 text-sm border rounded-md px-2 py-1.5 cursor-pointer"
-                >
-                  <Checkbox
-                    checked={newServiceTypeKeys.includes(st.key)}
-                    onCheckedChange={() =>
-                      toggleSelectionKey(newServiceTypeKeys, setNewServiceTypeKeys, st.key)
-                    }
-                  />
-                  {st.label}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label className="mb-2 block">Areas covered</Label>
-            <p className="text-xs text-gray-500 mb-2">
-              Leave all unchecked to treat this cleaner as covering every area (default).
-            </p>
-            <AreaCoverageSelector
-              selectedIds={newAreaIds}
-              onToggle={(boroughId) => toggleSelectionKey(newAreaIds, setNewAreaIds, boroughId)}
-            />
-          </div>
+          <CleanerScopeFields
+            serviceTypes={serviceTypes}
+            serviceTypeKeys={newServiceTypeKeys}
+            onServiceTypeKeysChange={setNewServiceTypeKeys}
+            areaIds={newAreaIds}
+            onAreaIdsChange={setNewAreaIds}
+          />
 
           <div className="flex items-center justify-between border rounded-md px-3 py-2">
             <div>
@@ -241,7 +219,7 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 pb-2">
             <div>
               <Label htmlFor="years">Years Experience</Label>
               <Input
@@ -280,22 +258,23 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
               />
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                'Create Cleaner'
-              )}
-            </Button>
-          </div>
+        <div className="flex justify-end space-x-2 shrink-0 border-t bg-background px-6 py-4">
+          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              'Create Cleaner'
+            )}
+          </Button>
+        </div>
         </div>
       </DialogContent>
     </Dialog>

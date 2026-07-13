@@ -129,7 +129,7 @@ export async function createCleanerRecord({
   let accountCreated = false;
   if (password) {
     try {
-      const { error: userError } = await supabase.functions.invoke('create-user', {
+      const { data: userData, error: userError } = await supabase.functions.invoke('create-user', {
         body: {
           email: cleaner.email,
           password,
@@ -140,6 +140,8 @@ export async function createCleanerRecord({
       });
       if (userError) {
         console.error('Error creating user account:', userError);
+      } else if (userData?.error || userData?.success === false) {
+        console.error('Error creating user account:', userData?.error || userData);
       } else {
         accountCreated = true;
       }

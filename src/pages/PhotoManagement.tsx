@@ -41,6 +41,7 @@ const PhotoManagement = () => {
   const { user, userRole, signOut } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [folders, setFolders] = useState<PhotoFolder[]>([]);
   const [photos, setPhotos] = useState<CleaningPhoto[]>([]);
   const [groupBy, setGroupBy] = useState<GroupBy>('date');
@@ -61,6 +62,7 @@ const PhotoManagement = () => {
 
   const fetchPhotosAndGroup = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const { data, error } = await supabase
         .from('cleaning_photos')
@@ -183,6 +185,14 @@ const PhotoManagement = () => {
       setPhotos(allPhotos);
     } catch (error) {
       console.error('Error fetching photos:', error);
+      setFolders([]);
+      setPhotos([]);
+      setLoadError('Failed to load photos');
+      toast({
+        title: 'Error',
+        description: 'Failed to load photos. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -366,6 +376,13 @@ const PhotoManagement = () => {
                       <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                       </div>
+                    ) : loadError ? (
+                      <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+                        <p className="text-muted-foreground">{loadError}</p>
+                        <Button variant="outline" size="sm" onClick={fetchPhotosAndGroup}>
+                          Retry
+                        </Button>
+                      </div>
                     ) : selectedFolder ? (
                       // Photo grid view
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -446,7 +463,7 @@ const PhotoManagement = () => {
                         
                         {getFilteredFolders().length === 0 && (
                           <div className="col-span-full text-center py-12 text-muted-foreground">
-                            No folders found
+                            {searchQuery ? 'No folders match your search' : 'No photos found'}
                           </div>
                         )}
                       </div>

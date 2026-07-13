@@ -103,11 +103,10 @@ const EnhancedCleanerManagement = () => {
     serviceTypeKeys: string[];
     areaIds: string[];
   }) => {
-    const { password, ...cleaner } = payload.cleaner;
     createCleaner.mutate(
       {
-        cleaner,
-        password,
+        cleaner: payload.cleaner,
+        password: payload.password,
         serviceTypeKeys: payload.serviceTypeKeys,
         areaIds: payload.areaIds,
       },
