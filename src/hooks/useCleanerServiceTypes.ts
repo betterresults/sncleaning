@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { ServiceType } from '@/hooks/useCompanySettings';
+import { saveCleanerServiceTypes } from '@/api/cleaners/mutations';
 
 export const cleanerServiceTypesQueryKey = (cleanerId: number | null) => ['cleaner-service-types', cleanerId];
 export const allCleanerServiceTypesQueryKey = ['cleaner-service-types', 'all'];
@@ -47,23 +48,13 @@ export const useAllCleanerServiceTypes = () => {
   });
 };
 
-// Replaces a cleaner's entire set of configured service types in one go.
+// Diff-based replace so a failed insert cannot wipe existing services.
 export const useSaveCleanerServiceTypes = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ cleanerId, serviceTypeKeys }: { cleanerId: number; serviceTypeKeys: string[] }) => {
-      const { error: deleteError } = await supabase
-        .from('cleaner_service_types')
-        .delete()
-        .eq('cleaner_id', cleanerId);
-      if (deleteError) throw deleteError;
-
-      if (serviceTypeKeys.length === 0) return;
-
-      const rows = serviceTypeKeys.map((key) => ({ cleaner_id: cleanerId, service_type_key: key }));
-      const { error: insertError } = await supabase.from('cleaner_service_types').insert(rows);
-      if (insertError) throw insertError;
+      await saveCleanerServiceTypes(cleanerId, serviceTypeKeys);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: cleanerServiceTypesQueryKey(variables.cleanerId) });

@@ -14,14 +14,17 @@ export function applyCleanersListFilters(cleaners: CleanerData[], searchTerm: st
   const term = searchTerm.trim().toLowerCase();
   if (!term) return cleaners;
 
-  return cleaners.filter(
-    (cleaner) =>
+  return cleaners.filter((cleaner) => {
+    const fullName = `${cleaner.first_name ?? ''} ${cleaner.last_name ?? ''}`.trim().toLowerCase();
+    return (
+      fullName.includes(term) ||
       cleaner.first_name?.toLowerCase().includes(term) ||
       cleaner.last_name?.toLowerCase().includes(term) ||
       cleaner.email?.toLowerCase().includes(term) ||
       cleaner.phone?.toString().includes(term) ||
       cleaner.id.toString().includes(term)
-  );
+    );
+  });
 }
 
 export const createEmptyNewCleanerData = () => ({

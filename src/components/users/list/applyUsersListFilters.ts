@@ -26,13 +26,16 @@ export function applyUsersListFilters(
 
   if (searchTerm.trim() !== '') {
     const term = searchTerm.toLowerCase();
-    filtered = filtered.filter(
-      (user) =>
+    filtered = filtered.filter((user) => {
+      const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim().toLowerCase();
+      return (
+        fullName.includes(term) ||
         user.first_name?.toLowerCase().includes(term) ||
         user.last_name?.toLowerCase().includes(term) ||
         user.email?.toLowerCase().includes(term) ||
-        user.id.toLowerCase().includes(term),
-    );
+        user.id.toLowerCase().includes(term)
+      );
+    });
   }
 
   if (userType === 'customer') {

@@ -1,32 +1,70 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { CleanerData, CreateCleanerInput, UpdateCleanerInput } from './types';
 
+/** Diff-based replace: never wipe existing rows before new ones are written. */
 export async function saveCleanerServiceTypes(cleanerId: number, serviceTypeKeys: string[]) {
-  const { error: deleteError } = await supabase
-    .from('cleaner_service_types')
-    .delete()
-    .eq('cleaner_id', cleanerId);
-  if (deleteError) throw deleteError;
+  const desired = Array.from(new Set(serviceTypeKeys));
 
-  if (serviceTypeKeys.length > 0) {
+  const { data: existing, error: fetchError } = await supabase
+    .from('cleaner_service_types')
+    .select('service_type_key')
+    .eq('cleaner_id', cleanerId);
+  if (fetchError) throw fetchError;
+
+  const existingKeys = (existing || []).map((row) => row.service_type_key);
+  const desiredSet = new Set(desired);
+  const existingSet = new Set(existingKeys);
+
+  const toDelete = existingKeys.filter((key) => !desiredSet.has(key));
+  const toInsert = desired.filter((key) => !existingSet.has(key));
+
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('cleaner_service_types')
+      .delete()
+      .eq('cleaner_id', cleanerId)
+      .in('service_type_key', toDelete);
+    if (deleteError) throw deleteError;
+  }
+
+  if (toInsert.length > 0) {
     const { error: insertError } = await supabase
       .from('cleaner_service_types')
-      .insert(serviceTypeKeys.map((key) => ({ cleaner_id: cleanerId, service_type_key: key })));
+      .insert(toInsert.map((key) => ({ cleaner_id: cleanerId, service_type_key: key })));
     if (insertError) throw insertError;
   }
 }
 
+/** Diff-based replace: never wipe existing rows before new ones are written. */
 export async function saveCleanerCoverageAreas(cleanerId: number, boroughIds: string[]) {
-  const { error: deleteError } = await supabase
-    .from('cleaner_coverage_areas')
-    .delete()
-    .eq('cleaner_id', cleanerId);
-  if (deleteError) throw deleteError;
+  const desired = Array.from(new Set(boroughIds));
 
-  if (boroughIds.length > 0) {
+  const { data: existing, error: fetchError } = await supabase
+    .from('cleaner_coverage_areas')
+    .select('borough_id')
+    .eq('cleaner_id', cleanerId);
+  if (fetchError) throw fetchError;
+
+  const existingIds = (existing || []).map((row) => row.borough_id);
+  const desiredSet = new Set(desired);
+  const existingSet = new Set(existingIds);
+
+  const toDelete = existingIds.filter((id) => !desiredSet.has(id));
+  const toInsert = desired.filter((id) => !existingSet.has(id));
+
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('cleaner_coverage_areas')
+      .delete()
+      .eq('cleaner_id', cleanerId)
+      .in('borough_id', toDelete);
+    if (deleteError) throw deleteError;
+  }
+
+  if (toInsert.length > 0) {
     const { error: insertError } = await supabase
       .from('cleaner_coverage_areas')
-      .insert(boroughIds.map((boroughId) => ({ cleaner_id: cleanerId, borough_id: boroughId })));
+      .insert(toInsert.map((boroughId) => ({ cleaner_id: cleanerId, borough_id: boroughId })));
     if (insertError) throw insertError;
   }
 }
