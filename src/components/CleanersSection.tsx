@@ -20,7 +20,7 @@ interface CleanerData {
   presentage_rate: number;
   DBS: string;
   DBS_date: string;
-  services: string;
+  notes: string;
   years: number;
   rating: number;
   reviews: number;
@@ -52,7 +52,7 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, re
     postcode: '',
     hourly_rate: 20,
     presentage_rate: 70,
-    services: '',
+    notes: '',
     years: 0
   });
   const { toast } = useToast();
@@ -113,7 +113,7 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, re
           postcode: newCleaner.postcode,
           hourly_rate: newCleaner.hourly_rate,
           presentage_rate: newCleaner.presentage_rate,
-          services: newCleaner.services,
+          notes: newCleaner.notes,
           years: newCleaner.years
         })
         .select();
@@ -134,7 +134,7 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, re
         postcode: '',
         hourly_rate: 20,
         presentage_rate: 70,
-        services: '',
+        notes: '',
         years: 0
       });
       fetchCleaners();
@@ -217,7 +217,7 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, re
       postcode: cleaner.postcode,
       hourly_rate: cleaner.hourly_rate,
       presentage_rate: cleaner.presentage_rate,
-      services: cleaner.services,
+      notes: cleaner.notes,
       years: cleaner.years
     });
   };
@@ -335,9 +335,9 @@ const CleanersSection = ({ hideCreateButton, showCreateForm, onCreateSuccess, re
                         className="text-sm"
                       />
                       <Input
-                        placeholder="Services"
-                        value={editCleanerData.services || ''}
-                        onChange={(e) => setEditCleanerData({ ...editCleanerData, services: e.target.value })}
+                        placeholder="Notes"
+                        value={editCleanerData.notes || ''}
+                        onChange={(e) => setEditCleanerData({ ...editCleanerData, notes: e.target.value })}
                         className="text-sm"
                       />
                     </div>

@@ -105,7 +105,7 @@ export const salesAgentNavigation = [
     icon: Map,
   },
   {
-    title: "SMS Messages",
+    title: "Customer SMS",
     url: "/admin-sms-messages",
     icon: MessageSquareText,
   },
@@ -256,9 +256,20 @@ export const adminNavigation = [
     ],
   },
   {
-    title: "Chat Management",
-    url: "/admin-chat-management",
+    title: "Messages",
     icon: MessageCircle,
+    subItems: [
+      {
+        title: "In-app Chat",
+        url: "/admin-chat-management",
+        icon: MessageCircle,
+      },
+      {
+        title: "Customer SMS",
+        url: "/admin-sms-messages",
+        icon: MessageSquareText,
+      },
+    ],
   },
   {
     title: "Quote Requests",
@@ -283,11 +294,6 @@ export const adminNavigation = [
         title: "Activity Logs",
         url: "/admin-activity-logs",
         icon: Activity,
-      },
-      {
-        title: "SMS Messages",
-        url: "/admin-sms-messages",
-        icon: MessageSquareText,
       },
       {
         title: "Quote Leads",

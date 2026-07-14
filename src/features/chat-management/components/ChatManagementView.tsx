@@ -77,6 +77,10 @@ export function ChatManagementView({
       fill={isLiveTab}
       className={cn(isLiveTab && 'gap-shell-block')}
     >
+      <p className="text-sm text-muted-foreground">
+        In-app messages between staff, customers, and cleaners in the account portal.
+        Phone texts are under Messages → Customer SMS.
+      </p>
       <ShellSegment
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as ChatManagementTab)}

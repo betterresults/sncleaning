@@ -157,9 +157,9 @@ export const CleanerEditPanel: React.FC<CleanerEditPanelProps> = ({
       <div className="md:col-span-2 lg:col-span-3">
         <Label className="text-xs font-medium text-muted-foreground">Notes (optional)</Label>
         <Input
-          value={editData.services || ''}
-          onChange={(e) => onEditDataChange({ ...editData, services: e.target.value })}
-          placeholder="Free-text notes, e.g. own equipment, prefers weekends..."
+          value={editData.notes || ''}
+          onChange={(e) => onEditDataChange({ ...editData, notes: e.target.value })}
+          placeholder="Free-text notes, e.g. prefers weekends, door code info..."
           className="mt-1"
         />
       </div>

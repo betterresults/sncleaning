@@ -204,9 +204,9 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
 
           <CleanerCalendarStatus cleanerId={cleaner.id} connection={calendarConnection} />
 
-          {cleaner.services && (
+          {cleaner.notes && (
             <div className="text-sm text-muted-foreground">
-              <strong>Notes:</strong> {cleaner.services}
+              <strong>Notes:</strong> {cleaner.notes}
             </div>
           )}
         </div>

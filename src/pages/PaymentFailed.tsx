@@ -3,6 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { XCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  getPaymentFailedCleanupCopy,
+  parsePaymentFailedBookingId,
+} from '@/lib/paymentFailedCleanup';
 
 const PaymentFailed = () => {
   const navigate = useNavigate();
@@ -12,6 +16,7 @@ const PaymentFailed = () => {
 
   const errorMessage = searchParams.get('error') || 'Your payment could not be processed.';
   const bookingId = searchParams.get('bookingId');
+  const parsedBookingId = parsePaymentFailedBookingId(bookingId);
 
   // Clear payment redirect flag and cancel any unpaid orphan booking left from a failed checkout.
   useEffect(() => {
@@ -20,20 +25,14 @@ const PaymentFailed = () => {
     let cancelled = false;
 
     const cleanupOrphan = async () => {
-      if (!bookingId) {
+      if (parsedBookingId == null) {
         setCleanupDone(true);
         return;
       }
 
       try {
-        const parsedId = parseInt(bookingId, 10);
-        if (!Number.isFinite(parsedId)) {
-          setCleanupDone(true);
-          return;
-        }
-
         const { data, error } = await supabase.functions.invoke('cancel-unpaid-booking', {
-          body: { bookingId: parsedId },
+          body: { bookingId: parsedBookingId },
         });
 
         if (cancelled) return;
@@ -59,12 +58,18 @@ const PaymentFailed = () => {
     return () => {
       cancelled = true;
     };
-  }, [bookingId]);
+  }, [parsedBookingId]);
 
   const handleTryAgain = () => {
     const returnPath = sessionStorage.getItem('booking_form_path') || '/domestic';
     navigate(returnPath);
   };
+
+  const cleanupCopy = getPaymentFailedCleanupCopy({
+    hasBookingId: parsedBookingId != null,
+    cleanupDone,
+    cleanupFailed,
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-orange-50 p-4">
@@ -80,24 +85,20 @@ const PaymentFailed = () => {
 
         <p className="text-gray-600 mb-6">{errorMessage}</p>
 
-        {!cleanupDone && bookingId ? (
+        {!cleanupDone && parsedBookingId != null ? (
           <div className="mb-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Cleaning up incomplete booking…
           </div>
         ) : (
-          <p className="text-sm text-gray-500 mb-6">
-            {cleanupFailed
-              ? 'Payment did not complete. If a booking appears in your account unpaid, please contact support so we can remove it.'
-              : 'Payment did not complete. Any incomplete booking has been cancelled so you will not be charged. Please try again with a different payment method.'}
-          </p>
+          cleanupCopy && <p className="text-sm text-gray-500 mb-6">{cleanupCopy}</p>
         )}
 
         <div className="flex flex-col gap-3">
           <Button
             onClick={handleTryAgain}
             className="w-full h-12 bg-[#185166] hover:bg-[#185166]/90"
-            disabled={!cleanupDone && !!bookingId}
+            disabled={!cleanupDone && parsedBookingId != null}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Try Again

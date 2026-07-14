@@ -104,7 +104,7 @@ export function SMSMessagesView() {
       <ShellDivideBlock className="flex min-h-0 flex-1 flex-col gap-shell-block overflow-hidden">
         <ShellSectionHeader
           title="Conversations"
-          description={detailActive ? undefined : 'Reply to customer SMS'}
+          description={detailActive ? undefined : 'Phone SMS with customers (separate from in-app chat)'}
           action={newMessageAction}
         />
 
