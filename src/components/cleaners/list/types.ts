@@ -37,7 +37,7 @@ export const createEmptyNewCleanerData = () => ({
   postcode: '',
   hourly_rate: 20,
   presentage_rate: 70,
-  services: '',
+  notes: '',
   years: 0,
   DBS: 'No',
   DBS_date: '',

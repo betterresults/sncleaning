@@ -104,7 +104,7 @@ export async function createCleanerRecord({
       postcode: cleaner.postcode,
       hourly_rate: cleaner.hourly_rate,
       presentage_rate: cleaner.presentage_rate,
-      services: cleaner.services,
+      notes: cleaner.notes,
       years: cleaner.years,
       DBS: cleaner.DBS,
       DBS_date: cleaner.DBS_date || null,

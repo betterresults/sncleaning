@@ -212,12 +212,12 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
           </div>
 
           <div>
-            <Label htmlFor="services">Notes (optional)</Label>
+            <Label htmlFor="notes">Notes (optional)</Label>
             <Input
-              id="services"
-              value={newCleanerData.services}
-              onChange={(e) => setNewCleanerData({ ...newCleanerData, services: e.target.value })}
-              placeholder="Free-text notes, e.g. own equipment, prefers weekends..."
+              id="notes"
+              value={newCleanerData.notes}
+              onChange={(e) => setNewCleanerData({ ...newCleanerData, notes: e.target.value })}
+              placeholder="Free-text notes, e.g. prefers weekends, door code info..."
             />
           </div>
 

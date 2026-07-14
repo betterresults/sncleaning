@@ -36,6 +36,10 @@ import TableControls from '@/components/cleaner/TableControls';
 import { ShellLoading, ShellPage } from '@/layouts/shell';
 import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsLocalDate } from '@/lib/ukTime';
 import { trySyncBookingGoogleCalendar } from '@/lib/googleCalendarSync';
+import {
+  formatBulkUpdateConfirmDescription,
+  formatBulkUpdateSuccessToast,
+} from '@/lib/bulkEditMessaging';
 
 interface Booking {
   id: number;
@@ -415,10 +419,14 @@ const BulkEditBookings = () => {
       }
 
       if (!data || data.length === 0) {
+        const emptyToast = formatBulkUpdateSuccessToast({
+          updatedCount: 0,
+          selectedCount: selectedBookings.length,
+        });
         toast({
-          title: "Update Failed",
-          description: "No bookings were updated. Please check your selection.",
-          variant: "destructive",
+          title: emptyToast.title,
+          description: emptyToast.description,
+          variant: emptyToast.variant,
         });
         return;
       }
@@ -452,14 +460,15 @@ const BulkEditBookings = () => {
 
       const selectedCount = selectedBookings.length;
       const updatedCount = data.length;
+      const successToast = formatBulkUpdateSuccessToast({
+        updatedCount,
+        selectedCount,
+      });
 
       toast({
-        title: updatedCount < selectedCount ? 'Partially updated' : 'Update Successful',
-        description:
-          updatedCount < selectedCount
-            ? `Updated ${updatedCount} of ${selectedCount} selected booking${selectedCount !== 1 ? 's' : ''}. Some rows may not have changed due to permissions or filters.`
-            : `Successfully updated ${updatedCount} booking${updatedCount !== 1 ? 's' : ''}`,
-        variant: updatedCount < selectedCount ? 'destructive' : 'default',
+        title: successToast.title,
+        description: successToast.description,
+        variant: successToast.variant,
       });
       
       await fetchBookings();
@@ -1004,21 +1013,21 @@ const BulkEditBookings = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Confirm bulk update</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Update {selectedBookings.length} booking{selectedBookings.length !== 1 ? 's' : ''} —
-                                set <strong>{getFieldLabel()}</strong> to{' '}
-                                <strong>
-                                  {editType === 'linen_used'
-                                    ? 'the linen usage you entered'
-                                    : editType === 'cleaner'
-                                      ? (() => {
-                                          const c = cleaners.find((cl) => String(cl.id) === String(newValue));
-                                          return c ? `${c.first_name} ${c.last_name}` : (newValue || '(empty)');
-                                        })()
-                                      : newValue === '' || newValue == null
-                                        ? '(empty)'
-                                        : String(newValue)}
-                                </strong>
-                                ? This cannot be undone from this screen.
+                                {formatBulkUpdateConfirmDescription({
+                                  selectedCount: selectedBookings.length,
+                                  fieldLabel: getFieldLabel(),
+                                  displayValue:
+                                    editType === 'linen_used'
+                                      ? 'the linen usage you entered'
+                                      : editType === 'cleaner'
+                                        ? (() => {
+                                            const c = cleaners.find((cl) => String(cl.id) === String(newValue));
+                                            return c ? `${c.first_name} ${c.last_name}` : (newValue || '(empty)');
+                                          })()
+                                        : newValue === '' || newValue == null
+                                          ? '(empty)'
+                                          : String(newValue),
+                                })}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

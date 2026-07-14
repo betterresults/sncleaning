@@ -8,7 +8,7 @@ export interface CleanerData {
   postcode: string;
   hourly_rate: number;
   presentage_rate: number;
-  services: string;
+  notes: string;
   years: number;
   rating: number;
   reviews: number;
@@ -29,7 +29,7 @@ export interface NewCleanerInput {
   postcode: string;
   hourly_rate: number;
   presentage_rate: number;
-  services: string;
+  notes: string;
   years: number;
   DBS: string;
   DBS_date: string;

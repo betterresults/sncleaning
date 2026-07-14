@@ -27,7 +27,7 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
     postcode: '',
     hourlyRate: '20',
     percentageRate: '70',
-    services: '',
+    notes: '',
     dbsDate: '',
     dbsStatus: 'No',
     hasEquipment: true
@@ -55,7 +55,7 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
         postcode: formData.postcode,
         hourly_rate: formData.hourlyRate ? parseFloat(formData.hourlyRate) : 20,
         presentage_rate: formData.percentageRate ? parseFloat(formData.percentageRate) : 70,
-        services: formData.services,
+        notes: formData.notes,
         DBS_date: formData.dbsDate || null,
         DBS: formData.dbsStatus,
         has_equipment: formData.hasEquipment,
@@ -97,7 +97,7 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
         postcode: '',
         hourlyRate: '20',
         percentageRate: '70',
-        services: '',
+        notes: '',
         dbsDate: '',
         dbsStatus: 'No',
         hasEquipment: true
@@ -215,12 +215,12 @@ const CreateCleanerDialog = ({ children, onCleanerCreated }: CreateCleanerDialog
           </div>
 
           <div>
-            <Label htmlFor="services">Services Offered</Label>
+            <Label htmlFor="notes">Notes (optional)</Label>
             <Textarea
-              id="services"
-              value={formData.services}
-              onChange={(e) => handleInputChange('services', e.target.value)}
-              placeholder="Regular cleaning, deep cleaning, end of tenancy..."
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              placeholder="Free-text notes, e.g. prefers weekends..."
             />
           </div>
 

@@ -15,6 +15,10 @@ import {
   generateCandidateSlotLabels,
 } from '@/lib/customerSlotAvailability';
 import { getUKNowAsLocalDate } from '@/lib/ukTime';
+import {
+  EMPTY_SLOT_QUOTE_PATH,
+  getEmptySlotAvailabilityMessage,
+} from '@/lib/emptySlotMessaging';
 import { format } from 'date-fns';
 
 interface ScheduleStepProps {
@@ -350,12 +354,12 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
               <AlertDescription className="text-red-800 space-y-2">
                 <p>
                   {isToday
-                    ? 'No available time slots for today. Same-day cleaning requires at least 2 hours notice and a cleaner who is free for your job.'
-                    : 'No cleaners are available on this date for your booking. Please try another date or contact us for help.'}
+                    ? getEmptySlotAvailabilityMessage(true)
+                    : getEmptySlotAvailabilityMessage(false)}
                 </p>
                 <p>
                   Still need a clean?{' '}
-                  <Link to="/quote-request" className="font-semibold underline underline-offset-2">
+                  <Link to={EMPTY_SLOT_QUOTE_PATH} className="font-semibold underline underline-offset-2">
                     Request a custom quote
                   </Link>
                   .

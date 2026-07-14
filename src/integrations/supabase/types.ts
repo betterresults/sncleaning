@@ -966,7 +966,7 @@ export type Database = {
           presentage_rate: number | null
           rating: number | null
           reviews: number | null
-          services: string | null
+          notes: string | null
           years: number | null
         }
         Insert: {
@@ -989,7 +989,7 @@ export type Database = {
           presentage_rate?: number | null
           rating?: number | null
           reviews?: number | null
-          services?: string | null
+          notes?: string | null
           years?: number | null
         }
         Update: {
@@ -1012,7 +1012,7 @@ export type Database = {
           presentage_rate?: number | null
           rating?: number | null
           reviews?: number | null
-          services?: string | null
+          notes?: string | null
           years?: number | null
         }
         Relationships: []
