@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, UserPlus, User, Loader2 } from 'lucide-react';
 import { useServiceTypes } from '@/hooks/useCompanySettings';
 import { useAllCleanerServiceTypes } from '@/hooks/useCleanerServiceTypes';
@@ -12,6 +11,7 @@ import { useCleanerMutations } from '@/hooks/queries/useCleanerMutations';
 import {
   AddCleanerDialog,
   CleanerCard,
+  DeleteCleanerDialog,
   applyCleanersListFilters,
   type CleanerData,
 } from '@/components/cleaners/list';
@@ -23,6 +23,7 @@ const EnhancedCleanerManagement = () => {
   const [editServiceTypeKeys, setEditServiceTypeKeys] = useState<string[]>([]);
   const [editAreaIds, setEditAreaIds] = useState<string[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [cleanerToDelete, setCleanerToDelete] = useState<CleanerData | null>(null);
 
   const { data: cleaners = [], isLoading } = useCleanersList();
   const invalidateCleanersList = useInvalidateCleanersList();
@@ -78,9 +79,10 @@ const EnhancedCleanerManagement = () => {
     );
   };
 
-  const handleDelete = (cleanerId: number) => {
-    if (!confirm('Are you sure you want to delete this cleaner?')) return;
-    deleteCleaner.mutate(cleanerId);
+  const handleConfirmDelete = (cleanerId: number) => {
+    deleteCleaner.mutate(cleanerId, {
+      onSuccess: () => setCleanerToDelete(null),
+    });
   };
 
   const handleCreate = (payload: {
@@ -115,69 +117,68 @@ const EnhancedCleanerManagement = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Cleaners ({filteredCleaners.length})
-          </span>
-          <Button onClick={() => setShowAddDialog(true)} size="sm">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Cleaner
-          </Button>
-        </CardTitle>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search cleaners by name, email, phone, or ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <User className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold tracking-tight">
+            Cleaners{' '}
+            <span className="font-normal text-muted-foreground">({filteredCleaners.length})</span>
+          </h2>
         </div>
-      </CardHeader>
+        <Button onClick={() => setShowAddDialog(true)} size="sm">
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add Cleaner
+        </Button>
+      </div>
 
-      <CardContent>
-        {isLoading ? (
-          <div className="text-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-            <p className="mt-2 text-muted-foreground">Loading cleaners...</p>
-          </div>
-        ) : filteredCleaners.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            {searchTerm ? 'No cleaners found matching your search.' : 'No cleaners found.'}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredCleaners.map((cleaner) => (
-              <CleanerCard
-                key={cleaner.id}
-                cleaner={cleaner}
-                isEditing={editingCleaner === cleaner.id}
-                editData={editData}
-                onEditDataChange={setEditData}
-                editServiceTypeKeys={editServiceTypeKeys}
-                onEditServiceTypeKeysChange={setEditServiceTypeKeys}
-                editAreaIds={editAreaIds}
-                onEditAreaIdsChange={setEditAreaIds}
-                serviceTypes={serviceTypes}
-                cleanerServiceTypeKeys={cleanerServiceTypeMap.get(cleaner.id) || []}
-                cleanerAreaIds={cleanerCoverageAreaMap.get(cleaner.id) || []}
-                areaOptions={areaOptions}
-                calendarConnection={cleanerCalendarConnectionMap.get(cleaner.id)}
-                onStartEdit={() => startEditing(cleaner)}
-                onSave={() => handleSave(cleaner.id)}
-                onCancelEdit={cancelEditing}
-                onDelete={() => handleDelete(cleaner.id)}
-                onAccountCreated={invalidateCleanersList}
-                isSaving={updateCleaner.isPending}
-              />
-            ))}
-          </div>
-        )}
-      </CardContent>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search cleaners by name, email, phone, or ID..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="py-10 text-center">
+          <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+          <p className="mt-2 text-muted-foreground">Loading cleaners...</p>
+        </div>
+      ) : filteredCleaners.length === 0 ? (
+        <div className="py-10 text-center text-muted-foreground">
+          {searchTerm ? 'No cleaners found matching your search.' : 'No cleaners found.'}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredCleaners.map((cleaner) => (
+            <CleanerCard
+              key={cleaner.id}
+              cleaner={cleaner}
+              isEditing={editingCleaner === cleaner.id}
+              editData={editData}
+              onEditDataChange={setEditData}
+              editServiceTypeKeys={editServiceTypeKeys}
+              onEditServiceTypeKeysChange={setEditServiceTypeKeys}
+              editAreaIds={editAreaIds}
+              onEditAreaIdsChange={setEditAreaIds}
+              serviceTypes={serviceTypes}
+              cleanerServiceTypeKeys={cleanerServiceTypeMap.get(cleaner.id) || []}
+              cleanerAreaIds={cleanerCoverageAreaMap.get(cleaner.id) || []}
+              areaOptions={areaOptions}
+              calendarConnection={cleanerCalendarConnectionMap.get(cleaner.id)}
+              onStartEdit={() => startEditing(cleaner)}
+              onSave={() => handleSave(cleaner.id)}
+              onCancelEdit={cancelEditing}
+              onDelete={() => setCleanerToDelete(cleaner)}
+              onAccountCreated={invalidateCleanersList}
+              isSaving={updateCleaner.isPending}
+            />
+          ))}
+        </div>
+      )}
 
       <AddCleanerDialog
         open={showAddDialog}
@@ -186,7 +187,17 @@ const EnhancedCleanerManagement = () => {
         onSubmit={handleCreate}
         isSubmitting={createCleaner.isPending}
       />
-    </Card>
+
+      <DeleteCleanerDialog
+        open={!!cleanerToDelete}
+        onOpenChange={(open) => {
+          if (!open) setCleanerToDelete(null);
+        }}
+        cleaner={cleanerToDelete}
+        onConfirm={handleConfirmDelete}
+        isDeleting={deleteCleaner.isPending}
+      />
+    </div>
   );
 };
 

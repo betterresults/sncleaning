@@ -72,7 +72,7 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
   onAccountCreated,
   isSaving,
 }) => (
-  <div className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all">
+  <div className="rounded-lg border border-border bg-background p-4 transition-colors hover:bg-muted/30">
     {isEditing ? (
       <CleanerEditPanel
         editData={editData}
@@ -105,7 +105,7 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Phone className="h-4 w-4" />
-              <span>{cleaner.phone || 'No phone'}</span>
+              <span>{cleaner.phone ? String(cleaner.phone) : 'No phone'}</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
