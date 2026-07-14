@@ -725,7 +725,8 @@ export const useAirbnbBookingSubmit = () => {
             total_cost: Math.round((recurringCost || 0) * 100) / 100,
             payment_method: bookingData.paymentMethod || null,
             start_date: dateStr || null,
-            start_time: time24ForDB ? `${time24ForDB}:00+00` : null,
+            // Store HH:mm only — `HH:mm:ss+00` is not a valid Date offset and crashes list UIs
+            start_time: time24ForDB || null,
             postponed: false,
             interval: interval,
             recurring_group_id: recurringGroupId,
@@ -739,6 +740,12 @@ export const useAirbnbBookingSubmit = () => {
 
           if (recurringError) {
             console.error('[useAirbnbBookingSubmit] Failed to create recurring service:', recurringError);
+            toast({
+              title: 'Booking saved, but recurring series failed',
+              description:
+                'Your first booking was created, but we could not save the recurring schedule. Please contact support so future visits can be set up.',
+              variant: 'destructive',
+            });
           } else {
             console.log('[useAirbnbBookingSubmit] Recurring service created successfully');
             
@@ -750,7 +757,12 @@ export const useAirbnbBookingSubmit = () => {
           }
         } catch (recurringError) {
           console.error('[useAirbnbBookingSubmit] Error creating recurring service:', recurringError);
-          // Don't fail the booking if recurring service creation fails
+          toast({
+            title: 'Booking saved, but recurring series failed',
+            description:
+              'Your first booking was created, but we could not save the recurring schedule. Please contact support so future visits can be set up.',
+            variant: 'destructive',
+          });
         }
       }
 

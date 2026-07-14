@@ -10,6 +10,7 @@ import { TaskCommentDialog } from './TaskCommentDialog';
 import { ChevronRight, ChevronDown, Check, Camera, MessageSquare, Save, ArrowLeft, Home, Settings, Edit, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { formatUKDate } from '@/lib/ukTime';
 
 interface MobileChecklistInterfaceProps {
   bookingId: number;
@@ -319,7 +320,7 @@ export function MobileChecklistInterface({ bookingId, cleanerId, onClose }: Mobi
     try {
       const timestamp = Date.now();
       const fileName = `${timestamp}_${file.name}`;
-      const bookingDate = new Date(customerData.date_time).toISOString().split('T')[0];
+      const bookingDate = formatUKDate(customerData.date_time, 'yyyy-MM-dd');
       const safePostcode = customerData.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
       const folderPath = `${customerData.id}_${safePostcode}_${bookingDate}_${customerData.customer}`;
       const filePath = `${folderPath}/checklist/${roomId}/${fileName}`;

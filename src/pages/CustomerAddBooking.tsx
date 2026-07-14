@@ -38,11 +38,16 @@ const CustomerAddBooking = () => {
 
   const handleServiceSelect = (serviceType: string) => {
     if (serviceType === 'airbnb-cleaning') {
-      // Redirect to dedicated customer Airbnb booking page
       navigate('/customer/airbnb-form');
     } else if (serviceType === 'linen-order') {
-      // Redirect to linen order page
       navigate('/customer/linen-form');
+    } else if (serviceType === 'domestic-cleaning') {
+      // Slot-filtered public funnel (ScheduleStep), not free-pick NewBookingForm
+      navigate('/customer/domestic-form');
+    } else if (serviceType === 'end-of-tenancy') {
+      navigate('/customer/end-of-tenancy-form');
+    } else if (serviceType === 'carpet-cleaning') {
+      navigate('/customer/carpet-form');
     } else {
       setSelectedService(serviceType);
     }

@@ -12,8 +12,7 @@ import { Upload, X, Camera, AlertTriangle, ChevronDown, ChevronUp, Image as Imag
 import { compressImage } from '@/utils/imageCompression';
 import { isCapacitor, getPlatform } from '@/utils/capacitor';
 import { pickFilesNative } from '@/utils/nativeFilePicker';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
-import { formatLondonDate } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, formatLondonDate } from '@/lib/ukTime';
 
 interface CleaningPhotosUploadDialogProps {
   open: boolean;
@@ -57,7 +56,7 @@ const CleaningPhotosUploadDialog = ({ open, onOpenChange, booking }: CleaningPho
   const [showDeleteAnimation, setShowDeleteAnimation] = useState(false);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
-  const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
+  const bookingDate = formatUKDate(booking.date_time, 'yyyy-MM-dd');
   const safePostcode = booking.postcode?.toString().replace(/\s+/g, '').toUpperCase() || 'NA';
   const folderPath = `${booking.id}_${safePostcode}_${bookingDate}_${booking.customer}`;
 

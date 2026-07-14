@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { formatDateForStorage } from '@/lib/bookingDate';
 
 const SUPABASE_URL = "https://dkomihipebixlegygnoy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrb21paGlwZWJpeGxlZ3lnbm95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA1MDEwNTMsImV4cCI6MjA0NjA3NzA1M30.z4hlXMnyyleo4sWyPnFuKFC5-tkQw4lVcDiF8TRWla4";
@@ -451,9 +452,11 @@ export const useQuoteLeadTracking = (serviceType: string, options?: TrackingOpti
         frequency: data.frequency,
         cleaning_products: data.cleaningProducts,
         equipment_arrangement: data.equipmentArrangement,
-        selected_date: data.selectedDate instanceof Date 
-          ? data.selectedDate.toISOString().split('T')[0] 
-          : data.selectedDate,
+        selected_date: data.selectedDate instanceof Date
+          ? formatDateForStorage(data.selectedDate)
+          : (typeof data.selectedDate === 'string'
+            ? formatDateForStorage(data.selectedDate)
+            : data.selectedDate),
         selected_time: data.selectedTime,
         is_flexible: data.isFlexible,
         first_name: data.firstName,

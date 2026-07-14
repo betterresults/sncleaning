@@ -780,7 +780,11 @@ useEffect(() => {
             // Delete the booking since payment failed
             console.log('[PaymentStep] Redirect return charge failed, deleting booking:', bookingId);
             await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId: parseInt(bookingId) } });
-            throw new Error(chargeResult?.error || 'Payment failed');
+            navigate(
+              `/payment-failed?error=${encodeURIComponent(chargeResult?.error || 'Payment failed')}`,
+              { replace: true },
+            );
+            return;
           }
 
           // Call success callback for quote lead tracking
@@ -1632,8 +1636,16 @@ useEffect(() => {
           console.error('[PaymentStep] SetupIntent confirmation error:', confirmError);
           // Clear payment redirect flag since we're not redirecting
           localStorage.removeItem('payment_redirect_in_progress');
-          // Booking was created but payment failed - navigate to failure page
-          navigate(`/payment-failed?bookingId=${bookingId}&error=${encodeURIComponent(confirmError.message || 'Payment failed')}`);
+          // Booking was created before ConfirmSetup — cancel the orphan unpaid row (same
+          // contract as authorization-decline / BookingConfirmation redirect failures).
+          try {
+            await supabase.functions.invoke('cancel-unpaid-booking', { body: { bookingId } });
+          } catch (cancelError) {
+            console.error('[PaymentStep] Failed to cancel unpaid booking after confirm error:', cancelError);
+          }
+          navigate(
+            `/payment-failed?error=${encodeURIComponent(confirmError.message || 'Payment failed')}`,
+          );
           return;
         }
 

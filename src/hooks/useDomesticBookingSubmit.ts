@@ -440,6 +440,8 @@ export const useDomesticBookingSubmit = () => {
         }
       }
 
+      let recurringFailed = false;
+
       // Create recurring service if this is a recurring booking
       if (isRecurring && recurringGroupId) {
         console.log('[useDomesticBookingSubmit] Creating recurring service for frequency:', bookingData.serviceFrequency);
@@ -509,7 +511,8 @@ export const useDomesticBookingSubmit = () => {
           total_cost: Math.round((recurringCost || 0) * 100) / 100,
           payment_method: bookingData.paymentMethod || null,
           start_date: dateStr || null,
-          start_time: time24ForDB ? `${time24ForDB}:00+00` : null,
+          // Store HH:mm only — `HH:mm:ss+00` is not a valid Date offset and crashes list UIs
+          start_time: time24ForDB || null,
           postponed: false,
           interval: interval,
           recurring_group_id: recurringGroupId,
@@ -524,7 +527,13 @@ export const useDomesticBookingSubmit = () => {
 
         if (recurringError) {
           console.error('[useDomesticBookingSubmit] Failed to create recurring service:', recurringError);
-          // Don't fail the whole booking if recurring service creation fails
+          recurringFailed = true;
+          toast({
+            title: 'Booking saved, but recurring series failed',
+            description:
+              'Your first booking was created, but we could not save the recurring schedule. Please contact support so future visits can be set up.',
+            variant: 'destructive',
+          });
         } else {
           console.log('[useDomesticBookingSubmit] Recurring service created successfully');
         }
@@ -557,12 +566,14 @@ export const useDomesticBookingSubmit = () => {
         }
       }
 
-      toast({
-        title: 'Booking Created!',
-        description: `Your domestic cleaning booking has been confirmed.`,
-      });
+      if (!recurringFailed) {
+        toast({
+          title: 'Booking Created!',
+          description: `Your domestic cleaning booking has been confirmed.`,
+        });
+      }
 
-      return { success: true, bookingId: booking.id, customerId };
+      return { success: true, bookingId: booking.id, customerId, recurringFailed };
     } catch (error: any) {
       console.error('Booking submission error:', error);
       toast({

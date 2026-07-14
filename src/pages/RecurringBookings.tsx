@@ -12,8 +12,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PostponeDialog } from '@/components/recurringBookings/PostponeDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ShellLoading, ShellPage } from '@/layouts/shell';
-import { format } from 'date-fns';
 import { formatUKDate } from '@/lib/ukTime';
+
+/** Recurring `start_time` is stored as HH:mm, HH:mm:ss, or HH:mm:ss+00 — never parse via Date. */
+function formatRecurringStartTime(startTime?: string | null): string {
+  if (!startTime) return 'Not set';
+  const match = String(startTime).match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return 'Not set';
+  return `${match[1].padStart(2, '0')}:${match[2]}`;
+}
+
 interface RecurringService {
   id: number;
   customer: number;
@@ -366,7 +374,7 @@ export default function RecurringBookings() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="font-medium">
-                      Starts {formatUKDate(service.start_date, 'd MMM yyyy')} at {service.start_time ? format(new Date(`2000-01-01T${service.start_time}`), 'HH:mm') : 'Not set'}
+                      Starts {formatUKDate(service.start_date, 'd MMM yyyy')} at {formatRecurringStartTime(service.start_time)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

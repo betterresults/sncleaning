@@ -62,6 +62,9 @@ const ROUTE_TITLES: Record<string, string> = {
   '/customer-linen-management': 'Linen Management',
   '/customer-messages': 'Messages',
   '/customer/airbnb-form': 'Airbnb Booking',
+  '/customer/domestic-form': 'Domestic Booking',
+  '/customer/end-of-tenancy-form': 'End of Tenancy',
+  '/customer/carpet-form': 'Carpet Cleaning',
   '/customer/linen-form': 'Linen Order',
 };
 
