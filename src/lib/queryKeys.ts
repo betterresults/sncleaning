@@ -47,4 +47,8 @@ export const queryKeys = {
     all: ['upcoming-calendar'] as const,
     data: (params: UpcomingCalendarParams) => ['upcoming-calendar', 'data', params] as const,
   },
+  recurring: {
+    all: ['recurring'] as const,
+    health: ['recurring', 'health'] as const,
+  },
 };

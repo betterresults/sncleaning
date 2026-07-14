@@ -2702,6 +2702,48 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_generation_runs: {
+        Row: {
+          id: number
+          started_at: string
+          finished_at: string | null
+          status: string
+          triggered_by: string
+          services_processed: number
+          bookings_created: number
+          bookings_skipped: number
+          services_with_errors: number
+          error_message: string | null
+          details: Json
+        }
+        Insert: {
+          id?: number
+          started_at?: string
+          finished_at?: string | null
+          status?: string
+          triggered_by?: string
+          services_processed?: number
+          bookings_created?: number
+          bookings_skipped?: number
+          services_with_errors?: number
+          error_message?: string | null
+          details?: Json
+        }
+        Update: {
+          id?: number
+          started_at?: string
+          finished_at?: string | null
+          status?: string
+          triggered_by?: string
+          services_processed?: number
+          bookings_created?: number
+          bookings_skipped?: number
+          services_with_errors?: number
+          error_message?: string | null
+          details?: Json
+        }
+        Relationships: []
+      }
       recurring_services: {
         Row: {
           address: string | null
@@ -3165,7 +3207,12 @@ export type Database = {
           past_bookings_updated: number
         }[]
       }
-      generate_recurring_bookings: { Args: never; Returns: undefined }
+      generate_recurring_bookings: {
+        Args: { p_triggered_by?: string }
+        Returns: Json
+      }
+      get_recurring_generation_health: { Args: never; Returns: Json }
+      run_recurring_generation_now: { Args: never; Returns: Json }
       get_assignable_cleaners: {
         Args: never
         Returns: {
