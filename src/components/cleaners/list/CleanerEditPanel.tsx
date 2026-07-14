@@ -67,10 +67,18 @@ export const CleanerEditPanel: React.FC<CleanerEditPanelProps> = ({
       <div>
         <Label className="text-xs font-medium text-muted-foreground">Phone</Label>
         <Input
-          type="number"
-          value={editData.phone || ''}
-          onChange={(e) => onEditDataChange({ ...editData, phone: Number(e.target.value) })}
+          type="tel"
+          inputMode="tel"
+          value={editData.phone != null ? String(editData.phone) : ''}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, '');
+            onEditDataChange({
+              ...editData,
+              phone: digits ? Number(digits) : undefined,
+            });
+          }}
           className="mt-1"
+          placeholder="07…"
         />
       </div>
       <div>

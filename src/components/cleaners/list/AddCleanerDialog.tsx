@@ -109,6 +109,8 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
+                type="tel"
+                inputMode="tel"
                 value={newCleanerData.phone}
                 onChange={(e) => setNewCleanerData({ ...newCleanerData, phone: e.target.value })}
               />
