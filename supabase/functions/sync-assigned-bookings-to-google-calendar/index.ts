@@ -5,6 +5,10 @@ import {
   jsonResponse,
   syncBookingCalendarEvents,
 } from '../_shared/googleCalendar.ts';
+import {
+  bookingStoredIsoDaysFromNow,
+  nowAsBookingStoredIso,
+} from '../_shared/ukBookingTime.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -12,8 +16,9 @@ Deno.serve(async (req) => {
   try {
     const supabase = getSupabaseAdmin();
     const body = await req.json().catch(() => ({}));
-    const nowIso = new Date().toISOString();
-    const untilIso = new Date(Date.now() + Number(body.daysAhead ?? 90) * 24 * 60 * 60 * 1000).toISOString();
+    // Compare against naive-London `date_time`, not real UTC `now` (BST skew).
+    const nowIso = nowAsBookingStoredIso();
+    const untilIso = bookingStoredIsoDaysFromNow(Number(body.daysAhead ?? 90));
 
     const { data: connections, error: connectionError } = await supabase
       .from('cleaner_calendar_connections')

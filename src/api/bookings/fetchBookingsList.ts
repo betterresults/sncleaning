@@ -35,6 +35,8 @@ export async function fetchBookingsList(
 
   if (dashboardDateFilter) {
     if (filterBySubmissionDate) {
+      // Expect bare YYYY-MM-DD (or ISO whose date part is already the UK calendar day —
+      // never build that via device-local Date.toISOString(), which shifts the day).
       const dateFrom = dashboardDateFilter.dateFrom.split('T')[0];
       const dateTo = dashboardDateFilter.dateTo.split('T')[0];
       bookingsQuery = bookingsQuery

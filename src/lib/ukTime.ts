@@ -366,3 +366,36 @@ export const formatLondonLocale = (
  * No UK-specific helper is needed for those; leave `date-fns`'s `formatDistanceToNow`
  * as-is.
  */
+
+/** Shift a `YYYY-MM-DD` calendar day by whole days (UTC-arithmetic; day-only, no TZ). */
+export const shiftUKDateString = (ymd: string, days: number): string => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}`;
+};
+
+export type UKBookedFilter = 'today' | 'yesterday' | 'last3days' | 'lastweek' | 'lastmonth';
+
+/**
+ * UK calendar-day range for admin "Booked:" filters on submission date.
+ * Returns bare `YYYY-MM-DD` strings — never pass through `Date.toISOString()`, which
+ * shifts the day for non-UTC viewers before `fetchBookingsList` takes `split('T')[0]`.
+ */
+export const getUKBookedFilterDateRange = (
+  filter: UKBookedFilter,
+  todayYmd: string = getUKTodayDateString(),
+): { dateFrom: string; dateTo: string } => {
+  const daysBack: Record<UKBookedFilter, number> = {
+    today: 0,
+    yesterday: 1,
+    last3days: 3,
+    lastweek: 7,
+    lastmonth: 30,
+  };
+  return {
+    dateFrom: shiftUKDateString(todayYmd, -daysBack[filter]),
+    dateTo: todayYmd,
+  };
+};

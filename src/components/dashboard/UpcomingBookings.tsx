@@ -18,7 +18,7 @@ import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import { format } from 'date-fns';
-import { formatUKDate, getUKNowAsLocalDate } from '@/lib/ukTime';
+import { formatUKDate, getUKBookedFilterDateRange } from '@/lib/ukTime';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
@@ -492,37 +492,9 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
       <div className="bg-white rounded-xl border-0 shadow-sm overflow-hidden">
           {viewMode === 'list' ? (
             <BookingsListView 
-              dashboardDateFilter={bookedFilter !== 'none' ? (() => {
-                const now = getUKNowAsLocalDate();
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                let dateFrom: Date;
-                const dateTo = new Date(today.getTime() + 24 * 60 * 60 * 1000 - 1);
-                
-                switch (bookedFilter) {
-                  case 'today':
-                    dateFrom = today;
-                    break;
-                  case 'yesterday':
-                    dateFrom = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-                    break;
-                  case 'last3days':
-                    dateFrom = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
-                    break;
-                  case 'lastweek':
-                    dateFrom = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    break;
-                  case 'lastmonth':
-                    dateFrom = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    break;
-                  default:
-                    dateFrom = today;
-                }
-                
-                return {
-                  dateFrom: dateFrom.toISOString(),
-                  dateTo: dateTo.toISOString()
-                };
-              })() : dashboardDateFilter}
+              dashboardDateFilter={bookedFilter !== 'none'
+                ? getUKBookedFilterDateRange(bookedFilter)
+                : dashboardDateFilter}
               initialCleanerFilter={filters.cleanerId}
               filterBySubmissionDate={bookedFilter !== 'none'}
               openBookingId={openBookingId}
