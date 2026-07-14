@@ -198,6 +198,9 @@ export function AppRoutes() {
         {shellRoute('/customer-add-booking', <CustomerAddBooking />)}
         {shellRoute('/customer-linen-management', <CustomerLinenManagement />)}
         {shellRoute('/customer/airbnb-form', <AirbnbBooking />, 'Airbnb Booking')}
+        {shellRoute('/customer/domestic-form', <DomesticBooking />, 'Domestic Booking')}
+        {shellRoute('/customer/end-of-tenancy-form', <EndOfTenancyBooking />, 'End of Tenancy')}
+        {shellRoute('/customer/carpet-form', <CarpetBooking />, 'Carpet Cleaning')}
         {shellRoute('/customer/linen-form', <LinenOrder />, 'Linen Order')}
       </Route>
 

@@ -13,7 +13,6 @@ import { Upload, X, Camera, AlertTriangle, Trash2, Eye, Download, CheckSquare, S
 import { compressImage } from '@/utils/imageCompression';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { formatLondonDate } from '@/lib/ukTime';
 import { isCapacitor } from '@/utils/capacitor';
 import { savePhotoLocally, initPhotoStorage } from '@/utils/photoStorage';
 import { addToQueue } from '@/utils/photoQueue';
@@ -28,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime } from '@/lib/ukTime';
+import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, formatLondonDate } from '@/lib/ukTime';
 
 interface PhotoManagementDialogProps {
   open: boolean;
@@ -71,7 +70,7 @@ const PhotoManagementDialog = ({ open, onOpenChange, booking }: PhotoManagementD
   const [uploadedCount, setUploadedCount] = useState(0);
   const [totalToUpload, setTotalToUpload] = useState(0);
 
-  const bookingDate = new Date(booking.date_time).toISOString().split('T')[0];
+  const bookingDate = formatUKDate(booking.date_time, 'yyyy-MM-dd');
   const folderPath = `${bookingDate}/${booking.postcode}/${booking.id}`;
 
   useEffect(() => {

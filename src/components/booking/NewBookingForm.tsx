@@ -25,6 +25,7 @@ import { useServiceTypes, useCleaningTypes, usePaymentMethods, getServiceTypeBad
 import { usePaymentMethodCheck } from '@/hooks/usePaymentMethodCheck';
 import { computeBookingTimeWindow } from '@/lib/cleanerAvailabilityMatch';
 import { getUKNowAsLocalDate } from '@/lib/ukTime';
+import { formatDateForStorage } from '@/lib/bookingDate';
 
 interface NewBookingFormProps {
   onBookingCreated: () => void;
@@ -623,7 +624,7 @@ const NewBookingForm = ({ onBookingCreated, isCustomerView = false, preselectedC
           totalCost: formData.totalCost,
           hourlyRate: formData.costPerHour || 22,
           discount: formData.discount || 0,
-          selectedDate: formData.selectedDate?.toISOString() || null,
+          selectedDate: formatDateForStorage(formData.selectedDate),
           selectedTime: formData.selectedTime,
           additionalDetails: formData.additionalDetails,
           propertyDetails: formData.propertyDetails,
