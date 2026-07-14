@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { format, subDays } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ShellEmpty } from '@/layouts/shell';
 import { PerformanceChartSkeleton } from './PerformanceChartSkeleton';
-import { formatUK, formatUKDate, formatUKTime, formatUKDateTime, formatUKLocaleDate, formatUKLocaleTime, getUKNowAsStoredDate } from '@/lib/ukTime';
+import { formatUK, getUKTodayDateString, shiftUKDateString } from '@/lib/ukTime';
 
 interface ChartData {
   date: string;
@@ -26,12 +25,12 @@ const PerformanceChart = () => {
     try {
       setLoading(true);
 
-      const last7Days = subDays(getUKNowAsStoredDate(), 7);
+      const from = `${shiftUKDateString(getUKTodayDateString(), -7)}T00:00:00+00:00`;
 
       const { data: bookingsData, error } = await supabase
         .from('past_bookings')
         .select('date_time, total_cost')
-        .gte('date_time', last7Days.toISOString())
+        .gte('date_time', from)
         .order('date_time', { ascending: true });
 
       if (error) throw error;

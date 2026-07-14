@@ -7,8 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Calendar, DollarSign, Mail, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { formatUKDateTime, getUKNowAsStoredDate, getUKNowAsLocalDate } from '@/lib/ukTime';
+import { formatUKDateTime, formatUKDate, getUKTodayDateString, shiftUKDateString } from '@/lib/ukTime';
 
 interface Booking {
   id: number;
@@ -37,24 +36,24 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
 
   useEffect(() => {
     if (booking) {
-      const bookingDate = new Date(booking.date_time);
       const term = booking.invoice_term || 7;
       setInvoiceTerm(term);
-      
-      // Calculate due date based on invoice term
-      const calculatedDueDate = new Date(bookingDate);
-      calculatedDueDate.setDate(calculatedDueDate.getDate() + term);
-      setDueDate(format(calculatedDueDate, 'yyyy-MM-dd'));
+      const bookingYmd = formatUKDate(booking.date_time, 'yyyy-MM-dd');
+      setDueDate(bookingYmd ? shiftUKDateString(bookingYmd, term) : '');
     }
   }, [booking]);
 
   const handleDueDateChange = (newDate: string) => {
     setDueDate(newDate);
     if (newDate && booking) {
-      const bookingDate = new Date(booking.date_time);
-      const due = new Date(newDate);
-      const diffTime = due.getTime() - bookingDate.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const bookingYmd = formatUKDate(booking.date_time, 'yyyy-MM-dd');
+      if (!bookingYmd) return;
+      // Whole calendar-day difference (UK wall digits), not device-local Date math
+      const [by, bm, bd] = bookingYmd.split('-').map(Number);
+      const [dy, dm, dd] = newDate.split('-').map(Number);
+      const bookingUtc = Date.UTC(by, bm - 1, bd);
+      const dueUtc = Date.UTC(dy, dm - 1, dd);
+      const diffDays = Math.round((dueUtc - bookingUtc) / (1000 * 60 * 60 * 24));
       setInvoiceTerm(diffDays > 0 ? diffDays : 0);
     }
   };
@@ -62,10 +61,8 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
   const handleInvoiceTermChange = (term: number) => {
     setInvoiceTerm(term);
     if (booking) {
-      const bookingDate = new Date(booking.date_time);
-      const calculatedDueDate = new Date(bookingDate);
-      calculatedDueDate.setDate(calculatedDueDate.getDate() + term);
-      setDueDate(format(calculatedDueDate, 'yyyy-MM-dd'));
+      const bookingYmd = formatUKDate(booking.date_time, 'yyyy-MM-dd');
+      setDueDate(bookingYmd ? shiftUKDateString(bookingYmd, term) : '');
     }
   };
 
@@ -115,11 +112,12 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
 
   const calculateDaysUntilDue = () => {
     if (!dueDate) return 0;
-    const due = new Date(dueDate);
-    const today = getUKNowAsStoredDate();
-    const diffTime = due.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    const todayYmd = getUKTodayDateString();
+    const [ty, tm, td] = todayYmd.split('-').map(Number);
+    const [dy, dm, dd] = dueDate.split('-').map(Number);
+    const todayUtc = Date.UTC(ty, tm - 1, td);
+    const dueUtc = Date.UTC(dy, dm - 1, dd);
+    return Math.round((dueUtc - todayUtc) / (1000 * 60 * 60 * 24));
   };
 
   if (!booking) return null;
@@ -202,7 +200,7 @@ const InvoilessInvoiceDialog = ({ booking, isOpen, onClose, onSuccess }: Invoile
                     value={dueDate}
                     onChange={(e) => handleDueDateChange(e.target.value)}
                     className="h-12 rounded-xl pl-11 text-base"
-                    min={format(getUKNowAsLocalDate(), 'yyyy-MM-dd')}
+                    min={getUKTodayDateString()}
                   />
                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 </div>

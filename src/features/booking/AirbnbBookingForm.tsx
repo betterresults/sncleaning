@@ -645,7 +645,7 @@ const AirbnbBookingForm: React.FC = () => {
             phone: bookingData.phone,
           }}
           sessionId={sessionId}
-          serviceType="Air BnB"
+          serviceType="Airbnb"
           agentUserId={adminUserId || undefined}
           onQuoteSent={resetFormForNewQuote}
         />

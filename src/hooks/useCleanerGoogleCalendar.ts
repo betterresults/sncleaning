@@ -145,6 +145,59 @@ export const useSyncGoogleCalendar = (cleanerId: number | null, weekStartIso?: s
   });
 };
 
+/** Admin: force-resync one cleaner's Google connection (including error status). */
+export const useAdminSyncCleanerGoogleCalendar = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (cleanerId: number) => {
+      const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
+        body: { cleanerId },
+      });
+      if (error) throw error;
+      if (data?.skipped) throw new Error(data.skipped);
+      return data;
+    },
+    onSuccess: (_data, cleanerId) => {
+      queryClient.invalidateQueries({ queryKey: allCleanerCalendarConnectionsQueryKey });
+      queryClient.invalidateQueries({ queryKey: cleanerCalendarConnectionQueryKey(cleanerId) });
+      toast.success('Google Calendar re-synced');
+    },
+    onError: (error: unknown) => {
+      toast.error(errorMessage(error, 'Failed to re-sync Google Calendar'));
+    },
+  });
+};
+
+/** Admin: sync every connected/error Google calendar connection. */
+export const useAdminSyncAllGoogleCalendars = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
+        body: { syncAll: true },
+      });
+      if (error) throw error;
+      return data as { results?: Array<{ connectionId: string; error?: string; synced?: number }> };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: allCleanerCalendarConnectionsQueryKey });
+      const results = data?.results ?? [];
+      const failed = results.filter((r) => r.error).length;
+      const ok = results.length - failed;
+      if (failed > 0) {
+        toast.error(`Synced ${ok} calendar${ok === 1 ? '' : 's'}; ${failed} failed`);
+      } else {
+        toast.success(`Synced ${ok} Google calendar${ok === 1 ? '' : 's'}`);
+      }
+    },
+    onError: (error: unknown) => {
+      toast.error(errorMessage(error, 'Failed to sync Google calendars'));
+    },
+  });
+};
+
 export const useDisconnectGoogleCalendar = (cleanerId: number | null) => {
   const queryClient = useQueryClient();
 

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, X } from 'lucide-react';
 import type { CleanerData } from './types';
 import { CleanerScopeFields } from './CleanerScopeFields';
@@ -115,6 +116,41 @@ export const CleanerEditPanel: React.FC<CleanerEditPanelProps> = ({
         <Input
           value={editData.postcode || ''}
           onChange={(e) => onEditDataChange({ ...editData, postcode: e.target.value })}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label className="text-xs font-medium text-muted-foreground">Years Experience</Label>
+        <Input
+          type="number"
+          min="0"
+          value={editData.years ?? ''}
+          onChange={(e) => onEditDataChange({ ...editData, years: Number(e.target.value) })}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label className="text-xs font-medium text-muted-foreground">DBS Status</Label>
+        <Select
+          value={editData.DBS || 'No'}
+          onValueChange={(value) => onEditDataChange({ ...editData, DBS: value })}
+        >
+          <SelectTrigger className="mt-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="No">No</SelectItem>
+            <SelectItem value="Yes">Yes</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label className="text-xs font-medium text-muted-foreground">DBS Date</Label>
+        <Input
+          type="date"
+          value={editData.DBS_date || ''}
+          onChange={(e) => onEditDataChange({ ...editData, DBS_date: e.target.value })}
           className="mt-1"
         />
       </div>

@@ -89,13 +89,15 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
     ) : (
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex-1 space-y-2">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h3 className="font-semibold text-lg text-primary">
               {cleaner.first_name} {cleaner.last_name}
             </h3>
-            <Badge variant="outline" className="text-xs">
-              ID: {cleaner.id}
-            </Badge>
+            {(!cleaner.phone || !cleaner.address || cleaner.DBS !== 'Yes' || !cleaner.has_account) && (
+              <Badge variant="outline" className="text-xs text-amber-800 border-amber-300 bg-amber-50">
+                Incomplete
+              </Badge>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
@@ -119,8 +121,20 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
               <Percent className="h-4 w-4" />
               <span>{cleaner.presentage_rate || 0}% rate</span>
             </div>
-            <div className="text-muted-foreground">
+            <div className="text-muted-foreground flex items-center gap-2 flex-wrap">
               <span>Experience: {cleaner.years || 0} years</span>
+              <Badge
+                variant="outline"
+                className={`text-xs ${
+                  cleaner.DBS === 'Yes'
+                    ? 'text-green-700 border-green-300 bg-green-50'
+                    : cleaner.DBS === 'Pending'
+                      ? 'text-amber-700 border-amber-300 bg-amber-50'
+                      : 'text-muted-foreground'
+                }`}
+              >
+                DBS: {cleaner.DBS || 'No'}
+              </Badge>
             </div>
           </div>
 
@@ -188,7 +202,7 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
             )}
           </div>
 
-          <CleanerCalendarStatus connection={calendarConnection} />
+          <CleanerCalendarStatus cleanerId={cleaner.id} connection={calendarConnection} />
 
           {cleaner.services && (
             <div className="text-sm text-muted-foreground">
@@ -197,22 +211,22 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:items-end">
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/cleaner-availability?cleanerId=${cleaner.id}`}>
+                <Clock className="h-4 w-4 mr-2" />
+                Availability
+              </Link>
+            </Button>
+            <Button onClick={onStartEdit} variant="outline" size="icon" aria-label="Edit cleaner">
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button onClick={onDelete} variant="destructive" size="icon" aria-label="Delete cleaner">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
           <CleanerAccountActions cleaner={cleaner} onAccountCreated={onAccountCreated} />
-          <Button asChild variant="outline" size="sm">
-            <Link to={`/cleaner-availability?cleanerId=${cleaner.id}`}>
-              <Clock className="h-4 w-4 mr-2" />
-              Availability
-            </Link>
-          </Button>
-          <Button onClick={onStartEdit} variant="outline" size="sm">
-            <Edit2 className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-          <Button onClick={onDelete} variant="destructive" size="sm">
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
         </div>
       </div>
     )}

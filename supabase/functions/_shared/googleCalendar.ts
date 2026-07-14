@@ -421,7 +421,7 @@ export const syncAllActiveConnections = async (supabase: ReturnType<typeof getSu
     .from('cleaner_calendar_connections')
     .select('id')
     .eq('provider', 'google')
-    .eq('status', 'connected');
+    .in('status', ['connected', 'error']);
   if (error) throw error;
 
   const results = [];
