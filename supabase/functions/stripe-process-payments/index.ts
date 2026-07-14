@@ -1,26 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { nowInBookingTimeFrame } from '../_shared/ukBookingTime.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-// bookings.date_time is stored as naive London wall-clock digits with a hardcoded
-// +00:00 suffix (not a true UTC instant) — during BST (UTC+1) it's a real 1 hour ahead
-// of true UTC. Comparing real UTC `now` directly against it makes the authorization
-// window open ~1h late during summer. Convert `now` into the same naive-London-stamped
-// frame before comparing to `date_time` (real UTC columns like `last_payment_attempt_at`
-// should still be compared against the real `now`).
-function nowInBookingTimeFrame(): Date {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/London',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-  }).formatToParts(new Date())
-  const get = (t: string) => parts.find(p => p.type === t)?.value ?? '00'
-  const hour = get('hour') === '24' ? '00' : get('hour')
-  return new Date(`${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}:${get('second')}+00:00`)
 }
 
 serve(async (req) => {
