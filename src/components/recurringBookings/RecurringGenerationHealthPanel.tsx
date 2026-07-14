@@ -1,15 +1,16 @@
-import { AlertTriangle, CalendarClock, Play, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CalendarClock, Play, RefreshCw, Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   useRecurringGenerationHealth,
+  useRepairRecurringSeriesGap,
   useRunRecurringGeneration,
 } from '@/hooks/queries/useRecurringGenerationHealth';
 import { ShellStat, ShellStatGrid } from '@/layouts/shell';
 import { formatUKDate } from '@/lib/ukTime';
-import type { RecurringGenerationGapReason } from '@/api/recurring';
+import { isRepairableGapReason, type RecurringGenerationGapReason } from '@/api/recurring';
 
 function formatRunTime(value?: string | null): string {
   if (!value) return 'Never';
@@ -44,9 +45,11 @@ function gapReasonLabel(reason: RecurringGenerationGapReason): string {
 export function RecurringGenerationHealthPanel() {
   const { data, isLoading, isFetching, refetch } = useRecurringGenerationHealth();
   const runNow = useRunRecurringGeneration();
+  const repairGap = useRepairRecurringSeriesGap();
 
   const lastRun = data?.last_run ?? null;
   const gaps = data?.gaps ?? [];
+  const repairingId = repairGap.isPending ? repairGap.variables : null;
 
   return (
     <Card className="mb-4">
@@ -55,7 +58,8 @@ export function RecurringGenerationHealthPanel() {
           <div>
             <h2 className="text-base font-semibold tracking-tight">Generation health</h2>
             <p className="text-sm text-muted-foreground">
-              Cron creates upcoming bookings automatically. Use Run now to force a pass, and review any series with gaps.
+              Cron creates upcoming bookings automatically. Use Run now for a full pass, or Repair on a
+              gap to reset that series cursor and fill missing bookings.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -64,7 +68,7 @@ export function RecurringGenerationHealthPanel() {
               variant="outline"
               size="sm"
               onClick={() => void refetch()}
-              disabled={isFetching || runNow.isPending}
+              disabled={isFetching || runNow.isPending || repairGap.isPending}
             >
               <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
               Refresh
@@ -73,7 +77,7 @@ export function RecurringGenerationHealthPanel() {
               type="button"
               size="sm"
               onClick={() => runNow.mutate()}
-              disabled={runNow.isPending}
+              disabled={runNow.isPending || repairGap.isPending}
             >
               <Play className="mr-1.5 h-3.5 w-3.5" />
               {runNow.isPending ? 'Running…' : 'Run now'}
@@ -120,28 +124,45 @@ export function RecurringGenerationHealthPanel() {
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Series needing attention</h3>
             <div className="divide-y rounded-md border">
-              {gaps.slice(0, 12).map((gap) => (
-                <div
-                  key={gap.service_id}
-                  className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
-                >
-                  <div className="min-w-0 space-y-0.5">
-                    <div className="font-medium truncate">
-                      {gap.customer_name || `Series #${gap.service_id}`}
+              {gaps.slice(0, 12).map((gap) => {
+                const canRepair = isRepairableGapReason(gap.reason);
+                const isRepairing = repairingId === gap.service_id;
+
+                return (
+                  <div
+                    key={gap.service_id}
+                    className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="font-medium truncate">
+                        {gap.customer_name || `Series #${gap.service_id}`}
+                      </div>
+                      <div className="text-muted-foreground">
+                        {gap.frequently || '—'} · {gap.days_of_the_week || 'no day'} · until{' '}
+                        {gap.was_created_until ? formatUKDate(gap.was_created_until) : 'never'}
+                      </div>
                     </div>
-                    <div className="text-muted-foreground">
-                      {gap.frequently || '—'} · {gap.days_of_the_week || 'no day'} · until{' '}
-                      {gap.was_created_until ? formatUKDate(gap.was_created_until) : 'never'}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{gapReasonLabel(gap.reason)}</Badge>
+                      {canRepair && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          disabled={repairGap.isPending || runNow.isPending}
+                          onClick={() => repairGap.mutate(gap.service_id)}
+                        >
+                          <Wrench className="mr-1.5 h-3.5 w-3.5" />
+                          {isRepairing ? 'Repairing…' : 'Repair'}
+                        </Button>
+                      )}
+                      <Button asChild variant="ghost" size="sm">
+                        <Link to={`/recurring-bookings/edit/${gap.service_id}`}>Edit</Link>
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{gapReasonLabel(gap.reason)}</Badge>
-                    <Button asChild variant="ghost" size="sm">
-                      <Link to={`/recurring-bookings/edit/${gap.service_id}`}>Edit</Link>
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
