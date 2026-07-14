@@ -3208,10 +3208,14 @@ export type Database = {
         }[]
       }
       generate_recurring_bookings: {
-        Args: { p_triggered_by?: string }
+        Args: { p_service_id?: number; p_triggered_by?: string }
         Returns: Json
       }
       get_recurring_generation_health: { Args: never; Returns: Json }
+      repair_recurring_series_gap: {
+        Args: { p_service_id: number }
+        Returns: Json
+      }
       run_recurring_generation_now: { Args: never; Returns: Json }
       get_assignable_cleaners: {
         Args: never

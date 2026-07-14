@@ -42,4 +42,17 @@ export interface RecurringGenerationRunResult {
   bookings_skipped: number;
   services_with_errors: number;
   errors: Array<{ service_id?: number; error: string }>;
+  service_id_filter?: number | null;
+}
+
+export interface RecurringSeriesGapRepairResult {
+  service_id: number;
+  was_created_until_before: string | null;
+  was_created_until_anchor: string | null;
+  was_created_until_after_reset: string | null;
+  generation: RecurringGenerationRunResult;
+}
+
+export function isRepairableGapReason(reason: RecurringGenerationGapReason): boolean {
+  return reason === 'no_upcoming_booking' || reason === 'horizon_lag';
 }
