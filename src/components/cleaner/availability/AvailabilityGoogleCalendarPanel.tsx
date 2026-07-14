@@ -6,8 +6,10 @@ import {
   useConnectGoogleCalendar,
   useDisconnectGoogleCalendar,
   useSyncGoogleCalendar,
+  useAdminSyncCleanerGoogleCalendar,
 } from '@/hooks/useCleanerGoogleCalendar';
 import { formatLondonDateTime } from '@/lib/ukTime';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AvailabilityGoogleCalendarPanelProps {
   cleanerId: number;
@@ -20,13 +22,23 @@ const AvailabilityGoogleCalendarPanel: React.FC<AvailabilityGoogleCalendarPanelP
   weekStartIso,
   weekEndIso,
 }) => {
+  const { userRole } = useAuth();
+  const isAdmin = userRole === 'admin';
   const { data: connection, isLoading } = useCleanerCalendarConnection(cleanerId);
   const connectGoogle = useConnectGoogleCalendar();
   const syncGoogle = useSyncGoogleCalendar(cleanerId, weekStartIso, weekEndIso);
+  const adminSync = useAdminSyncCleanerGoogleCalendar();
   const disconnectGoogle = useDisconnectGoogleCalendar(cleanerId);
 
   const connected = connection?.status === 'connected';
-  const hasError = connection?.status === 'error' || !!connection?.last_error;
+  const hasError = connection?.status === 'error';
+  const canSync = connected || hasError;
+  const syncPending = isAdmin ? adminSync.isPending : syncGoogle.isPending;
+
+  const handleSync = () => {
+    if (isAdmin) adminSync.mutate(cleanerId);
+    else syncGoogle.mutate();
+  };
 
   return (
     <div className="flex flex-col gap-3 border-b border-border bg-background px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -53,37 +65,54 @@ const AvailabilityGoogleCalendarPanel: React.FC<AvailabilityGoogleCalendarPanelP
           <p className="text-xs text-muted-foreground">
             {connected
               ? `Busy events block availability${connection.last_synced_at ? ` · Synced ${formatLondonDateTime(connection.last_synced_at)}` : ''}`
-              : 'Connect a cleaner calendar to block busy time automatically.'}
+              : hasError
+                ? 'Connection needs attention — try Sync now, or Reconnect if that fails.'
+                : 'Connect a cleaner calendar to block busy time automatically.'}
           </p>
           {connection?.last_error && <p className="text-xs text-amber-700">{connection.last_error}</p>}
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-        {connected ? (
+        {canSync ? (
           <>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => syncGoogle.mutate()}
-              disabled={syncGoogle.isPending || disconnectGoogle.isPending}
+              onClick={handleSync}
+              disabled={syncPending || disconnectGoogle.isPending}
               className="gap-2"
             >
-              <RefreshCw className={syncGoogle.isPending ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
+              <RefreshCw className={syncPending ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
               Sync now
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => disconnectGoogle.mutate()}
-              disabled={disconnectGoogle.isPending || syncGoogle.isPending}
-              className="gap-2 text-muted-foreground"
-            >
-              <Unplug className="h-4 w-4" />
-              Disconnect
-            </Button>
+            {!isAdmin && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => disconnectGoogle.mutate()}
+                disabled={disconnectGoogle.isPending || syncPending}
+                className="gap-2 text-muted-foreground"
+              >
+                <Unplug className="h-4 w-4" />
+                Disconnect
+              </Button>
+            )}
+            {hasError && !isAdmin && (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => connectGoogle.mutate()}
+                disabled={connectGoogle.isPending || isLoading}
+                className="gap-2"
+              >
+                <Link2 className="h-4 w-4" />
+                Reconnect
+              </Button>
+            )}
           </>
         ) : (
           <Button

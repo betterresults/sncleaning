@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
@@ -346,10 +347,19 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
           return (
             <Alert className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                {isToday
-                  ? 'No available time slots for today. Same-day cleaning requires at least 2 hours notice and a cleaner who is free for your job.'
-                  : 'No cleaners are available on this date for your booking. Please try another date or contact us for help.'}
+              <AlertDescription className="text-red-800 space-y-2">
+                <p>
+                  {isToday
+                    ? 'No available time slots for today. Same-day cleaning requires at least 2 hours notice and a cleaner who is free for your job.'
+                    : 'No cleaners are available on this date for your booking. Please try another date or contact us for help.'}
+                </p>
+                <p>
+                  Still need a clean?{' '}
+                  <Link to="/quote-request" className="font-semibold underline underline-offset-2">
+                    Request a custom quote
+                  </Link>
+                  .
+                </p>
               </AlertDescription>
             </Alert>
           );

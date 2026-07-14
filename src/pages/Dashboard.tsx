@@ -13,7 +13,7 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getUKTodayRange } from '@/lib/ukTime';
+import { getUKTodayRange, getUKTodayDateString, shiftUKDateString } from '@/lib/ukTime';
 
 const Dashboard = () => {
   const { userRole } = useAuth();
@@ -28,12 +28,10 @@ const Dashboard = () => {
   };
 
   const getNext7DaysRange = () => {
-    const { end: todayEnd } = getUKTodayRange();
-    const tomorrow = new Date(new Date(todayEnd).getTime() + 1);
-    const next7Days = new Date(tomorrow.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const today = getUKTodayDateString();
     return {
-      dateFrom: tomorrow.toISOString(),
-      dateTo: next7Days.toISOString(),
+      dateFrom: `${shiftUKDateString(today, 1)}T00:00:00+00:00`,
+      dateTo: `${shiftUKDateString(today, 7)}T23:59:59.999+00:00`,
     };
   };
 

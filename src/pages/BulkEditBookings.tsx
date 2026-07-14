@@ -13,6 +13,17 @@ import { Check, ChevronsUpDown, ArrowLeft, Filter, X, Search } from 'lucide-reac
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { LinenUsageEditor } from '@/components/dashboard/LinenUsageEditor';
@@ -439,16 +450,23 @@ const BulkEditBookings = () => {
         }
       }
 
+      const selectedCount = selectedBookings.length;
+      const updatedCount = data.length;
+
       toast({
-        title: "Update Successful",
-        description: `Successfully updated ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}`,
+        title: updatedCount < selectedCount ? 'Partially updated' : 'Update Successful',
+        description:
+          updatedCount < selectedCount
+            ? `Updated ${updatedCount} of ${selectedCount} selected booking${selectedCount !== 1 ? 's' : ''}. Some rows may not have changed due to permissions or filters.`
+            : `Successfully updated ${updatedCount} booking${updatedCount !== 1 ? 's' : ''}`,
+        variant: updatedCount < selectedCount ? 'destructive' : 'default',
       });
       
       await fetchBookings();
       
       setFilteredBookings(prevBookings => 
         prevBookings.map(booking => {
-          if (selectedBookings.includes(booking.id)) {
+          if (selectedBookings.includes(booking.id) && data.some((row: { id: number }) => row.id === booking.id)) {
             return { ...booking, ...updateData };
           }
           return booking;
@@ -973,13 +991,44 @@ const BulkEditBookings = () => {
                       </div>
 
                       <div className="flex items-end">
-                        <Button 
-                          onClick={handleBulkUpdate} 
-                          disabled={loading || selectedBookings.length === 0}
-                          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          {loading ? 'Updating...' : `Update ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}`}
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              disabled={loading || selectedBookings.length === 0}
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              {loading ? 'Updating...' : `Update ${selectedBookings.length} booking${selectedBookings.length !== 1 ? 's' : ''}`}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirm bulk update</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Update {selectedBookings.length} booking{selectedBookings.length !== 1 ? 's' : ''} —
+                                set <strong>{getFieldLabel()}</strong> to{' '}
+                                <strong>
+                                  {editType === 'linen_used'
+                                    ? 'the linen usage you entered'
+                                    : editType === 'cleaner'
+                                      ? (() => {
+                                          const c = cleaners.find((cl) => String(cl.id) === String(newValue));
+                                          return c ? `${c.first_name} ${c.last_name}` : (newValue || '(empty)');
+                                        })()
+                                      : newValue === '' || newValue == null
+                                        ? '(empty)'
+                                        : String(newValue)}
+                                </strong>
+                                ? This cannot be undone from this screen.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleBulkUpdate} disabled={loading}>
+                                {loading ? 'Updating...' : 'Apply update'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
 

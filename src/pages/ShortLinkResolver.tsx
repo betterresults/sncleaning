@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { formatStoredTimeForDisplay } from '@/lib/bookingDate';
+import { resolveQuoteBookingRoute } from '@/lib/bookingShortLink';
 
 const ShortLinkResolver = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
@@ -73,7 +74,17 @@ const ShortLinkResolver = () => {
 
         if (fetchError || !data) {
           console.error('Short link lookup error:', fetchError);
-          setError('This link has expired or is invalid');
+          setError('This link is invalid');
+          return;
+        }
+
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          setError('This link has expired');
+          return;
+        }
+
+        if (data.converted_booking_id) {
+          setError('This quote has already been booked');
           return;
         }
 
@@ -143,20 +154,14 @@ const ShortLinkResolver = () => {
         // Mark as quote link - this tells the form to lock to payment step
         params.set('fromQuote', '1');
 
-        // Determine the route based on service type
+        // Determine the route based on service type (normalize labels like "Air BnB")
         const serviceType = data.service_type || 'Domestic';
         console.log('[ShortLinkResolver] Raw service_type from DB:', JSON.stringify(data.service_type));
-        console.log('[ShortLinkResolver] Using serviceType:', serviceType);
-        let route = '/domestic-cleaning';
-        
-        // Check for Carpet Cleaning FIRST (before Domestic) to prevent false matching
-        if (serviceType === 'Carpet Cleaning' || serviceType === 'carpet_cleaning' || serviceType.toLowerCase().includes('carpet')) {
-          route = '/carpet-cleaning';
+        const route = resolveQuoteBookingRoute(serviceType);
+        console.log('[ShortLinkResolver] Resolved route:', route);
+
+        if (route === '/carpet-cleaning') {
           console.log('[ShortLinkResolver] Matched Carpet Cleaning route');
-          console.log('[ShortLinkResolver] data.carpet_items:', data.carpet_items);
-          console.log('[ShortLinkResolver] data.upholstery_items:', data.upholstery_items);
-          console.log('[ShortLinkResolver] data.mattress_items:', data.mattress_items);
-          
           // For carpet cleaning, pass items as JSON in URL params
           // Use type assertion since these columns were added after types were generated
           const carpetItems = (data as any).carpet_items;
@@ -175,15 +180,6 @@ const ShortLinkResolver = () => {
             params.set('mattressItems', JSON.stringify(mattressItems));
             console.log('[ShortLinkResolver] Set mattressItems param:', JSON.stringify(mattressItems));
           }
-        } else if (serviceType === 'End of Tenancy' || serviceType === 'end_of_tenancy' || serviceType.toLowerCase().includes('end of tenancy') || serviceType.toLowerCase().includes('eot')) {
-          route = '/end-of-tenancy';
-          console.log('[ShortLinkResolver] Matched End of Tenancy route');
-        } else if (serviceType === 'Airbnb' || serviceType === 'airbnb' || serviceType.toLowerCase().includes('airbnb')) {
-          route = '/airbnb-cleaning';
-          console.log('[ShortLinkResolver] Matched Airbnb route');
-        } else {
-          route = '/domestic-cleaning';
-          console.log('[ShortLinkResolver] Using Domestic route (default)');
         }
         
         console.log('[ShortLinkResolver] Final URL params:', params.toString());

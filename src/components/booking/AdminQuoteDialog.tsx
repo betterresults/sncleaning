@@ -14,6 +14,7 @@ import { Mail, Send, CheckCircle2, Link2, MessageSquare, Loader2, Calendar, Home
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateForStorage } from '@/lib/bookingDate';
+import { getCustomerBookingShortUrl } from '@/lib/bookingShortLink';
 import { format } from 'date-fns';
 
 interface CarpetCleaningItem {
@@ -276,6 +277,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       source: 'admin',
       created_by_admin_id: agentUserId,
       updated_at: new Date().toISOString(),
+      // Quote links expire after 7 days (same window as payment short links)
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     };
     
     // Add carpet cleaning items if present
@@ -303,8 +306,8 @@ export const AdminQuoteDialog: React.FC<AdminQuoteDialogProps> = ({
       throw error;
     }
 
-    // Return the short URL
-    return `https://account.sncleaningservices.co.uk/b/${shortCode}`;
+    // Customer-facing URL (always production — safe for email/SMS)
+    return getCustomerBookingShortUrl(shortCode);
   };
 
   const handleSendQuoteEmail = async () => {

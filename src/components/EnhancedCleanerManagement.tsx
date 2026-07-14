@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, UserPlus, User, Loader2 } from 'lucide-react';
+import { Search, UserPlus, User, Loader2, RefreshCw } from 'lucide-react';
 import { useServiceTypes } from '@/hooks/useCompanySettings';
 import { useAllCleanerServiceTypes } from '@/hooks/useCleanerServiceTypes';
 import { useCoverageAreaOptions, useAllCleanerCoverageAreas } from '@/hooks/useCoverageAreas';
-import { useAllCleanerCalendarConnections } from '@/hooks/useCleanerGoogleCalendar';
+import { useAllCleanerCalendarConnections, useAdminSyncAllGoogleCalendars } from '@/hooks/useCleanerGoogleCalendar';
 import { useCleanersList, useInvalidateCleanersList } from '@/hooks/queries/useCleanersList';
 import { useCleanerMutations } from '@/hooks/queries/useCleanerMutations';
 import {
@@ -33,6 +33,7 @@ const EnhancedCleanerManagement = () => {
   const { data: areaOptions = [] } = useCoverageAreaOptions();
   const { data: cleanerCoverageAreaMap = new Map<number, string[]>() } = useAllCleanerCoverageAreas();
   const { data: cleanerCalendarConnectionMap = new Map() } = useAllCleanerCalendarConnections();
+  const syncAllCalendars = useAdminSyncAllGoogleCalendars();
 
   const filteredCleaners = useMemo(
     () => applyCleanersListFilters(cleaners, searchTerm),
@@ -126,10 +127,22 @@ const EnhancedCleanerManagement = () => {
             <span className="font-normal text-muted-foreground">({filteredCleaners.length})</span>
           </h2>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} size="sm">
-          <UserPlus className="h-4 w-4 mr-2" />
-          Add Cleaner
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={syncAllCalendars.isPending}
+            onClick={() => syncAllCalendars.mutate()}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncAllCalendars.isPending ? 'animate-spin' : ''}`} />
+            Sync all calendars
+          </Button>
+          <Button onClick={() => setShowAddDialog(true)} size="sm">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add Cleaner
+          </Button>
+        </div>
       </div>
 
       <div className="relative">

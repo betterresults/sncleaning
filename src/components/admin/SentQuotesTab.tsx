@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, subDays, subWeeks, subMonths } from 'date-fns';
 import { formatLondon, getLondonWallClockDate } from '@/lib/ukTime';
+import { getAppBookingShortUrl } from '@/lib/bookingShortLink';
 import { 
   RefreshCw, Copy, ExternalLink,
   User, Mail, Phone, MapPin, Home, Bath, BedDouble, 
@@ -175,7 +176,7 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
   };
 
   const getBookingLink = (quote: SentQuote): string => {
-    return `https://account.sncleaningservices.co.uk/b/${quote.short_code}`;
+    return getAppBookingShortUrl(quote.short_code);
   };
 
   const handleCopyLink = async (quote: SentQuote, e?: React.MouseEvent) => {
@@ -530,8 +531,8 @@ const SentQuotesTab: React.FC<SentQuotesTabProps> = ({ agentUserId, isAgent = fa
 
                 {/* Short Link */}
                 <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-                  <span className="font-mono">
-                    account.sncleaningservices.co.uk/b/{quote.short_code}
+                  <span className="font-mono truncate">
+                    {getBookingLink(quote).replace(/^https?:\/\//, '')}
                   </span>
                   <span className="ml-auto">
                     Sent {quote.created_at && formatLondon(quote.created_at, 'dd MMM yyyy, HH:mm')}
