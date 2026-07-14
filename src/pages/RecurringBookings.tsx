@@ -10,6 +10,7 @@ import { Plus, Edit, Trash2, Calendar, User, MapPin, Pause, Play, Clock, Search,
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { PostponeDialog } from '@/components/recurringBookings/PostponeDialog';
+import { RecurringGenerationHealthPanel } from '@/components/recurringBookings/RecurringGenerationHealthPanel';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ShellLoading, ShellPage } from '@/layouts/shell';
 import { formatUKDate } from '@/lib/ukTime';
@@ -244,6 +245,7 @@ export default function RecurringBookings() {
 
   return (
     <ShellPage width="wide">
+              <RecurringGenerationHealthPanel />
               {/* Header with Search and Filters */}
               <Card>
                 <CardContent className="p-4 space-y-4">
