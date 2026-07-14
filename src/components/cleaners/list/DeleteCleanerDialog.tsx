@@ -116,9 +116,6 @@ export function DeleteCleanerDialog({
                         {impact.upcomingBookings > 0 && (
                           <li>{impact.upcomingBookings} upcoming booking(s) as primary cleaner</li>
                         )}
-                        {impact.bookingAssignments > 0 && (
-                          <li>{impact.bookingAssignments} booking assignment(s)</li>
-                        )}
                         {impact.pastBookings > 0 && (
                           <li>{impact.pastBookings} past booking(s) still linked</li>
                         )}

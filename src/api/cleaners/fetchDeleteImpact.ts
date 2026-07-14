@@ -2,7 +2,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface CleanerDeleteImpact {
   upcomingBookings: number;
-  bookingAssignments: number;
   pastBookings: number;
   payments: number;
   photos: number;
@@ -15,9 +14,9 @@ export interface CleanerDeleteImpact {
 export async function fetchCleanerDeleteImpact(
   cleanerId: number
 ): Promise<CleanerDeleteImpact> {
+  // Note: `booking_cleaners` was renamed to `cleaner_payments` — do not query the old name.
   const [
     upcomingRes,
-    assignmentsRes,
     pastRes,
     paymentsRes,
     photosRes,
@@ -28,10 +27,6 @@ export async function fetchCleanerDeleteImpact(
       .from('bookings')
       .select('*', { count: 'exact', head: true })
       .eq('cleaner', cleanerId),
-    supabase
-      .from('booking_cleaners')
-      .select('*', { count: 'exact', head: true })
-      .eq('cleaner_id', cleanerId),
     supabase
       .from('past_bookings')
       .select('*', { count: 'exact', head: true })
@@ -57,7 +52,6 @@ export async function fetchCleanerDeleteImpact(
 
   const errors = [
     upcomingRes.error,
-    assignmentsRes.error,
     pastRes.error,
     paymentsRes.error,
     photosRes.error,
@@ -70,7 +64,6 @@ export async function fetchCleanerDeleteImpact(
 
   return {
     upcomingBookings: upcomingRes.count || 0,
-    bookingAssignments: assignmentsRes.count || 0,
     pastBookings: pastRes.count || 0,
     payments: paymentsRes.count || 0,
     photos: photosRes.count || 0,
@@ -84,7 +77,6 @@ export async function fetchCleanerDeleteImpact(
 export function cleanerDeleteIsBlocked(impact: CleanerDeleteImpact): boolean {
   return (
     impact.upcomingBookings > 0 ||
-    impact.bookingAssignments > 0 ||
     impact.pastBookings > 0 ||
     impact.payments > 0 ||
     impact.photos > 0 ||

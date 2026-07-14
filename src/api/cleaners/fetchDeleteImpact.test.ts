@@ -6,7 +6,6 @@ import {
 
 const emptyImpact = (): CleanerDeleteImpact => ({
   upcomingBookings: 0,
-  bookingAssignments: 0,
   pastBookings: 0,
   payments: 0,
   photos: 0,
@@ -32,7 +31,6 @@ describe('cleanerDeleteIsBlocked', () => {
 
   it('blocks when any booking/payment/photo relation exists', () => {
     expect(cleanerDeleteIsBlocked({ ...emptyImpact(), upcomingBookings: 1 })).toBe(true);
-    expect(cleanerDeleteIsBlocked({ ...emptyImpact(), bookingAssignments: 2 })).toBe(true);
     expect(cleanerDeleteIsBlocked({ ...emptyImpact(), pastBookings: 1 })).toBe(true);
     expect(cleanerDeleteIsBlocked({ ...emptyImpact(), payments: 1 })).toBe(true);
     expect(cleanerDeleteIsBlocked({ ...emptyImpact(), photos: 3 })).toBe(true);
