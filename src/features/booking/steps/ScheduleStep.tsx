@@ -349,7 +349,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
       )}
 
       {/* No available times on selected date */}
-      {data.selectedDate && !slotsLoading && timeSlots.length === 0 && (
+      {data.selectedDate && !slotsLoading && timeSlots.length === 0 && !isAdminMode && (
         (() => {
           const now = getUKNowAsLocalDate();
           const selectedDate = data.selectedDate;
@@ -378,6 +378,16 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
             </Alert>
           );
         })()
+      )}
+
+      {/* Admin: warn if no cleaner is free but still allow booking */}
+      {isAdminMode && noCleanerAvailable && !slotsLoading && (
+        <Alert className="border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            No cleaner is currently available for this date/time. You can still book — assign a cleaner manually later.
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Property Access Section */}
