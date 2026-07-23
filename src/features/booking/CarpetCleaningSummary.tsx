@@ -215,6 +215,19 @@ export const CarpetCleaningSummary: React.FC<CarpetCleaningSummaryProps> = ({
               £{shortNoticeInfo.charge.toFixed(2)}
             </span>
           </div>
+          {isAdminMode && (
+            <label className="flex items-center gap-2 mt-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={data.adminRemoveShortNoticeCharge || false}
+                onChange={(e) => onUpdate?.({ adminRemoveShortNoticeCharge: e.target.checked })}
+                className="rounded border-amber-300"
+              />
+              <span className="text-xs text-amber-700">
+                Waive short notice charge (£{shortNoticeInfo.charge.toFixed(2)})
+              </span>
+            </label>
+          )}
         </div>
       )}
       
