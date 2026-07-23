@@ -7,6 +7,7 @@ export interface CoCleaner {
 export interface Booking {
   id: number;
   date_time: string;
+  end_date_time?: string | null;
   time_only?: string | null;
   first_name: string;
   last_name: string;

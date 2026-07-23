@@ -5,7 +5,7 @@ export async function fetchRecurringGenerationHealth(): Promise<RecurringGenerat
   const { data, error } = await supabase.rpc('get_recurring_generation_health');
   if (error) throw error;
 
-  const payload = (data ?? {}) as RecurringGenerationHealth;
+  const payload = (data ?? {}) as unknown as RecurringGenerationHealth;
   return {
     active_series: Number(payload.active_series ?? 0),
     gap_count: Number(payload.gap_count ?? 0),

@@ -9,7 +9,7 @@ export async function repairRecurringSeriesGap(
   });
   if (error) throw error;
 
-  const payload = (data ?? {}) as RecurringSeriesGapRepairResult;
+  const payload = (data ?? {}) as unknown as RecurringSeriesGapRepairResult;
   const generation = payload.generation ?? {
     run_id: 0,
     triggered_by: 'admin' as const,
