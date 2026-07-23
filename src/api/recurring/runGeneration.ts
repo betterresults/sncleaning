@@ -5,7 +5,7 @@ export async function runRecurringGenerationNow(): Promise<RecurringGenerationRu
   const { data, error } = await supabase.rpc('run_recurring_generation_now');
   if (error) throw error;
 
-  const payload = (data ?? {}) as RecurringGenerationRunResult;
+  const payload = (data ?? {}) as unknown as RecurringGenerationRunResult;
   return {
     run_id: Number(payload.run_id ?? 0),
     triggered_by: payload.triggered_by ?? 'admin',

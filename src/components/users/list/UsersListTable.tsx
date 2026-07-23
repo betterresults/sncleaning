@@ -13,6 +13,7 @@ import type { UserData, UsersTableRowHandlers, UsersTableUserType } from './type
 
 export interface UsersListTableProps {
   userType: UsersTableUserType;
+  isCustomerView?: boolean;
   loading: boolean;
   filteredUsers: UserData[];
   searchTerm: string;

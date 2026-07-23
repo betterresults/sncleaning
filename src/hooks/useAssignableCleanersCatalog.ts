@@ -64,7 +64,7 @@ export const useAssignableCleanersCatalog = (
     };
 
     return (query.data || []).map((row) =>
-      enrichAssignableCleanerCatalogEntry(row, serviceTypeKey, boroughId, toCalendarBusyBlock)
+      enrichAssignableCleanerCatalogEntry(row as any, serviceTypeKey, boroughId, toCalendarBusyBlock)
     );
   }, [query.data, serviceTypeKey, boroughId]);
 

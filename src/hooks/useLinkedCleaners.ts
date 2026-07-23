@@ -112,7 +112,7 @@ export const useLinkedCleaners = (
         const serviceTypeKeys = c.service_type_keys || [];
         const coverageAreaIds = c.coverage_area_ids || [];
         const workingHours = (c.working_hours || []) as unknown as WorkingHourBlock[];
-        const calendarBusyBlocks = ((c.calendar_busy_blocks || []) as RawCalendarBusyBlock[])
+        const calendarBusyBlocks = ((c.calendar_busy_blocks || []) as unknown as RawCalendarBusyBlock[])
           .map(toCalendarBusyBlock)
           .filter((block): block is CalendarBusyBlock => Boolean(block));
         const hasCalendarConflict = cleanerHasCalendarConflict(calendarBusyBlocks, bookingTimeWindow ?? null);
