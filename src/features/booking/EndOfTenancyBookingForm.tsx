@@ -605,6 +605,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
             serviceTypeLabel="End of Tenancy Cleaning"
             durationHours={bookingData.estimatedHours}
             postcode={bookingData.postcode || null}
+            isAdminMode={isAdminMode}
           />
         );
       case 4:

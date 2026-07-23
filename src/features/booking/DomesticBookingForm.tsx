@@ -965,6 +965,7 @@ const DomesticBookingForm: React.FC = () => {
             serviceTypeLabel="Domestic"
             durationHours={displayHours}
             postcode={bookingData.postcode || null}
+            isAdminMode={isAdminMode}
           />
         );
       case 3:

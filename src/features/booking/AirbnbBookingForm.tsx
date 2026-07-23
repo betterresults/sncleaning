@@ -470,6 +470,7 @@ const AirbnbBookingForm: React.FC = () => {
             serviceTypeLabel="Air BnB"
             durationHours={(bookingData.estimatedHours ?? 0) + (bookingData.extraHours ?? 0) || null}
             postcode={bookingData.postcode || null}
+            isAdminMode={isAdminMode}
           />
         );
       case 4:

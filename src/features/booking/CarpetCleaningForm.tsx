@@ -487,6 +487,7 @@ const CarpetCleaningForm: React.FC = () => {
             serviceTypeLabel="Carpet Cleaning"
             durationHours={bookingData.estimatedHours}
             postcode={bookingData.postcode || null}
+            isAdminMode={isAdminMode}
           />
         );
       case 4:
