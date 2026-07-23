@@ -309,6 +309,67 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_calendar_events: {
+        Row: {
+          booking_id: number
+          cleaner_id: number
+          connection_id: string
+          created_at: string
+          google_event_id: string
+          google_event_link: string | null
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          booking_id: number
+          cleaner_id: number
+          connection_id: string
+          created_at?: string
+          google_event_id: string
+          google_event_link?: string | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: number
+          cleaner_id?: number
+          connection_id?: string
+          created_at?: string
+          google_event_id?: string
+          google_event_link?: string | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_calendar_events_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_calendar_events_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_calendar_events_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_calendar_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           access: string | null
@@ -684,6 +745,140 @@ export type Database = {
           },
         ]
       }
+      cleaner_calendar_busy_blocks: {
+        Row: {
+          cleaner_id: number
+          connection_id: string
+          created_at: string
+          ends_at: string
+          google_event_etag: string | null
+          google_event_id: string
+          id: string
+          is_all_day: boolean
+          starts_at: string
+          status: string
+          summary: string | null
+          transparency: string | null
+          updated_at: string
+        }
+        Insert: {
+          cleaner_id: number
+          connection_id: string
+          created_at?: string
+          ends_at: string
+          google_event_etag?: string | null
+          google_event_id: string
+          id?: string
+          is_all_day?: boolean
+          starts_at: string
+          status?: string
+          summary?: string | null
+          transparency?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cleaner_id?: number
+          connection_id?: string
+          created_at?: string
+          ends_at?: string
+          google_event_etag?: string | null
+          google_event_id?: string
+          id?: string
+          is_all_day?: boolean
+          starts_at?: string
+          status?: string
+          summary?: string | null
+          transparency?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_calendar_busy_blocks_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cleaner_calendar_busy_blocks_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "cleaner_calendar_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cleaner_calendar_connections: {
+        Row: {
+          access_token_ciphertext: string | null
+          channel_expires_at: string | null
+          channel_id: string | null
+          channel_resource_id: string | null
+          cleaner_id: number
+          created_at: string
+          google_calendar_email: string | null
+          google_calendar_id: string
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          provider: string
+          refresh_token_ciphertext: string | null
+          scopes: string[]
+          status: string
+          sync_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_ciphertext?: string | null
+          channel_expires_at?: string | null
+          channel_id?: string | null
+          channel_resource_id?: string | null
+          cleaner_id: number
+          created_at?: string
+          google_calendar_email?: string | null
+          google_calendar_id?: string
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          provider?: string
+          refresh_token_ciphertext?: string | null
+          scopes?: string[]
+          status?: string
+          sync_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_ciphertext?: string | null
+          channel_expires_at?: string | null
+          channel_id?: string | null
+          channel_resource_id?: string | null
+          cleaner_id?: number
+          created_at?: string
+          google_calendar_email?: string | null
+          google_calendar_id?: string
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          provider?: string
+          refresh_token_ciphertext?: string | null
+          scopes?: string[]
+          status?: string
+          sync_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cleaner_calendar_connections_cleaner_id_fkey"
+            columns: ["cleaner_id"]
+            isOneToOne: false
+            referencedRelation: "cleaners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaner_coverage_areas: {
         Row: {
           borough_id: string
@@ -960,13 +1155,13 @@ export type Database = {
           id: number
           ID: string | null
           last_name: string | null
+          notes: string | null
           phone: number | null
           photo: string | null
           postcode: string | null
           presentage_rate: number | null
           rating: number | null
           reviews: number | null
-          notes: string | null
           years: number | null
         }
         Insert: {
@@ -983,13 +1178,13 @@ export type Database = {
           id?: number
           ID?: string | null
           last_name?: string | null
+          notes?: string | null
           phone?: number | null
           photo?: string | null
           postcode?: string | null
           presentage_rate?: number | null
           rating?: number | null
           reviews?: number | null
-          notes?: string | null
           years?: number | null
         }
         Update: {
@@ -1006,13 +1201,13 @@ export type Database = {
           id?: number
           ID?: string | null
           last_name?: string | null
+          notes?: string | null
           phone?: number | null
           photo?: string | null
           postcode?: string | null
           presentage_rate?: number | null
           rating?: number | null
           reviews?: number | null
-          notes?: string | null
           years?: number | null
         }
         Relationships: []
@@ -2704,43 +2899,43 @@ export type Database = {
       }
       recurring_generation_runs: {
         Row: {
-          id: number
-          started_at: string
-          finished_at: string | null
-          status: string
-          triggered_by: string
-          services_processed: number
           bookings_created: number
           bookings_skipped: number
-          services_with_errors: number
-          error_message: string | null
           details: Json
+          error_message: string | null
+          finished_at: string | null
+          id: number
+          services_processed: number
+          services_with_errors: number
+          started_at: string
+          status: string
+          triggered_by: string
         }
         Insert: {
-          id?: number
-          started_at?: string
-          finished_at?: string | null
-          status?: string
-          triggered_by?: string
-          services_processed?: number
           bookings_created?: number
           bookings_skipped?: number
-          services_with_errors?: number
-          error_message?: string | null
           details?: Json
+          error_message?: string | null
+          finished_at?: string | null
+          id?: number
+          services_processed?: number
+          services_with_errors?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string
         }
         Update: {
-          id?: number
-          started_at?: string
-          finished_at?: string | null
-          status?: string
-          triggered_by?: string
-          services_processed?: number
           bookings_created?: number
           bookings_skipped?: number
-          services_with_errors?: number
-          error_message?: string | null
           details?: Json
+          error_message?: string | null
+          finished_at?: string | null
+          id?: number
+          services_processed?: number
+          services_with_errors?: number
+          started_at?: string
+          status?: string
+          triggered_by?: string
         }
         Relationships: []
       }
@@ -3211,15 +3406,10 @@ export type Database = {
         Args: { p_service_id?: number; p_triggered_by?: string }
         Returns: Json
       }
-      get_recurring_generation_health: { Args: never; Returns: Json }
-      repair_recurring_series_gap: {
-        Args: { p_service_id: number }
-        Returns: Json
-      }
-      run_recurring_generation_now: { Args: never; Returns: Json }
       get_assignable_cleaners: {
         Args: never
         Returns: {
+          calendar_busy_blocks: Json
           coverage_area_ids: string[]
           first_name: string
           full_name: string
@@ -3233,6 +3423,7 @@ export type Database = {
         }[]
       }
       get_current_user_role: { Args: never; Returns: string }
+      get_recurring_generation_health: { Args: never; Returns: Json }
       get_user_cleaner_id: { Args: { _user_id: string }; Returns: number }
       get_user_customer_id: { Args: { _user_id: string }; Returns: number }
       get_user_role: { Args: { user_uuid: string }; Returns: string }
@@ -3260,8 +3451,13 @@ export type Database = {
       }
       move_to_past_bookings_table: { Args: never; Returns: undefined }
       populate_sample_activity_logs: { Args: never; Returns: undefined }
+      repair_recurring_series_gap: {
+        Args: { p_service_id: number }
+        Returns: Json
+      }
       round_bookings_prices: { Args: never; Returns: number }
       round_past_bookings_prices: { Args: never; Returns: number }
+      run_recurring_generation_now: { Args: never; Returns: Json }
       send_booking_notification: {
         Args: { booking_id: number; event_type: string }
         Returns: undefined
