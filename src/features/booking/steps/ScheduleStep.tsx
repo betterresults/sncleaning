@@ -32,6 +32,8 @@ interface ScheduleStepProps {
   durationHours?: number | null;
   /** When known (quote URL prefill), filters slots to cleaners covering the area. */
   postcode?: string | null;
+  /** When true, admin can pick any date/time regardless of cleaner availability. */
+  isAdminMode?: boolean;
 }
 
 const ScheduleStep: React.FC<ScheduleStepProps> = ({
@@ -42,6 +44,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
   serviceTypeLabel,
   durationHours,
   postcode,
+  isAdminMode = false,
 }) => {
   // Fetch dynamic time flexibility configs from Supabase
   const { data: timeFlexConfigs = [] } = useAirbnbFieldConfigs('Time Flexibility', true);
@@ -82,6 +85,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
     if (!data.selectedDate || cleanersLoading || businessHoursLoading || cleanersError) {
       return candidateSlots;
     }
+    // Admins can book any time — availability is informational only.
+    if (isAdminMode) return candidateSlots;
     return filterSlotsByCleanerAvailability(cleaners, data.selectedDate, candidateSlots, durationHours);
   }, [
     candidateSlots,
@@ -91,10 +96,15 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
     businessHoursLoading,
     data.selectedDate,
     durationHours,
+    isAdminMode,
   ]);
 
   const slotsLoading = businessHoursLoading || cleanersLoading;
   const hasAvailabilityOnSelectedDate = timeSlots.length > 0;
+  const noCleanerAvailable = useMemo(() => {
+    if (!isAdminMode || !data.selectedDate || cleanersLoading || businessHoursLoading || cleanersError) return false;
+    return filterSlotsByCleanerAvailability(cleaners, data.selectedDate, candidateSlots, durationHours).length === 0;
+  }, [isAdminMode, data.selectedDate, cleanersLoading, businessHoursLoading, cleanersError, cleaners, candidateSlots, durationHours]);
   const isFlexible = data.flexibility === 'flexible-time';
 
   // Clear a previously picked time if it falls outside the newly filtered list.
