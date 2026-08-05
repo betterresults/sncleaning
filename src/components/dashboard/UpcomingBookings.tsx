@@ -13,12 +13,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle, AlertTriangle, Send } from 'lucide-react';
+import { Edit, Trash2, Filter, Search, Settings, Copy, X, UserPlus, DollarSign, Repeat, Calendar, List, MoreHorizontal, CalendarDays, Clock, MapPin, User, Mail, Phone, Banknote, CheckCircle, XCircle, AlertCircle, AlertTriangle, Send, Download, Loader2 } from 'lucide-react';
 import PaymentStatusIndicator from '@/components/payments/PaymentStatusIndicator';
 import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import { format } from 'date-fns';
-import { formatUKDate, getUKBookedFilterDateRange } from '@/lib/ukTime';
+import { formatUKDate, getUKBookedFilterDateRange, getUKTodayRange } from '@/lib/ukTime';
+import { bookingsToCsv, downloadCsv, fetchAllUpcomingBookings } from '@/lib/exportBookingsCsv';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
@@ -120,6 +121,32 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
   const [selectedDayBookings, setSelectedDayBookings] = useState<Booking[]>([]);
   const [bookedFilter, setBookedFilter] = useState<BookedFilterType>('none');
   const { toast } = useToast();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      const range = bookedFilter !== 'none'
+        ? getUKBookedFilterDateRange(bookedFilter)
+        : dashboardDateFilter;
+      const dateFrom = range?.dateFrom || getUKTodayRange().start;
+      const rows = await fetchAllUpcomingBookings(dateFrom, range?.dateTo);
+      if (rows.length === 0) {
+        toast({ title: 'Nothing to export', description: 'No bookings match the current range.' });
+        return;
+      }
+      downloadCsv(bookingsToCsv(rows), `upcoming-bookings-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      toast({ title: 'Export ready', description: `${rows.length} bookings downloaded as CSV.` });
+    } catch (err) {
+      toast({
+        title: 'Export failed',
+        description: err instanceof Error ? err.message : 'Could not export bookings.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
   const cancelBookingMutation = useCancelBooking();
   const deleteBookingMutation = useDeleteBooking();
 
@@ -474,6 +501,12 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
       )}
 
       {/* View Controls */}
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={exporting}>
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {exporting ? 'Preparing…' : 'Download CSV'}
+        </Button>
+      </div>
       <BookingsViewControls
         viewMode={viewMode}
         onViewModeChange={setViewMode}
