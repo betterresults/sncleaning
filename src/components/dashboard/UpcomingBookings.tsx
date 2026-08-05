@@ -501,6 +501,12 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
       )}
 
       {/* View Controls */}
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={exporting}>
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {exporting ? 'Preparing…' : 'Download CSV'}
+        </Button>
+      </div>
       <BookingsViewControls
         viewMode={viewMode}
         onViewModeChange={setViewMode}
