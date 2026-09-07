@@ -7,6 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const NON_CARD_PAYMENT_METHODS = ['bank', 'cash', 'cheque', 'check', 'invoiless', 'invoice', 'transfer']
+
+function isNonCardPaymentMethod(paymentMethod?: string | null): boolean {
+  if (!paymentMethod) return false
+  const pm = paymentMethod.toLowerCase()
+  return NON_CARD_PAYMENT_METHODS.some((m) => pm.includes(m))
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -38,7 +46,7 @@ serve(async (req) => {
     // CRITICAL: Exclude cancelled bookings to prevent charging for cancelled services
     const { data: bookingsToAuthorize, error: authorizeError } = await supabaseClient
       .from('bookings')
-      .select('id, date_time, total_cost, customer, payment_status, invoice_id, booking_status, payment_attempt_count, last_payment_attempt_at')
+      .select('id, date_time, total_cost, customer, payment_status, invoice_id, booking_status, payment_method, payment_attempt_count, last_payment_attempt_at')
       .gte('date_time', authorizationWindowStart.toISOString())
       .lte('date_time', authorizationWindowEnd.toISOString())
       .in('payment_status', ['Unpaid', 'pending']) // Do NOT auto-retry 'failed' — Stripe Radar will block repeat attempts
@@ -55,6 +63,10 @@ serve(async (req) => {
       // Filter bookings: must have a payment method AND respect 6-hour back-off between attempts
       const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000)
       for (const booking of bookingsToAuthorize) {
+        if (isNonCardPaymentMethod(booking.payment_method)) {
+          console.log(`Skipping booking ${booking.id} - payment method is "${booking.payment_method}" (non-card)`)
+          continue
+        }
         if (booking.last_payment_attempt_at && new Date(booking.last_payment_attempt_at) > sixHoursAgo) {
           console.log(`Skipping booking ${booking.id} - last attempt was less than 6 hours ago`)
           continue
@@ -109,7 +121,7 @@ serve(async (req) => {
     // CRITICAL: Exclude cancelled bookings
     const { data: pastBookingsToCapture, error: pastCaptureError } = await supabaseClient
       .from('past_bookings')
-      .select('id, date_time, invoice_id, total_hours, payment_status, booking_status')
+      .select('id, date_time, invoice_id, total_hours, payment_status, booking_status, payment_method')
       .eq('payment_status', 'authorized')
       .not('invoice_id', 'is', null)
       .not('booking_status', 'ilike', '%cancelled%') // Skip cancelled bookings
@@ -122,7 +134,13 @@ serve(async (req) => {
     
     if (pastBookingsToCapture && pastBookingsToCapture.length > 0) {
       // Capture ALL past bookings with 'authorized' status immediately
-      readyToCapture = pastBookingsToCapture
+      readyToCapture = pastBookingsToCapture.filter((b) => {
+        if (isNonCardPaymentMethod(b.payment_method)) {
+          console.log(`Skipping capture for booking ${b.id} - payment method is "${b.payment_method}" (non-card)`)
+          return false
+        }
+        return true
+      })
       
       console.log(`Found ${readyToCapture.length} completed bookings ready for capture`)
       
