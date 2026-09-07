@@ -37,7 +37,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     )
 
-    const { bookingId, action, amount, paymentMethodId }: SystemPaymentActionRequest = await req.json()
+    const { bookingId, action, amount, paymentMethodId, forceCardPayment }: SystemPaymentActionRequest = await req.json()
 
     if (!bookingId || !action) {
       throw new Error('Booking ID and action are required')
@@ -123,6 +123,24 @@ serve(async (req) => {
           message: 'Booking is cancelled - payment processing skipped',
           bookingId,
           bookingStatus: booking.booking_status
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
+    }
+
+    // CRITICAL: Never touch a saved card when the booking is set to a non-card payment method
+    // (bank transfer, cash, cheque, invoice). Admins can override with forceCardPayment.
+    if (!forceCardPayment && isNonCardPaymentMethod(booking.payment_method)) {
+      console.log(`Booking ${bookingId} uses non-card payment method "${booking.payment_method}" - skipping card ${action}`)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          action: 'skipped',
+          message: `Booking payment method is "${booking.payment_method}" - card payments are not allowed`,
+          bookingId,
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
