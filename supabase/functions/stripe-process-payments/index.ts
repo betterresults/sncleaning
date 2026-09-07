@@ -66,7 +66,7 @@ serve(async (req) => {
       // Filter bookings: must have a payment method AND respect 6-hour back-off between attempts
       const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000)
       for (const booking of bookingsToAuthorize) {
-        if (isNonCardPaymentMethod(booking.payment_method)) {
+        if (!isStripeCardPayment(booking.payment_method)) {
           console.log(`Skipping booking ${booking.id} - payment method is "${booking.payment_method}" (non-card)`)
           continue
         }
@@ -138,7 +138,7 @@ serve(async (req) => {
     if (pastBookingsToCapture && pastBookingsToCapture.length > 0) {
       // Capture ALL past bookings with 'authorized' status immediately
       readyToCapture = pastBookingsToCapture.filter((b) => {
-        if (isNonCardPaymentMethod(b.payment_method)) {
+        if (!isStripeCardPayment(b.payment_method)) {
           console.log(`Skipping capture for booking ${b.id} - payment method is "${b.payment_method}" (non-card)`)
           return false
         }
