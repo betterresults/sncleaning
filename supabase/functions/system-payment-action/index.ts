@@ -133,15 +133,16 @@ serve(async (req) => {
       )
     }
 
-    // CRITICAL: Never touch a saved card when the booking is set to a non-card payment method
-    // (bank transfer, cash, cheque, invoice). Admins can override with forceCardPayment.
-    if (!forceCardPayment && isNonCardPaymentMethod(booking.payment_method)) {
-      console.log(`Booking ${bookingId} uses non-card payment method "${booking.payment_method}" - skipping card ${action}`)
+    // CRITICAL: only touch a saved card when the booking is explicitly a Stripe/card payment.
+    // Admins can still force a card charge with forceCardPayment.
+    if (!forceCardPayment && !isStripeCardPayment(booking.payment_method)) {
+      console.log(`Booking ${bookingId} payment method is "${booking.payment_method}" (not Stripe) - skipping card ${action}`)
       return new Response(
         JSON.stringify({
           success: false,
           action: 'skipped',
-          message: `Booking payment method is "${booking.payment_method}" - card payments are not allowed`,
+          message: `Booking payment method is "${booking.payment_method || 'not set'}" - card payments only run for Stripe bookings`,
+
           bookingId,
         }),
         {
