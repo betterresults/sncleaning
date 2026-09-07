@@ -7,13 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const NON_CARD_PAYMENT_METHODS = ['bank', 'cash', 'cheque', 'check', 'invoiless', 'invoice', 'transfer']
-
-function isNonCardPaymentMethod(paymentMethod?: string | null): boolean {
-  if (!paymentMethod) return false
-  const pm = paymentMethod.toLowerCase()
-  return NON_CARD_PAYMENT_METHODS.some((m) => pm.includes(m))
+// Allow-list: only bookings explicitly marked as Stripe/card are ever charged.
+// Bank transfer, cash, invoice, GoCardless, PayPal, blank or any future method is skipped.
+function isStripeCardPayment(paymentMethod?: string | null): boolean {
+  const pm = (paymentMethod || '').trim().toLowerCase()
+  if (!pm) return false
+  if (pm.includes('gocardless')) return false
+  if (pm.includes('stripe')) return true
+  return /(^|[^a-z])card([^a-z]|$)/.test(pm)
 }
+
 
 serve(async (req) => {
   // Handle CORS preflight requests
