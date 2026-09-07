@@ -15,14 +15,16 @@ interface SystemPaymentActionRequest {
   forceCardPayment?: boolean
 }
 
-// Payment methods that must NEVER be charged/authorized on a saved Stripe card
-const NON_CARD_PAYMENT_METHODS = ['bank', 'cash', 'cheque', 'check', 'invoiless', 'invoice', 'transfer']
-
-export function isNonCardPaymentMethod(paymentMethod?: string | null): boolean {
-  if (!paymentMethod) return false
-  const pm = paymentMethod.toLowerCase()
-  return NON_CARD_PAYMENT_METHODS.some((m) => pm.includes(m))
+// Allow-list: only bookings explicitly marked as Stripe/card are ever charged or authorized.
+// Bank transfer, cash, invoice, GoCardless, PayPal, blank or any future method is skipped.
+export function isStripeCardPayment(paymentMethod?: string | null): boolean {
+  const pm = (paymentMethod || '').trim().toLowerCase()
+  if (!pm) return false
+  if (pm.includes('gocardless')) return false
+  if (pm.includes('stripe')) return true
+  return /(^|[^a-z])card([^a-z]|$)/.test(pm)
 }
+
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -131,15 +133,16 @@ serve(async (req) => {
       )
     }
 
-    // CRITICAL: Never touch a saved card when the booking is set to a non-card payment method
-    // (bank transfer, cash, cheque, invoice). Admins can override with forceCardPayment.
-    if (!forceCardPayment && isNonCardPaymentMethod(booking.payment_method)) {
-      console.log(`Booking ${bookingId} uses non-card payment method "${booking.payment_method}" - skipping card ${action}`)
+    // CRITICAL: only touch a saved card when the booking is explicitly a Stripe/card payment.
+    // Admins can still force a card charge with forceCardPayment.
+    if (!forceCardPayment && !isStripeCardPayment(booking.payment_method)) {
+      console.log(`Booking ${bookingId} payment method is "${booking.payment_method}" (not Stripe) - skipping card ${action}`)
       return new Response(
         JSON.stringify({
           success: false,
           action: 'skipped',
-          message: `Booking payment method is "${booking.payment_method}" - card payments are not allowed`,
+          message: `Booking payment method is "${booking.payment_method || 'not set'}" - card payments only run for Stripe bookings`,
+
           bookingId,
         }),
         {

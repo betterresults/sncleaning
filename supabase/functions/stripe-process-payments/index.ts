@@ -7,13 +7,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const NON_CARD_PAYMENT_METHODS = ['bank', 'cash', 'cheque', 'check', 'invoiless', 'invoice', 'transfer']
-
-function isNonCardPaymentMethod(paymentMethod?: string | null): boolean {
-  if (!paymentMethod) return false
-  const pm = paymentMethod.toLowerCase()
-  return NON_CARD_PAYMENT_METHODS.some((m) => pm.includes(m))
+// Allow-list: only bookings explicitly marked as Stripe/card are ever charged.
+// Bank transfer, cash, invoice, GoCardless, PayPal, blank or any future method is skipped.
+function isStripeCardPayment(paymentMethod?: string | null): boolean {
+  const pm = (paymentMethod || '').trim().toLowerCase()
+  if (!pm) return false
+  if (pm.includes('gocardless')) return false
+  if (pm.includes('stripe')) return true
+  return /(^|[^a-z])card([^a-z]|$)/.test(pm)
 }
+
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -63,7 +66,7 @@ serve(async (req) => {
       // Filter bookings: must have a payment method AND respect 6-hour back-off between attempts
       const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000)
       for (const booking of bookingsToAuthorize) {
-        if (isNonCardPaymentMethod(booking.payment_method)) {
+        if (!isStripeCardPayment(booking.payment_method)) {
           console.log(`Skipping booking ${booking.id} - payment method is "${booking.payment_method}" (non-card)`)
           continue
         }
@@ -135,7 +138,7 @@ serve(async (req) => {
     if (pastBookingsToCapture && pastBookingsToCapture.length > 0) {
       // Capture ALL past bookings with 'authorized' status immediately
       readyToCapture = pastBookingsToCapture.filter((b) => {
-        if (isNonCardPaymentMethod(b.payment_method)) {
+        if (!isStripeCardPayment(b.payment_method)) {
           console.log(`Skipping capture for booking ${b.id} - payment method is "${b.payment_method}" (non-card)`)
           return false
         }
