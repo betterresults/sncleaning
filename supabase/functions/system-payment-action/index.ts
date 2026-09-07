@@ -11,6 +11,17 @@ interface SystemPaymentActionRequest {
   action: 'authorize' | 'charge' | 'retry'
   amount?: number
   paymentMethodId?: string
+  /** Admin-only override to card-charge a booking marked as cash/bank transfer/invoice */
+  forceCardPayment?: boolean
+}
+
+// Payment methods that must NEVER be charged/authorized on a saved Stripe card
+const NON_CARD_PAYMENT_METHODS = ['bank', 'cash', 'cheque', 'check', 'invoiless', 'invoice', 'transfer']
+
+export function isNonCardPaymentMethod(paymentMethod?: string | null): boolean {
+  if (!paymentMethod) return false
+  const pm = paymentMethod.toLowerCase()
+  return NON_CARD_PAYMENT_METHODS.some((m) => pm.includes(m))
 }
 
 serve(async (req) => {
