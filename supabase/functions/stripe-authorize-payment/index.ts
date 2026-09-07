@@ -6,6 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Allow-list: a Stripe card is only ever touched when the booking is explicitly
+// marked as a Stripe/card payment. Every other method (bank transfer, cash,
+// invoice, GoCardless, PayPal, blank, or anything added later) is skipped.
+export function isStripeCardPayment(paymentMethod?: string | null): boolean {
+  const pm = (paymentMethod || '').trim().toLowerCase()
+  if (!pm) return false
+  if (pm.includes('gocardless')) return false
+  if (pm.includes('stripe')) return true
+  return /(^|[^a-z])card([^a-z]|$)/.test(pm)
+}
+
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
