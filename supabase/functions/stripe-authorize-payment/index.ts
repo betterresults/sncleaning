@@ -66,6 +66,20 @@ serve(async (req) => {
       );
     }
 
+    // CRITICAL: never authorize a card for bookings marked as bank transfer / cash / invoice
+    const bookingPaymentMethod = (booking.payment_method || '').toLowerCase()
+    if (['bank', 'cash', 'cheque', 'check', 'invoiless', 'invoice', 'transfer'].some((m) => bookingPaymentMethod.includes(m))) {
+      console.log(`Booking ${bookingId} uses non-card payment method "${booking.payment_method}" - skipping authorization`)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          skipped: true,
+          message: `Booking payment method is "${booking.payment_method}" - card authorization not allowed`,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+      )
+    }
+
     // Get customer's payment methods (try default first, then any available)
     const { data: defaultPaymentMethods } = await supabaseClient
       .from('customer_payment_methods')

@@ -11,6 +11,17 @@ interface SystemPaymentActionRequest {
   action: 'authorize' | 'charge' | 'retry'
   amount?: number
   paymentMethodId?: string
+  /** Admin-only override to card-charge a booking marked as cash/bank transfer/invoice */
+  forceCardPayment?: boolean
+}
+
+// Payment methods that must NEVER be charged/authorized on a saved Stripe card
+const NON_CARD_PAYMENT_METHODS = ['bank', 'cash', 'cheque', 'check', 'invoiless', 'invoice', 'transfer']
+
+export function isNonCardPaymentMethod(paymentMethod?: string | null): boolean {
+  if (!paymentMethod) return false
+  const pm = paymentMethod.toLowerCase()
+  return NON_CARD_PAYMENT_METHODS.some((m) => pm.includes(m))
 }
 
 serve(async (req) => {
@@ -26,7 +37,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     )
 
-    const { bookingId, action, amount, paymentMethodId }: SystemPaymentActionRequest = await req.json()
+    const { bookingId, action, amount, paymentMethodId, forceCardPayment }: SystemPaymentActionRequest = await req.json()
 
     if (!bookingId || !action) {
       throw new Error('Booking ID and action are required')
@@ -112,6 +123,24 @@ serve(async (req) => {
           message: 'Booking is cancelled - payment processing skipped',
           bookingId,
           bookingStatus: booking.booking_status
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        }
+      )
+    }
+
+    // CRITICAL: Never touch a saved card when the booking is set to a non-card payment method
+    // (bank transfer, cash, cheque, invoice). Admins can override with forceCardPayment.
+    if (!forceCardPayment && isNonCardPaymentMethod(booking.payment_method)) {
+      console.log(`Booking ${bookingId} uses non-card payment method "${booking.payment_method}" - skipping card ${action}`)
+      return new Response(
+        JSON.stringify({
+          success: false,
+          action: 'skipped',
+          message: `Booking payment method is "${booking.payment_method}" - card payments are not allowed`,
+          bookingId,
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

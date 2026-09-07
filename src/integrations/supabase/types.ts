@@ -285,6 +285,63 @@ export type Database = {
         }
         Relationships: []
       }
+      area_pages: {
+        Row: {
+          created_at: string
+          faqs: Json | null
+          id: string
+          intro: string | null
+          meta_description: string | null
+          meta_title: string | null
+          published: boolean
+          region_id: string
+          service_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          faqs?: Json | null
+          id?: string
+          intro?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean
+          region_id: string
+          service_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          faqs?: Json | null
+          id?: string
+          intro?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean
+          region_id?: string
+          service_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "area_pages_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_regions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "area_pages_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automation_settings: {
         Row: {
           config: Json
@@ -305,6 +362,51 @@ export type Database = {
           created_at?: string
           enabled?: boolean
           key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_posts: {
+        Row: {
+          content: string
+          cover_image: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          cover_image?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -1468,6 +1570,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          parent_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1476,6 +1579,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          parent_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1484,9 +1588,18 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          parent_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "coverage_regions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_regions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_payment_methods: {
         Row: {
@@ -3143,6 +3256,62 @@ export type Database = {
         }
         Relationships: []
       }
+      service_pages: {
+        Row: {
+          created_at: string
+          faqs: Json
+          full_description: string | null
+          id: string
+          images: Json
+          included_tasks: Json
+          meta_description: string | null
+          meta_title: string | null
+          pricing_note: string | null
+          published: boolean
+          service_id: string | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          faqs?: Json
+          full_description?: string | null
+          id?: string
+          images?: Json
+          included_tasks?: Json
+          meta_description?: string | null
+          meta_title?: string | null
+          pricing_note?: string | null
+          published?: boolean
+          service_id?: string | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          faqs?: Json
+          full_description?: string | null
+          id?: string
+          images?: Json
+          included_tasks?: Json
+          meta_description?: string | null
+          meta_title?: string | null
+          pricing_note?: string | null
+          published?: boolean
+          service_id?: string | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_pages_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_pricing_formulas: {
         Row: {
           base_hourly_rate: number | null
@@ -3175,6 +3344,45 @@ export type Database = {
           is_active?: boolean | null
           service_type?: string
           sub_service_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string
+          features: Json
+          icon: string | null
+          id: string
+          published: boolean
+          short_description: string | null
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          features?: Json
+          icon?: string | null
+          id?: string
+          published?: boolean
+          short_description?: string | null
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          features?: Json
+          icon?: string | null
+          id?: string
+          published?: boolean
+          short_description?: string | null
+          slug?: string
+          sort_order?: number
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -3225,6 +3433,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      site_settings: {
+        Row: {
+          address_area: string | null
+          address_city: string | null
+          address_country: string | null
+          address_postcode: string | null
+          address_region: string | null
+          address_street: string | null
+          business_name: string
+          default_og_image: string | null
+          email: string | null
+          facebook_url: string | null
+          google_business_url: string | null
+          hours_note: string | null
+          id: string
+          instagram_url: string | null
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_area?: string | null
+          address_city?: string | null
+          address_country?: string | null
+          address_postcode?: string | null
+          address_region?: string | null
+          address_street?: string | null
+          business_name?: string
+          default_og_image?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          google_business_url?: string | null
+          hours_note?: string | null
+          id?: string
+          instagram_url?: string | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_area?: string | null
+          address_city?: string | null
+          address_country?: string | null
+          address_postcode?: string | null
+          address_region?: string | null
+          address_street?: string | null
+          business_name?: string
+          default_og_image?: string | null
+          email?: string | null
+          facebook_url?: string | null
+          google_business_url?: string | null
+          hours_note?: string | null
+          id?: string
+          instagram_url?: string | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       sms_conversations: {
         Row: {
@@ -3529,12 +3803,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3558,11 +3832,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3583,11 +3857,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3608,11 +3882,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3625,11 +3899,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
