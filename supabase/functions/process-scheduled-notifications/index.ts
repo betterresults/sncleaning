@@ -107,7 +107,7 @@ serve(async (req: Request) => {
         }
 
         // Check if booking is still active (not cancelled)
-        if (bookingData.booking_status === 'cancelled') {
+        if ((bookingData.booking_status || '').toLowerCase().includes('cancel')) {
           console.log(`Booking ${bookingData.id} is cancelled, skipping notification`);
           await markNotificationCancelled(supabase, notification.id, 'Booking cancelled');
           continue;
@@ -139,7 +139,7 @@ serve(async (req: Request) => {
           // Pin to UTC — bookings.date_time stores London wall-clock digits under a
           // hardcoded +00:00 suffix, so formatting in UTC preserves the intended UK time.
           booking_date: bookingData.date_time ? new Date(bookingData.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'TBC',
-          booking_time: bookingData.time_only || (bookingData.date_time ? new Date(bookingData.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) : 'TBC'),
+          booking_time: bookingData.date_time ? new Date(bookingData.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) : (bookingData.time_only || 'TBC'),
           service_type: bookingData.service_type || 'Cleaning Service',
           cleaning_type: bookingData.cleaning_type || '',
           address: bookingData.address || 'Address not specified',

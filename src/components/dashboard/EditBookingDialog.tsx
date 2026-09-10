@@ -373,6 +373,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         frequently = '';
       }
 
+      const isoDateTime = convertToISOString(formData.dateTime);
+
       // Build update object with sales agent assignment if changed
       const updateData: Record<string, any> = {
         first_name: formData.firstName,
@@ -381,7 +383,9 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         phone_number: formData.phoneNumber,
         address: formData.address,
         postcode: formData.postcode,
-        date_time: convertToISOString(formData.dateTime),
+        date_time: isoDateTime,
+        date_only: isoDateTime.slice(0, 10) || null,
+        time_only: isoDateTime.slice(11, 19) || null,
         total_hours: formData.totalHours,
         total_cost: formData.totalCost,
         discount: formData.discount,
@@ -499,26 +503,40 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         duration: 3000,
       });
 
-      // Determine if significant changes were made that warrant an email
-      const hasSignificantChanges = 
-        formData.dateTime !== formatDateTimeForInput(booking.date_time) || // Date/time changed
-        formData.address !== (booking.address || '') || // Address changed
-        formData.bookingStatus !== (booking.booking_status || 'Confirmed') || // Status changed
-        Math.abs((formData.totalCost || 0) - (booking.total_cost || 0)) > 0.01; // Cost changed
+      const dateChanged = formData.dateTime !== formatDateTimeForInput(booking.date_time);
+      const statusChanged = formData.bookingStatus !== (booking.booking_status || 'Confirmed');
+      const statusLower = (formData.bookingStatus || '').toLowerCase();
+      // UI stores Completed/Cancelled; do not send the date-changed template for
+      // address/cost-only edits, and do not treat those as a reschedule.
+      const shouldPromptCompletion = statusChanged && statusLower === 'completed';
+      const shouldPromptCancellation = statusChanged && statusLower === 'cancelled';
+      const shouldPromptDateChange = dateChanged && !shouldPromptCompletion && !shouldPromptCancellation;
 
-      if (hasSignificantChanges) {
-        // Prompt for email notification
-        const emailType = formData.bookingStatus === 'completed' ? 'booking_completion' :
-          formData.bookingStatus !== (booking.booking_status || 'Confirmed') ? 'booking_status_update' :
-          'booking_status_update'; // Default for other significant changes
-
+      if (shouldPromptCompletion) {
         promptForEmail({
           bookingId: booking.id,
-          emailType,
+          emailType: 'booking_completion',
           customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+          promptTitle: 'Send completion email?',
+          promptDescription: 'The booking has been marked completed. Would you like to email the customer a completion notice?',
+        });
+      } else if (shouldPromptCancellation) {
+        promptForEmail({
+          bookingId: booking.id,
+          emailType: 'booking_cancelled',
+          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+          promptTitle: 'Send cancellation email?',
+          promptDescription: 'The booking has been cancelled. Would you like to email the customer a cancellation notice?',
+        });
+      } else if (shouldPromptDateChange) {
+        promptForEmail({
+          bookingId: booking.id,
+          emailType: 'booking_rescheduled',
+          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+          promptTitle: 'Send date change email?',
+          promptDescription: 'The booking date and time have been changed. Would you like to email the customer that their appointment has been moved, including the new date and time?',
         });
       } else {
-        // No significant changes, just close
         onBookingUpdated();
         onOpenChange(false);
       }
@@ -1222,8 +1240,8 @@ const EditBookingDialog = ({ booking, open, onOpenChange, onBookingUpdated }: Ed
         onOpenChange={setShowConfirmDialog}
         onConfirm={handleConfirmEmail}
         onCancel={handleCancelEmail}
-        title="Send Booking Update Email?"
-        description="The booking has been updated successfully. Would you like to send an email notification to the customer about these changes?"
+        title={pendingEmailOptions?.promptTitle || 'Send Booking Update Email?'}
+        description={pendingEmailOptions?.promptDescription || 'The booking has been updated successfully. Would you like to send an email notification to the customer about these changes?'}
         customerName={pendingEmailOptions?.customerName}
         emailType={pendingEmailOptions?.emailType}
       />

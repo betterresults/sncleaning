@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Mail, Send } from 'lucide-react';
-import { useManualEmailNotification } from '@/hooks/useManualEmailNotification';
+import { useManualEmailNotification, type BookingEmailType } from '@/hooks/useManualEmailNotification';
 import { useToast } from '@/hooks/use-toast';
 
 interface AdminEmailControlsProps {
@@ -17,13 +17,13 @@ export function AdminEmailControls({
   customerName = 'Customer',
   customerEmail 
 }: AdminEmailControlsProps) {
-  const [selectedEmailType, setSelectedEmailType] = useState<string>('');
+  const [selectedEmailType, setSelectedEmailType] = useState<BookingEmailType | ''>('');
   const { sendManualEmail, isLoading } = useManualEmailNotification();
   const { toast } = useToast();
 
   const emailTypes = [
     { value: 'booking_confirmation', label: 'Booking Confirmation' },
-    { value: 'booking_status_update', label: 'Status Update' },
+    { value: 'booking_rescheduled', label: 'Date changed' },
     { value: 'booking_completion', label: 'Completion Notice' },
     { value: 'payment_reminder', label: 'Payment Reminder' },
   ];
@@ -49,7 +49,7 @@ export function AdminEmailControls({
 
     await sendManualEmail({
       bookingId,
-      emailType: selectedEmailType as any,
+      emailType: selectedEmailType,
       customerName,
     });
 
@@ -72,7 +72,7 @@ export function AdminEmailControls({
         </div>
         
         <div>
-          <Select value={selectedEmailType} onValueChange={setSelectedEmailType}>
+          <Select value={selectedEmailType} onValueChange={(value) => setSelectedEmailType(value as BookingEmailType)}>
             <SelectTrigger>
               <SelectValue placeholder="Select email template" />
             </SelectTrigger>

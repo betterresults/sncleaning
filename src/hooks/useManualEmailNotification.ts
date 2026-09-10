@@ -2,11 +2,21 @@ import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export type BookingEmailType =
+  | 'booking_confirmation'
+  | 'booking_status_update'
+  | 'booking_completion'
+  | 'payment_reminder'
+  | 'booking_rescheduled'
+  | 'booking_cancelled';
+
 export interface EmailNotificationOptions {
   bookingId: number;
-  emailType: 'booking_confirmation' | 'booking_status_update' | 'booking_completion' | 'payment_reminder';
+  emailType: BookingEmailType;
   customerName?: string;
   additionalVariables?: Record<string, string>;
+  promptTitle?: string;
+  promptDescription?: string;
 }
 
 export function useManualEmailNotification() {
