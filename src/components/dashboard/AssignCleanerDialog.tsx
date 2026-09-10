@@ -33,6 +33,8 @@ interface Cleaner {
   full_name: string;
   presentage_rate: number;
   hourly_rate: number;
+  default_payment_type?: 'hourly' | 'percentage' | 'fixed' | null;
+  fixed_amount?: number | null;
   offersService: boolean;
   coversArea: boolean;
   coversTime: boolean;
@@ -69,7 +71,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
   const [customHourlyRate, setCustomHourlyRate] = useState<string>('');
   const [customHours, setCustomHours] = useState<string>('');
   const [customPercentageRate, setCustomPercentageRate] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'hourly' | 'percentage'>('percentage');
+  const [customFixedAmount, setCustomFixedAmount] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<'hourly' | 'percentage' | 'fixed'>('percentage');
   
   // Additional cleaners state
   const [subCleaners, setSubCleaners] = useState<BookingCleaner[]>([]);
@@ -153,6 +156,8 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         full_name: c.full_name || `${c.first_name} ${c.last_name}`,
         presentage_rate: c.presentage_rate || 0,
         hourly_rate: c.hourly_rate || 0,
+        default_payment_type: c.default_payment_type || 'hourly',
+        fixed_amount: c.fixed_amount || 0,
         offersService: c.offersService,
         coversArea: c.coversArea,
         coversTime: c.coversTime,
@@ -180,6 +185,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
       if (cleaner) {
         setCustomHourlyRate(cleaner.hourly_rate?.toString() || '');
         setCustomPercentageRate(cleaner.presentage_rate?.toString() || '');
+        setCustomFixedAmount(cleaner.fixed_amount?.toString() || '');
       }
     } else {
       setCustomHourlyRate('');
@@ -212,6 +218,11 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         if (hours > 0 && hourlyRate > 0) {
           calculatedPay = hours * hourlyRate;
         }
+      } else if (paymentMethod === 'fixed') {
+        const fixedAmount = parseFloat(customFixedAmount) || 0;
+        if (fixedAmount > 0) {
+          calculatedPay = fixedAmount;
+        }
       } else {
         const percentageRate = parseFloat(customPercentageRate) || 0;
         if (bookingTotalCost > 0 && percentageRate > 0) {
@@ -223,7 +234,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     } else {
       setCalculatedCleanerPay(null);
     }
-  }, [selectedCleaner, bookingTotalCost, paymentMethod, customHours, customHourlyRate, customPercentageRate]);
+  }, [selectedCleaner, bookingTotalCost, paymentMethod, customHours, customHourlyRate, customPercentageRate, customFixedAmount]);
 
   const calculateNewCleanerPay = (): number => {
     if (newPaymentMethod === 'hourly') {
@@ -399,7 +410,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
         bookingTotalCost,
         paymentMethod === 'hourly' ? parseFloat(customHourlyRate) : undefined,
         paymentMethod === 'percentage' ? parseFloat(customPercentageRate) : undefined,
-        undefined,
+        paymentMethod === 'fixed' ? parseFloat(customFixedAmount) : undefined,
         parseFloat(customHours) || undefined
       );
 
@@ -431,6 +442,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
     setCustomHourlyRate('');
     setCustomHours('');
     setCustomPercentageRate('');
+    setCustomFixedAmount('');
     setShowAddForm(false);
     setNewCleanerId('');
     setSubCleaners([]);
@@ -475,7 +487,16 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 Area coverage couldn't be verified for this postcode — cleaners with restricted areas may still be shown.
               </p>
             )}
-            <Select value={selectedCleaner} onValueChange={setSelectedCleaner}>
+            <Select
+              value={selectedCleaner}
+              onValueChange={(id) => {
+                setSelectedCleaner(id);
+                const cleaner = cleaners.find((c) => c.id.toString() === id);
+                if (cleaner?.default_payment_type === 'hourly' || cleaner?.default_payment_type === 'percentage' || cleaner?.default_payment_type === 'fixed') {
+                  setPaymentMethod(cleaner.default_payment_type);
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Choose a cleaner" />
               </SelectTrigger>
@@ -536,7 +557,7 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
             <div className="bg-primary/5 rounded-lg p-4 space-y-3">
               <RadioGroup 
                 value={paymentMethod} 
-                onValueChange={(v) => setPaymentMethod(v as 'hourly' | 'percentage')}
+                onValueChange={(v) => setPaymentMethod(v as 'hourly' | 'percentage' | 'fixed')}
                 className="flex gap-4"
               >
                 <div className="flex items-center space-x-2">
@@ -546,6 +567,10 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="hourly" id="main-hourly" />
                   <Label htmlFor="main-hourly" className="text-sm">Hourly</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="fixed" id="main-fixed" />
+                  <Label htmlFor="main-fixed" className="text-sm">Fixed</Label>
                 </div>
               </RadioGroup>
 
@@ -573,6 +598,18 @@ const AssignCleanerDialog: React.FC<AssignCleanerDialogProps> = ({
                       placeholder="Rate"
                     />
                   </div>
+                </div>
+              ) : paymentMethod === 'fixed' ? (
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Fixed amount (£)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={customFixedAmount}
+                    onChange={(e) => setCustomFixedAmount(e.target.value)}
+                    placeholder="Amount"
+                  />
                 </div>
               ) : (
                 <div className="space-y-2">

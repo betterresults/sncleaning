@@ -8,6 +8,8 @@ export interface CleanerData {
   postcode: string;
   hourly_rate: number;
   presentage_rate: number;
+  default_payment_type?: 'hourly' | 'percentage' | 'fixed';
+  fixed_amount?: number | null;
   notes: string;
   years: number;
   rating: number;
@@ -29,6 +31,8 @@ export interface NewCleanerInput {
   postcode: string;
   hourly_rate: number;
   presentage_rate: number;
+  default_payment_type?: 'hourly' | 'percentage' | 'fixed';
+  fixed_amount?: number | null;
   notes: string;
   years: number;
   DBS: string;

@@ -43,7 +43,7 @@ const getServices = (isAdminView: boolean = false) => [
     id: 'deep-cleaning',
     title: 'Deep Cleaning',
     icon: Droplets,
-    available: isAdminView,
+    available: true,
     description: 'Thorough cleaning for all areas'
   },
   {

@@ -115,6 +115,8 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
     }
   };
   const calculations = useDomesticHardcodedCalculations(data);
+  const hoursPerVisit = calculations.totalHours || 0;
+  const canOfferEquipment = hoursPerVisit >= 6;
   const recommendedHours = calculations.baseTime;
   const [searchParams] = useSearchParams();
   const showDebug = searchParams.get('debug') === '1';
@@ -131,6 +133,16 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
   };
   
   const canContinue = !validationErrors.propertyType && !validationErrors.bedrooms && !validationErrors.bathrooms && !validationErrors.serviceFrequency && !validationErrors.equipmentArrangement && !validationErrors.equipmentStorageConfirmed;
+
+  useEffect(() => {
+    if (!canOfferEquipment && data.cleaningProducts.includes('equipment')) {
+      onUpdate({
+        cleaningProducts: data.cleaningProducts.filter((item) => item !== 'equipment'),
+        equipmentArrangement: null,
+        equipmentStorageConfirmed: false,
+      });
+    }
+  }, [canOfferEquipment, data.cleaningProducts, onUpdate]);
   
   const [hasInitialized, setHasInitialized] = React.useState(false);
   React.useEffect(() => {
@@ -683,7 +695,7 @@ export const DomesticPropertyStep: React.FC<DomesticPropertyStepProps> = ({
           </p>
           
           <div className="grid grid-cols-3 gap-4">
-            {cleaningSuppliesConfigs.map((supply: any) => {
+            {cleaningSuppliesConfigs.filter((supply: any) => supply.option !== 'equipment' || canOfferEquipment).map((supply: any) => {
           const isSelected = data.cleaningProducts.includes(supply.option);
           const IconComponent = (LucideIcons as any)[supply.icon];
           return <button key={supply.option} className={`group relative h-24 rounded-2xl border transition-all duration-300 ${isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'}`} onClick={() => {

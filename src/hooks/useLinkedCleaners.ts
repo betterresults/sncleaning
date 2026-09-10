@@ -18,6 +18,8 @@ export interface LinkedCleaner {
   full_name: string;
   hourly_rate: number | null;
   presentage_rate: number | null;
+  default_payment_type?: 'hourly' | 'percentage' | 'fixed' | null;
+  fixed_amount?: number | null;
   /** Configured service_type keys for this cleaner. Empty = no restriction configured (offers everything). */
   serviceTypeKeys: string[];
   /** Whether this cleaner is qualified for the `serviceType` passed into the hook (always true if none was passed). */
@@ -123,6 +125,8 @@ export const useLinkedCleaners = (
           full_name: c.full_name,
           hourly_rate: c.hourly_rate,
           presentage_rate: c.presentage_rate,
+          default_payment_type: c.default_payment_type,
+          fixed_amount: c.fixed_amount,
           serviceTypeKeys,
           offersService: cleanerOffersService(serviceTypeKeys, serviceType),
           coverageAreaIds,

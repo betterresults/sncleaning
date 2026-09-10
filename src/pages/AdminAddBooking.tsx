@@ -28,6 +28,8 @@ const AdminAddBooking = () => {
     } else if (serviceType === 'end-of-tenancy') {
       // Navigate to dedicated admin End of Tenancy booking page
       navigate('/admin/end-of-tenancy');
+    } else if (serviceType === 'deep-cleaning') {
+      navigate('/admin/deep-cleaning');
     } else {
       // For all other services, show the form inline
       setSelectedService(serviceType);

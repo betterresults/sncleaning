@@ -42,6 +42,7 @@ import AirbnbBooking from '@/pages/AirbnbBooking';
 import DomesticBooking from '@/pages/DomesticBooking';
 import CarpetBooking from '@/pages/CarpetBooking';
 import EndOfTenancyBooking from '@/pages/EndOfTenancyBooking';
+import DeepCleaningBooking from '@/pages/DeepCleaningBooking';
 import AdminDomesticFormSettings from '@/pages/AdminDomesticFormSettings';
 import LinenOrder from '@/pages/LinenOrder';
 import BookingConfirmation from '@/pages/BookingConfirmation';
@@ -114,6 +115,7 @@ export function AppRoutes() {
       <Route path="/carpet-cleaning" element={<CarpetBooking />} />
       <Route path="/end-of-tenancy" element={<EndOfTenancyBooking />} />
       <Route path="/end-of-tenancy-cleaning" element={<EndOfTenancyBooking />} />
+      <Route path="/deep-cleaning" element={<DeepCleaningBooking />} />
       <Route path="/coverage" element={<CheckCoverage />} />
       <Route path="/photos/:folderName" element={<CustomerPhotos />} />
 
@@ -143,6 +145,7 @@ export function AppRoutes() {
         {shellRoute('/admin/domestic', <DomesticBooking />, 'Domestic Booking')}
         {shellRoute('/admin/carpet', <CarpetBooking />, 'Carpet Booking')}
         {shellRoute('/admin/end-of-tenancy', <EndOfTenancyBooking />, 'End of Tenancy')}
+        {shellRoute('/admin/deep-cleaning', <DeepCleaningBooking />, 'Deep Cleaning')}
         {shellRoute('/admin/linen', <LinenOrder />, 'Linen Order')}
       </Route>
 
@@ -200,6 +203,7 @@ export function AppRoutes() {
         {shellRoute('/customer/airbnb-form', <AirbnbBooking />, 'Airbnb Booking')}
         {shellRoute('/customer/domestic-form', <DomesticBooking />, 'Domestic Booking')}
         {shellRoute('/customer/end-of-tenancy-form', <EndOfTenancyBooking />, 'End of Tenancy')}
+        {shellRoute('/customer/deep-cleaning-form', <DeepCleaningBooking />, 'Deep Cleaning')}
         {shellRoute('/customer/carpet-form', <CarpetBooking />, 'Carpet Cleaning')}
         {shellRoute('/customer/linen-form', <LinenOrder />, 'Linen Order')}
       </Route>

@@ -79,6 +79,11 @@ const PublicServiceSelection = () => {
       navigate(`/end-of-tenancy?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
       return;
     }
+
+    if (serviceType === 'deep-cleaning') {
+      navigate(`/deep-cleaning?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
+      return;
+    }
     
     // For other services, redirect to auth page to sign up/login first
     navigate(`/auth?service=${serviceType}&postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);

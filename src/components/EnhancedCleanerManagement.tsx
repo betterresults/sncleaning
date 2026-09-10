@@ -51,6 +51,8 @@ const EnhancedCleanerManagement = () => {
       postcode: cleaner.postcode,
       hourly_rate: cleaner.hourly_rate,
       presentage_rate: cleaner.presentage_rate,
+      default_payment_type: cleaner.default_payment_type || 'hourly',
+      fixed_amount: cleaner.fixed_amount ?? 0,
       notes: cleaner.notes,
       years: cleaner.years,
       DBS: cleaner.DBS,
@@ -96,6 +98,8 @@ const EnhancedCleanerManagement = () => {
       postcode: string;
       hourly_rate: number;
       presentage_rate: number;
+      default_payment_type?: 'hourly' | 'percentage' | 'fixed';
+      fixed_amount?: number | null;
       notes: string;
       years: number;
       DBS: string;

@@ -384,6 +384,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
     if (path.includes('/domestic')) return 'domestic';
     if (path.includes('/commercial')) return 'commercial';
     if (path.includes('/carpet')) return 'carpet';
+    if (path.includes('/deep-cleaning')) return 'deep-cleaning';
     if (path.includes('/end-of-tenancy')) return 'end-of-tenancy';
     return 'airbnb'; // default
   }, [location.pathname]);
@@ -997,12 +998,15 @@ useEffect(() => {
                 case 'airbnb': return 'Air BnB';
                 case 'carpet': return 'Carpet Cleaning';
                 case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                case 'deep-cleaning': return 'Deep Cleaning';
                 case 'commercial': return 'Commercial';
                 default: return subServiceType;
               }
             })(),
             cleaningType: subServiceType === 'end-of-tenancy' 
               ? 'End of Tenancy' 
+              : subServiceType === 'deep-cleaning'
+              ? 'Deep Cleaning'
               : subServiceType === 'carpet'
               ? 'Carpet Cleaning'
               : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
@@ -1411,12 +1415,15 @@ useEffect(() => {
               case 'airbnb': return 'Air BnB';
               case 'carpet': return 'Carpet Cleaning';
               case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+              case 'deep-cleaning': return 'Deep Cleaning';
               case 'commercial': return 'Commercial';
               default: return subServiceType;
             }
           })(),
           cleaningType: subServiceType === 'end-of-tenancy'
             ? 'End of Tenancy'
+            : subServiceType === 'deep-cleaning'
+            ? 'Deep Cleaning'
             : subServiceType === 'carpet'
               ? 'Carpet Cleaning'
               : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
@@ -1578,12 +1585,15 @@ useEffect(() => {
                 case 'airbnb': return 'Air BnB';
                 case 'carpet': return 'Carpet Cleaning';
                 case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                case 'deep-cleaning': return 'Deep Cleaning';
                 case 'commercial': return 'Commercial';
                 default: return subServiceType;
               }
             })(),
             cleaningType: subServiceType === 'end-of-tenancy' 
               ? 'End of Tenancy' 
+              : subServiceType === 'deep-cleaning'
+              ? 'Deep Cleaning'
               : subServiceType === 'carpet'
               ? 'Carpet Cleaning'
               : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',
@@ -1738,12 +1748,15 @@ useEffect(() => {
                 case 'airbnb': return 'Air BnB';
                 case 'carpet': return 'Carpet Cleaning';
                 case 'end-of-tenancy': return 'End of Tenancy Cleaning';
+                case 'deep-cleaning': return 'Deep Cleaning';
                 case 'commercial': return 'Commercial';
                 default: return subServiceType;
               }
             })(),
             cleaningType: subServiceType === 'end-of-tenancy' 
               ? 'End of Tenancy' 
+              : subServiceType === 'deep-cleaning'
+              ? 'Deep Cleaning'
               : subServiceType === 'carpet'
               ? 'Carpet Cleaning'
               : (data.wantsFirstDeepClean || data.serviceFrequency === 'onetime') ? 'Deep Cleaning' : 'Standard Cleaning',

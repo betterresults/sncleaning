@@ -24,6 +24,18 @@ export interface AssignableCleanerCatalogEntry {
   coversArea: boolean;
 }
 
+const normalizeHour = (hour: number): number => ((hour % 24) + 24) % 24;
+
+/** Clock label for a whole hour, e.g. 15 → "3:00 PM". */
+export const formatHourToClockLabel = (hour: number): string => {
+  const normalized = normalizeHour(hour);
+  if (normalized === 0) return '12:00 AM';
+  if (normalized < 12) return `${normalized}:00 AM`;
+  if (normalized === 12) return '12:00 PM';
+  return `${normalized - 12}:00 PM`;
+};
+
+/** Parses the start of "9:00 AM" or "9:00 AM – 10:00 AM". */
 export const parseSlotLabelToHour = (label: string): number | null => {
   const timeMatch = label.match(/(\d+):00\s*(AM|PM)/i);
   if (!timeMatch) return null;
@@ -34,10 +46,19 @@ export const parseSlotLabelToHour = (label: string): number | null => {
   return hour;
 };
 
+/** Customer-facing 1-hour arrival window, e.g. 11 → "11:00 AM – 12:00 PM". */
 export const formatHourToSlotLabel = (hour: number): string => {
-  if (hour < 12) return `${hour}:00 AM`;
-  if (hour === 12) return '12:00 PM';
-  return `${hour - 12}:00 PM`;
+  return `${formatHourToClockLabel(hour)} – ${formatHourToClockLabel(hour + 1)}`;
+};
+
+/** Confirmation emails: `time_only` null means the customer chose Flexible. */
+export const formatTimeOnlyToArrivalSlot = (
+  timeOnly: string | null | undefined
+): string => {
+  if (!timeOnly) return 'Flexible';
+  const hour = parseInt(String(timeOnly).split(':')[0], 10);
+  if (Number.isNaN(hour)) return 'Flexible';
+  return formatHourToSlotLabel(hour);
 };
 
 export const buildBookingDateTimeStr = (date: Date, slotLabel: string): string | null => {

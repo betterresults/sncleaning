@@ -275,7 +275,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
           {!isFlexible && (
             <>
               <p className="text-sm text-muted-foreground mb-3">
-                Select your preferred arrival time. Only times with an available cleaner are shown.
+                Select your preferred 1-hour arrival window. Only times with an available cleaner are shown.
               </p>
               {slotsLoading ? (
                 <div className="flex items-center gap-2 text-muted-foreground py-4">

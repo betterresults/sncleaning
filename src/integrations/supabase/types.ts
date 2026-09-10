@@ -1262,6 +1262,8 @@ export type Database = {
           photo: string | null
           postcode: string | null
           presentage_rate: number | null
+          default_payment_type: string
+          fixed_amount: number | null
           rating: number | null
           reviews: number | null
           years: number | null
@@ -1285,6 +1287,8 @@ export type Database = {
           photo?: string | null
           postcode?: string | null
           presentage_rate?: number | null
+          default_payment_type?: string
+          fixed_amount?: number | null
           rating?: number | null
           reviews?: number | null
           years?: number | null
@@ -1308,6 +1312,8 @@ export type Database = {
           photo?: string | null
           postcode?: string | null
           presentage_rate?: number | null
+          default_payment_type?: string
+          fixed_amount?: number | null
           rating?: number | null
           reviews?: number | null
           years?: number | null
@@ -3057,6 +3063,9 @@ export type Database = {
           address: string | null
           cleaner: number | null
           cleaner_rate: number | null
+          cleaner_pay_type: string
+          cleaner_percentage: number | null
+          cleaner_fixed_amount: number | null
           cleaning_type: string | null
           confirmed: boolean
           cost_per_hour: number | null
@@ -3083,6 +3092,9 @@ export type Database = {
           address?: string | null
           cleaner?: number | null
           cleaner_rate?: number | null
+          cleaner_pay_type?: string
+          cleaner_percentage?: number | null
+          cleaner_fixed_amount?: number | null
           cleaning_type?: string | null
           confirmed?: boolean
           cost_per_hour?: number | null
@@ -3109,6 +3121,9 @@ export type Database = {
           address?: string | null
           cleaner?: number | null
           cleaner_rate?: number | null
+          cleaner_pay_type?: string
+          cleaner_percentage?: number | null
+          cleaner_fixed_amount?: number | null
           cleaning_type?: string | null
           confirmed?: boolean
           cost_per_hour?: number | null
@@ -3685,7 +3700,9 @@ export type Database = {
         Returns: {
           calendar_busy_blocks: Json
           coverage_area_ids: string[]
+          default_payment_type: string
           first_name: string
+          fixed_amount: number
           full_name: string
           has_equipment: boolean
           hourly_rate: number

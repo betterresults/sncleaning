@@ -83,6 +83,27 @@ export const CleanerEditPanel: React.FC<CleanerEditPanelProps> = ({
         />
       </div>
       <div>
+        <Label className="text-xs font-medium text-muted-foreground">Default pay type</Label>
+        <Select
+          value={editData.default_payment_type || 'hourly'}
+          onValueChange={(value) =>
+            onEditDataChange({
+              ...editData,
+              default_payment_type: value as 'hourly' | 'percentage' | 'fixed',
+            })
+          }
+        >
+          <SelectTrigger className="mt-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="hourly">Hourly</SelectItem>
+            <SelectItem value="percentage">Percentage</SelectItem>
+            <SelectItem value="fixed">Fixed</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
         <Label className="text-xs font-medium text-muted-foreground">Hourly Rate (£)</Label>
         <Input
           type="number"
@@ -100,6 +121,16 @@ export const CleanerEditPanel: React.FC<CleanerEditPanelProps> = ({
           max="100"
           value={editData.presentage_rate || ''}
           onChange={(e) => onEditDataChange({ ...editData, presentage_rate: Number(e.target.value) })}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label className="text-xs font-medium text-muted-foreground">Fixed amount (£)</Label>
+        <Input
+          type="number"
+          step="0.01"
+          value={editData.fixed_amount || ''}
+          onChange={(e) => onEditDataChange({ ...editData, fixed_amount: Number(e.target.value) })}
           className="mt-1"
         />
       </div>

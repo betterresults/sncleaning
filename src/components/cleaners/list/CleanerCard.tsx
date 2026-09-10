@@ -9,8 +9,6 @@ import {
   Mail,
   MapPin,
   DollarSign,
-  Percent,
-  Sparkles,
   Clock,
 } from 'lucide-react';
 import { CleanerAccountActions } from '@/components/admin/CleanerAccountActions';
@@ -115,11 +113,13 @@ export const CleanerCard: React.FC<CleanerCardProps> = ({
             </div>
             <div className="flex items-center gap-2 text-primary font-medium">
               <DollarSign className="h-4 w-4" />
-              <span>£{cleaner.hourly_rate || 0}/hour</span>
-            </div>
-            <div className="flex items-center gap-2 text-primary font-medium">
-              <Percent className="h-4 w-4" />
-              <span>{cleaner.presentage_rate || 0}% rate</span>
+              <span>
+                {(cleaner.default_payment_type || 'hourly') === 'fixed'
+                  ? `£${cleaner.fixed_amount || 0} fixed`
+                  : (cleaner.default_payment_type || 'hourly') === 'percentage'
+                    ? `${cleaner.presentage_rate || 0}% of job`
+                    : `£${cleaner.hourly_rate || 0}/hour`}
+              </span>
             </div>
             <div className="text-muted-foreground flex items-center gap-2 flex-wrap">
               <span>Experience: {cleaner.years || 0} years</span>
