@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { EndOfTenancyBookingData } from './EndOfTenancyBookingForm';
+import { EndOfTenancyBookingData, EndOfTenancyFormVariant } from './EndOfTenancyBookingForm';
 import { Home, Clock, Calendar, ChevronDown, ChevronUp, Percent, Pencil } from 'lucide-react';
 import { useEndOfTenancyCalculations } from '@/hooks/useEndOfTenancyCalculations';
+import { useDeepCleaningCalculations } from '@/hooks/useDeepCleaningCalculations';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +14,7 @@ interface EndOfTenancySummaryProps {
   isAdminMode?: boolean;
   isFromQuoteLink?: boolean;
   onUpdate?: (updates: Partial<EndOfTenancyBookingData>) => void;
+  variant?: EndOfTenancyFormVariant;
 }
 
 const PROPERTY_CONDITION_LABELS: Record<string, string> = {
@@ -33,6 +35,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   isAdminMode = false,
   isFromQuoteLink = false,
   onUpdate,
+  variant = 'end-of-tenancy',
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSteamExpanded, setIsSteamExpanded] = useState(false);
@@ -41,8 +44,12 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
   const [manualDiscount, setManualDiscount] = useState<string>('');
   const [waiveShortNotice, setWaiveShortNotice] = useState(false);
 
-  // Use the calculation hook with database prices - but skip for quote links which use pre-calculated prices
-  const calculations = useEndOfTenancyCalculations(data, false);
+  const isDeepCleaning = variant === 'deep-cleaning';
+  const calculations = useEndOfTenancyCalculations(
+    isDeepCleaning ? { ...data, furnitureStatus: 'furnished' } : data,
+    false
+  );
+  const deepCleaningCalc = useDeepCleaningCalculations(data);
   
   // For quote links, preserve the exact quoted price without recalculation
   const quotedTotal = isFromQuoteLink ? (data.totalCost || 0) : null;
@@ -63,7 +70,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       return total;
     }
     
-    let total = calculations.totalCost;
+    let total = isDeepCleaning ? deepCleaningCalc.totalCost : calculations.totalCost;
     if (waiveShortNotice) {
       total -= calculations.shortNoticeCharge;
     }
@@ -80,11 +87,12 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
     // For quote links, don't recalculate or sync - preserve the quoted price
     if (isFromQuoteLink) return;
     
-    if (onUpdate && !calculations.isLoading) {
+    if (onUpdate && !(isDeepCleaning ? deepCleaningCalc.isLoading : calculations.isLoading)) {
       const displayTotal = getDisplayTotal();
       // Round to 2 decimal places to avoid floating point issues
       const roundedTotal = Math.round(displayTotal * 100) / 100;
-      const roundedHours = Math.round(calculations.estimatedHours * 100) / 100;
+      const hoursSource = isDeepCleaning ? deepCleaningCalc.estimatedHours : calculations.estimatedHours;
+      const roundedHours = Math.round(hoursSource * 100) / 100;
       
       // Only update if the values are actually different (with small tolerance for floating point)
       const totalDiff = Math.abs(roundedTotal - (data.totalCost || 0));
@@ -97,7 +105,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
         });
       }
     }
-  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, manualTotalCost, manualDiscount, waiveShortNotice, isFromQuoteLink]);
+  }, [calculations.totalCost, calculations.estimatedHours, calculations.isLoading, deepCleaningCalc.totalCost, deepCleaningCalc.estimatedHours, deepCleaningCalc.isLoading, isDeepCleaning, manualTotalCost, manualDiscount, waiveShortNotice, isFromQuoteLink]);
   
   // Format property description
   const getPropertyDescription = () => {
@@ -126,15 +134,28 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
     return desc;
   };
 
-  const hasPropertyData = data.bedrooms && calculations.baseCost > 0;
+  const hasPropertyData = isDeepCleaning && data.pricingMode === 'hourly'
+    ? (data.hourlyHours || 0) > 0 || deepCleaningCalc.hourlyCost > 0
+    : Boolean(data.bedrooms && calculations.baseCost > 0);
   const totalPercentage = calculations.conditionPercentage + calculations.furniturePercentage;
 
   const renderSummaryContent = () => (
     <div className="space-y-3">
-      {/* Base Cleaning Cost */}
-      {calculations.baseCost > 0 && (
+      {isDeepCleaning && data.pricingMode === 'hourly' && deepCleaningCalc.hourlyCost > 0 && (
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">End of Tenancy Cleaning</span>
+          <span className="text-muted-foreground">
+            Deep Cleaning ({deepCleaningCalc.hourlyHours}h × £{deepCleaningCalc.hourlyRate.toFixed(2)})
+          </span>
+          <span className="text-foreground font-semibold whitespace-nowrap">
+            £{deepCleaningCalc.hourlyCost.toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {/* Base Cleaning Cost */}
+      {calculations.baseCost > 0 && data.pricingMode !== 'hourly' && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">{isDeepCleaning ? 'Deep Cleaning' : 'End of Tenancy Cleaning'}</span>
           <span className="text-foreground font-semibold whitespace-nowrap">
             £{calculations.baseCost.toFixed(2)}
           </span>
@@ -142,7 +163,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       )}
 
       {/* Property Condition with percentage */}
-      {data.propertyCondition && calculations.conditionPercentage > 0 && (
+      {data.pricingMode !== 'hourly' && data.propertyCondition && calculations.conditionPercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">
             {PROPERTY_CONDITION_LABELS[data.propertyCondition]}
@@ -154,13 +175,22 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       )}
 
       {/* Furniture Status with percentage */}
-      {data.furnitureStatus && calculations.furniturePercentage > 0 && (
+      {data.pricingMode !== 'hourly' && data.furnitureStatus && calculations.furniturePercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">
             {FURNITURE_STATUS_LABELS[data.furnitureStatus]}
           </span>
           <span className="text-foreground font-medium">
             +£{(calculations.baseCost * calculations.furniturePercentage / 100).toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {isDeepCleaning && data.pricingMode !== 'hourly' && deepCleaningCalc.occupiedSurcharge > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Occupied property (+10%)</span>
+          <span className="text-foreground font-medium">
+            +£{deepCleaningCalc.occupiedSurcharge.toFixed(2)}
           </span>
         </div>
       )}
@@ -193,6 +223,19 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
               <span className="text-foreground font-medium">{data.selectedTime}</span>
             </div>
           )}
+        </div>
+      )}
+
+      {isDeepCleaning && deepCleaningCalc.equipmentIncluded && (
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-muted-foreground">Equipment</span>
+          <span className="text-foreground font-medium">Included</span>
+        </div>
+      )}
+      {isDeepCleaning && !deepCleaningCalc.equipmentIncluded && deepCleaningCalc.equipmentCost > 0 && (
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-muted-foreground">Equipment delivery</span>
+          <span className="text-foreground font-semibold">£{deepCleaningCalc.equipmentCost.toFixed(2)}</span>
         </div>
       )}
 
@@ -327,10 +370,21 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
 
   const renderMobileContent = () => (
     <div className="space-y-3">
-      {/* Base Cleaning Cost */}
-      {calculations.baseCost > 0 && (
+      {isDeepCleaning && data.pricingMode === 'hourly' && deepCleaningCalc.hourlyCost > 0 && (
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground">End of Tenancy Cleaning</span>
+          <span className="text-muted-foreground">
+            Deep Cleaning ({deepCleaningCalc.hourlyHours}h × £{deepCleaningCalc.hourlyRate.toFixed(2)})
+          </span>
+          <span className="text-foreground font-semibold whitespace-nowrap">
+            £{deepCleaningCalc.hourlyCost.toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {/* Base Cleaning Cost */}
+      {calculations.baseCost > 0 && data.pricingMode !== 'hourly' && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">{isDeepCleaning ? 'Deep Cleaning' : 'End of Tenancy Cleaning'}</span>
           <span className="text-foreground font-semibold whitespace-nowrap">
             £{calculations.baseCost.toFixed(2)}
           </span>
@@ -338,7 +392,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       )}
 
       {/* Property Condition adjustment */}
-      {data.propertyCondition && calculations.conditionPercentage > 0 && (
+      {data.pricingMode !== 'hourly' && data.propertyCondition && calculations.conditionPercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground text-sm">
             {PROPERTY_CONDITION_LABELS[data.propertyCondition]}
@@ -350,13 +404,22 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
       )}
 
       {/* Furniture Status adjustment */}
-      {data.furnitureStatus && calculations.furniturePercentage > 0 && (
+      {data.pricingMode !== 'hourly' && data.furnitureStatus && calculations.furniturePercentage > 0 && (
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground text-sm">
             {FURNITURE_STATUS_LABELS[data.furnitureStatus]}
           </span>
           <span className="text-foreground font-medium">
             +£{(calculations.baseCost * calculations.furniturePercentage / 100).toFixed(2)}
+          </span>
+        </div>
+      )}
+
+      {isDeepCleaning && data.pricingMode !== 'hourly' && deepCleaningCalc.occupiedSurcharge > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground text-sm">Occupied property (+10%)</span>
+          <span className="text-foreground font-medium">
+            +£{deepCleaningCalc.occupiedSurcharge.toFixed(2)}
           </span>
         </div>
       )}
@@ -370,6 +433,19 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
           <span className={`font-semibold ${calculations.ovenCleaningCost < 0 ? 'text-green-600' : 'text-foreground'}`}>
             {calculations.ovenCleaningCost < 0 ? '-' : ''}£{Math.abs(calculations.ovenCleaningCost).toFixed(2)}
           </span>
+        </div>
+      )}
+
+      {isDeepCleaning && deepCleaningCalc.equipmentIncluded && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Equipment</span>
+          <span className="text-foreground font-medium">Included</span>
+        </div>
+      )}
+      {isDeepCleaning && !deepCleaningCalc.equipmentIncluded && deepCleaningCalc.equipmentCost > 0 && (
+        <div className="flex justify-between items-center">
+          <span className="text-muted-foreground">Equipment delivery</span>
+          <span className="text-foreground font-semibold">£{deepCleaningCalc.equipmentCost.toFixed(2)}</span>
         </div>
       )}
 
@@ -451,7 +527,7 @@ export const EndOfTenancySummary: React.FC<EndOfTenancySummaryProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">
-              Est. {calculations.estimatedHours.toFixed(1)} hours team work
+              Est. {(isDeepCleaning ? deepCleaningCalc.estimatedHours : calculations.estimatedHours).toFixed(1)} hours team work
             </p>
           </div>
         </div>

@@ -42,6 +42,9 @@ interface BookingSubmission {
   cleaningProducts?: string; // Convert from array: 'no', 'products', 'equipment', 'products,equipment'
   equipmentArrangement?: string | null;
   equipmentStorageConfirmed?: boolean;
+  pricingMode?: 'hourly' | 'property';
+  hourlyHours?: number;
+  wantsEquipment?: boolean;
   
   // Linens
   linensHandling?: string;
@@ -131,6 +134,23 @@ const buildAdditionalDetails = (data: BookingSubmission) => {
       arrangement: data.equipmentArrangement || null,
       storageConfirmed: data.equipmentStorageConfirmed || false
     };
+  }
+
+  if (data.wantsEquipment) {
+    details.cleaningProducts = {
+      type: 'equipment',
+      arrangement: 'oneoff',
+      storageConfirmed: false,
+      included: false,
+    };
+  }
+
+  if (data.pricingMode) {
+    details.pricingMode = data.pricingMode;
+  }
+
+  if (data.hourlyHours) {
+    details.hourlyHours = data.hourlyHours;
   }
   
   // Linens
@@ -349,8 +369,8 @@ export const useAirbnbBookingSubmit = () => {
             let time24 = bookingData.selectedTime;
             
             // Extract start time if it's a range (e.g., "9am - 10am" -> "9am")
-            if (time24.includes(' - ')) {
-              time24 = time24.split(' - ')[0].trim();
+            if (time24.includes(' - ') || time24.includes(' – ')) {
+              time24 = time24.split(/\s+[–-]\s+/)[0].trim();
             }
             
             // Handle formats like "9am", "10pm", "9:00 AM", "10:30 PM"
@@ -458,6 +478,7 @@ export const useAirbnbBookingSubmit = () => {
             'commercial': 'Commercial Cleaning',
             'carpet': 'Carpet Cleaning',
             'end-of-tenancy': 'End of Tenancy Cleaning',
+            'deep-cleaning': 'Deep Cleaning',
           };
           return serviceTypeMap[subType] || subType;
         })(),
@@ -467,6 +488,9 @@ export const useAirbnbBookingSubmit = () => {
           // End of Tenancy: always use 'End of Tenancy'
           if (subType === 'end-of-tenancy') {
             return 'End of Tenancy';
+          }
+          if (subType === 'deep-cleaning') {
+            return 'Deep Cleaning';
           }
           // Carpet Cleaning: always use 'Carpet Cleaning'
           if (subType === 'carpet') {
@@ -620,6 +644,7 @@ export const useAirbnbBookingSubmit = () => {
             'commercial': 'Commercial Cleaning',
             'carpet': 'Carpet Cleaning',
             'end-of-tenancy': 'End of Tenancy Cleaning',
+            'deep-cleaning': 'Deep Cleaning',
           };
           return serviceTypeMap[subType] || subType;
         })();

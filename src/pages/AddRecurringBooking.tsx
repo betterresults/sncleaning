@@ -34,6 +34,9 @@ interface Cleaner {
   last_name: string;
   email: string;
   hourly_rate: number;
+  presentage_rate?: number;
+  default_payment_type?: 'hourly' | 'percentage' | 'fixed';
+  fixed_amount?: number | null;
 }
 
 interface Address {
@@ -82,6 +85,7 @@ export default function AddRecurringBooking() {
     cleaner_assignment: 'unassigned',
     cleaner_rate: '',
     cleaner_percentage: '70',
+    cleaner_fixed_amount: '',
     payment_structure: 'hourly',
     cleaning_type: '',
     frequently: '',
@@ -215,7 +219,7 @@ export default function AddRecurringBooking() {
     try {
       const { data, error } = await supabase
         .from('cleaners')
-        .select('id, first_name, last_name, email, hourly_rate')
+        .select('id, first_name, last_name, email, hourly_rate, presentage_rate, default_payment_type, fixed_amount')
         .order('first_name');
 
       if (error) throw error;
@@ -327,6 +331,9 @@ export default function AddRecurringBooking() {
         ...prev,
         cleaner: cleanerId,
         cleaner_rate: cleanerRate.toString(),
+        cleaner_percentage: (cleaner?.presentage_rate ?? 70).toString(),
+        cleaner_fixed_amount: (cleaner?.fixed_amount ?? 0).toString(),
+        payment_structure: cleaner?.default_payment_type || 'hourly',
         cost_per_hour: cleanerRate.toString()
       }));
     }
@@ -391,6 +398,9 @@ export default function AddRecurringBooking() {
         address: formData.address,
         cleaner: formData.cleaner ? parseInt(formData.cleaner) : null,
         cleaner_rate: formData.cleaner_rate ? parseFloat(formData.cleaner_rate) : null,
+        cleaner_pay_type: formData.payment_structure || 'hourly',
+        cleaner_percentage: formData.cleaner_percentage ? parseFloat(formData.cleaner_percentage) : null,
+        cleaner_fixed_amount: formData.cleaner_fixed_amount ? parseFloat(formData.cleaner_fixed_amount) : null,
         cleaning_type: formData.cleaning_type,
         frequently: formData.frequently,
         days_of_the_week: formData.days_of_the_week || null,
@@ -755,6 +765,7 @@ export default function AddRecurringBooking() {
                       <SelectContent>
                         <SelectItem value="hourly">Hourly Rate</SelectItem>
                         <SelectItem value="percentage">Percentage</SelectItem>
+                        <SelectItem value="fixed">Fixed</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -767,6 +778,17 @@ export default function AddRecurringBooking() {
                         step="0.01"
                         value={formData.cleaner_rate}
                         onChange={(e) => setFormData(prev => ({ ...prev, cleaner_rate: e.target.value }))}
+                        className="mt-1 border-2 border-green-200 focus:border-green-500"
+                      />
+                    </div>
+                  ) : formData.payment_structure === 'fixed' ? (
+                    <div>
+                      <Label className="text-sm font-semibold text-gray-700">Fixed amount (£)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.cleaner_fixed_amount}
+                        onChange={(e) => setFormData(prev => ({ ...prev, cleaner_fixed_amount: e.target.value }))}
                         className="mt-1 border-2 border-green-200 focus:border-green-500"
                       />
                     </div>

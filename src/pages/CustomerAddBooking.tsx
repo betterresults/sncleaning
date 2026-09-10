@@ -46,6 +46,8 @@ const CustomerAddBooking = () => {
       navigate('/customer/domestic-form');
     } else if (serviceType === 'end-of-tenancy') {
       navigate('/customer/end-of-tenancy-form');
+    } else if (serviceType === 'deep-cleaning') {
+      navigate('/customer/deep-cleaning-form');
     } else if (serviceType === 'carpet-cleaning') {
       navigate('/customer/carpet-form');
     } else {

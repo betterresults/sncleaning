@@ -39,6 +39,11 @@ export interface EndOfTenancyBookingData {
   additionalServices: string[]; // Balcony, Garage, Waste Removal, etc.
   ovenType: string;
   
+  // Deep Cleaning only — hourly vs occupied-property (EOT + 10%)
+  pricingMode?: 'hourly' | 'property';
+  hourlyHours?: number;
+  wantsEquipment?: boolean;
+  
   // House share specific
   houseShareAreas: string[];
   
@@ -120,10 +125,21 @@ const steps = [
   { id: 4, title: 'Summary', key: 'payment', icon: <CreditCard className="w-4 h-4" /> },
 ];
 
-const EndOfTenancyBookingForm: React.FC = () => {
+export type EndOfTenancyFormVariant = 'end-of-tenancy' | 'deep-cleaning';
+
+interface EndOfTenancyBookingFormProps {
+  variant?: EndOfTenancyFormVariant;
+}
+
+const EndOfTenancyBookingForm: React.FC<EndOfTenancyBookingFormProps> = ({ variant }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const isDeepCleaning =
+    variant === 'deep-cleaning' || location.pathname.toLowerCase().includes('deep-cleaning');
+  const serviceTitle = isDeepCleaning ? 'Deep Cleaning' : 'End of Tenancy Cleaning';
+  const serviceTitleShort = isDeepCleaning ? 'Deep Cleaning' : 'End of Tenancy';
+  const quoteServiceType = isDeepCleaning ? 'Deep Cleaning' : 'End of Tenancy';
   const [currentStep, setCurrentStep] = useState(1);
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [isAdminMode, setIsAdminMode] = useState(false);
@@ -137,11 +153,14 @@ const EndOfTenancyBookingForm: React.FC = () => {
     bedrooms: '',
     bathrooms: '',
     propertyCondition: '',
-    furnitureStatus: '',
+    furnitureStatus: isDeepCleaning ? 'furnished' : '',
     kitchenLivingSeparate: null,
     additionalRooms: [],
     additionalServices: [],
     ovenType: '',
+    pricingMode: isDeepCleaning ? 'property' : undefined,
+    hourlyHours: 2,
+    wantsEquipment: false,
     houseShareAreas: [],
     blindsItems: [],
     extraServices: [],
@@ -203,7 +222,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
   }, []);
 
   // Initialize tracking using the shared hook - include all tracking functions
-  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, markQuoteEmailSent, sessionId } = useQuoteLeadTracking('End of Tenancy', {
+  const { saveQuoteLead, trackStep, trackQuoteCalculated, markCompleted, trackBookingAttempt, markQuoteEmailSent, sessionId } = useQuoteLeadTracking(quoteServiceType, {
     isAdminMode,
     adminId: adminUserId || undefined,
   });
@@ -215,11 +234,14 @@ const EndOfTenancyBookingForm: React.FC = () => {
       bedrooms: '',
       bathrooms: '',
       propertyCondition: '',
-      furnitureStatus: '',
+      furnitureStatus: isDeepCleaning ? 'furnished' : '',
       kitchenLivingSeparate: null,
       additionalRooms: [],
       additionalServices: [],
       ovenType: '',
+      pricingMode: isDeepCleaning ? 'property' : undefined,
+      hourlyHours: 2,
+      wantsEquipment: false,
       houseShareAreas: [],
       blindsItems: [],
       extraServices: [],
@@ -250,7 +272,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
     });
     setCurrentStep(1);
     setShowQuoteDialog(false);
-  }, []);
+  }, [isDeepCleaning]);
 
   // Scroll to top on mount
   useEffect(() => {
@@ -555,7 +577,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
             customData: {
               currency: 'GBP',
               value: bookingData.totalCost || undefined,
-              content_name: 'End of Tenancy',
+              content_name: quoteServiceType,
             },
           }).catch(() => {});
         }
@@ -584,6 +606,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
             onUpdate={updateBookingData}
             onNext={nextStep}
             isAdminMode={isAdminMode}
+            variant={isDeepCleaning ? 'deep-cleaning' : 'end-of-tenancy'}
           />
         );
       case 2:
@@ -602,7 +625,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
             onUpdate={updateBookingData as any}
             onNext={nextStep}
             onBack={prevStep}
-            serviceTypeLabel="End of Tenancy Cleaning"
+            serviceTypeLabel={serviceTitle}
             durationHours={bookingData.estimatedHours}
             postcode={bookingData.postcode || null}
             isAdminMode={isAdminMode}
@@ -650,8 +673,8 @@ const EndOfTenancyBookingForm: React.FC = () => {
                   Back to Services
                 </Button>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 whitespace-nowrap">
-                  <span className="sm:hidden">End of Tenancy</span>
-                  <span className="hidden sm:inline">End of Tenancy Cleaning</span>
+                  <span className="sm:hidden">{serviceTitleShort}</span>
+                  <span className="hidden sm:inline">{serviceTitle}</span>
                 </h1>
                 <Button
                   variant="outline"
@@ -665,8 +688,8 @@ const EndOfTenancyBookingForm: React.FC = () => {
             ) : isFromQuoteLink ? (
               // Quote link users only see the title - no back button, no navigation
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto whitespace-nowrap">
-                <span className="sm:hidden">End of Tenancy</span>
-                <span className="hidden sm:inline">End of Tenancy Cleaning</span>
+                <span className="sm:hidden">{serviceTitleShort}</span>
+                <span className="hidden sm:inline">{serviceTitle}</span>
               </h1>
             ) : bookingData.customerId ? (
               <>
@@ -678,15 +701,15 @@ const EndOfTenancyBookingForm: React.FC = () => {
                   ← Back to Account
                 </Button>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 whitespace-nowrap">
-                  <span className="sm:hidden">End of Tenancy</span>
-                  <span className="hidden sm:inline">End of Tenancy Cleaning</span>
+                  <span className="sm:hidden">{serviceTitleShort}</span>
+                  <span className="hidden sm:inline">{serviceTitle}</span>
                 </h1>
                 <div className="w-[140px]" />
               </>
             ) : (
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-700 mx-auto whitespace-nowrap">
-                <span className="sm:hidden">End of Tenancy</span>
-                <span className="hidden sm:inline">End of Tenancy Cleaning</span>
+                <span className="sm:hidden">{serviceTitleShort}</span>
+                <span className="hidden sm:inline">{serviceTitle}</span>
               </h1>
             )}
           </div>
@@ -744,7 +767,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
         {/* Quote Summary Banner for Quote Link Users - shown at top */}
         {isFromQuoteLink && (
           <div className="mb-4 p-4 sm:p-6 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border-2 border-primary/20">
-            <h3 className="text-lg font-bold text-primary mb-3">Your End of Tenancy Cleaning Quote</h3>
+            <h3 className="text-lg font-bold text-primary mb-3">Your {serviceTitle} Quote</h3>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Property</p>
@@ -788,6 +811,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
                     isAdminMode={isAdminMode}
                     isFromQuoteLink={isFromQuoteLink}
                     onUpdate={updateBookingData}
+                    variant={isDeepCleaning ? 'deep-cleaning' : 'end-of-tenancy'}
                   />
               </div>
             </div>
@@ -801,7 +825,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
         onOpenChange={setShowExitPopup}
         email={bookingData.email}
         sessionId={sessionId}
-        serviceType="End of Tenancy"
+        serviceType={quoteServiceType}
         quoteData={{
           totalCost: bookingData.totalCost,
           estimatedHours: bookingData.estimatedHours,
@@ -865,7 +889,7 @@ const EndOfTenancyBookingForm: React.FC = () => {
             mattressItems: bookingData.mattressItems,
           }}
           sessionId={sessionId}
-          serviceType="End of Tenancy"
+          serviceType={quoteServiceType}
           agentUserId={adminUserId || undefined}
           onQuoteSent={resetFormForNewQuote}
         />

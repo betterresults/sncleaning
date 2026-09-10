@@ -97,9 +97,9 @@ const services = [
     id: 'deep-cleaning',
     title: 'Deep Cleaning',
     icon: Droplets,
-    available: false,
+    available: true,
     description: 'Thorough cleaning for all areas',
-    gradient: 'from-gray-400 to-gray-500'
+    gradient: 'from-[#18A5A5] to-[#0F6E6E]'
   },
   {
     id: 'after-builders',
@@ -158,6 +158,11 @@ const ChooseService = () => {
 
     if (serviceId === 'end-of-tenancy') {
       navigate(`/end-of-tenancy?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
+      return;
+    }
+
+    if (serviceId === 'deep-cleaning') {
+      navigate(`/deep-cleaning?postcode=${encodeURIComponent(postcode)}&email=${encodeURIComponent(email)}`);
       return;
     }
 

@@ -160,7 +160,28 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="hourlyRate">Hourly Rate (£) *</Label>
+              <Label htmlFor="payType">Default pay type</Label>
+              <Select
+                value={newCleanerData.default_payment_type}
+                onValueChange={(value) =>
+                  setNewCleanerData({
+                    ...newCleanerData,
+                    default_payment_type: value as 'hourly' | 'percentage' | 'fixed',
+                  })
+                }
+              >
+                <SelectTrigger id="payType" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="fixed">Fixed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="hourlyRate">Hourly Rate (£)</Label>
               <Input
                 id="hourlyRate"
                 type="number"
@@ -169,11 +190,10 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
                 onChange={(e) =>
                   setNewCleanerData({ ...newCleanerData, hourly_rate: Number(e.target.value) })
                 }
-                required
               />
             </div>
             <div>
-              <Label htmlFor="percentageRate">Percentage Rate (%) *</Label>
+              <Label htmlFor="percentageRate">Percentage Rate (%)</Label>
               <Input
                 id="percentageRate"
                 type="number"
@@ -183,7 +203,18 @@ export const AddCleanerDialog: React.FC<AddCleanerDialogProps> = ({
                 onChange={(e) =>
                   setNewCleanerData({ ...newCleanerData, presentage_rate: Number(e.target.value) })
                 }
-                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="fixedAmount">Fixed amount (£)</Label>
+              <Input
+                id="fixedAmount"
+                type="number"
+                step="0.01"
+                value={newCleanerData.fixed_amount}
+                onChange={(e) =>
+                  setNewCleanerData({ ...newCleanerData, fixed_amount: Number(e.target.value) })
+                }
               />
             </div>
           </div>

@@ -2,16 +2,19 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { EndOfTenancyBookingData } from '../EndOfTenancyBookingForm';
+import { EndOfTenancyBookingData, EndOfTenancyFormVariant } from '../EndOfTenancyBookingForm';
 import { Home, Building, Users, Plus, Minus, CheckCircle, Info, Microwave, UtensilsCrossed, BookOpen, WashingMachine, Trees, Sofa, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEndOfTenancyFieldConfigs } from '@/hooks/useEndOfTenancyFieldConfigs';
+import { useDeepCleaningCalculations } from '@/hooks/useDeepCleaningCalculations';
+import { DEEP_CLEANING_MIN_HOURS, EQUIPMENT_INCLUDED_HOURS } from '@/lib/deepCleaningPricing';
 
 interface EndOfTenancyPropertyStepProps {
   data: EndOfTenancyBookingData;
   onUpdate: (updates: Partial<EndOfTenancyBookingData>) => void;
   onNext: () => void;
   isAdminMode?: boolean;
+  variant?: EndOfTenancyFormVariant;
 }
 
 const PROPERTY_TYPES = [
@@ -69,12 +72,16 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   data,
   onUpdate,
   onNext,
-  isAdminMode = false
+  isAdminMode = false,
+  variant = 'end-of-tenancy',
 }) => {
   const { toast } = useToast();
+  const isDeepCleaning = variant === 'deep-cleaning';
+  const isHourly = isDeepCleaning && data.pricingMode === 'hourly';
   
   // Fetch oven options from database
   const { data: ovenConfigs } = useEndOfTenancyFieldConfigs('oven_cleaning', true);
+  const deepCleaningCalc = useDeepCleaningCalculations(data);
   
   // Fetch house share bedroom options from database
   const { data: houseShareConfigs } = useEndOfTenancyFieldConfigs('house_share_areas', true);
@@ -183,21 +190,30 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
     }
   };
   
-  // Validation - for house share, need areas; for others, need bedrooms/bathrooms
-  const canContinue = data.propertyType && 
-    data.propertyCondition && 
-    data.furnitureStatus &&
-    (isHouseShare ? (data.houseShareAreas && data.houseShareAreas.length > 0) : (data.bedrooms && data.bathrooms));
+  React.useEffect(() => {
+    if (isDeepCleaning && data.furnitureStatus !== 'furnished') {
+      onUpdate({ furnitureStatus: 'furnished' });
+    }
+  }, [isDeepCleaning, data.furnitureStatus, onUpdate]);
+
+  // Validation - hourly Deep Cleaning only needs hours; property path matches EOT minus furniture
+  const canContinue = isHourly
+    ? (data.hourlyHours || 0) >= DEEP_CLEANING_MIN_HOURS
+    : Boolean(data.propertyType &&
+      data.propertyCondition &&
+      (isDeepCleaning || data.furnitureStatus) &&
+      (isHouseShare ? (data.houseShareAreas && data.houseShareAreas.length > 0) : (data.bedrooms && data.bathrooms)));
   
   const handleContinue = () => {
     if (!canContinue) {
       const missingFields: string[] = [];
-      if (!data.propertyType) missingFields.push('property type');
-      if (!data.propertyCondition) missingFields.push('property condition');
-      if (!data.furnitureStatus) missingFields.push('furniture status');
-      if (!isHouseShare && !data.bedrooms) missingFields.push('bedrooms');
-      if (!isHouseShare && !data.bathrooms) missingFields.push('bathrooms');
-      if (isHouseShare && (!data.houseShareAreas || data.houseShareAreas.length === 0)) missingFields.push('areas to clean');
+      if (!isHourly && !data.propertyType) missingFields.push('property type');
+      if (!isHourly && !data.propertyCondition) missingFields.push('property condition');
+      if (!isHourly && !isDeepCleaning && !data.furnitureStatus) missingFields.push('furniture status');
+      if (!isHourly && !isHouseShare && !data.bedrooms) missingFields.push('bedrooms');
+      if (!isHourly && !isHouseShare && !data.bathrooms) missingFields.push('bathrooms');
+      if (!isHourly && isHouseShare && (!data.houseShareAreas || data.houseShareAreas.length === 0)) missingFields.push('areas to clean');
+      if (isHourly && (data.hourlyHours || 0) < DEEP_CLEANING_MIN_HOURS) missingFields.push('hours (minimum 2)');
       
       toast({
         title: "Please complete all required fields",
@@ -212,6 +228,63 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
   return (
     <TooltipProvider>
       <div className="space-y-6">
+        {isDeepCleaning && (
+          <div>
+            <h2 className="text-2xl font-bold text-slate-700 mb-2">Pricing</h2>
+            <p className="text-sm text-slate-600 mb-4">
+              Choose hourly if you already know how long you need, or property-based if you want us to price from the rooms.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { id: 'hourly' as const, label: 'Hourly rate', hint: 'You choose the hours' },
+                { id: 'property' as const, label: 'Property-based', hint: 'End of Tenancy price + 10%' },
+              ]).map((option) => {
+                const isSelected = (data.pricingMode || 'property') === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    className={`h-20 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center px-3 ${
+                      isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                    }`}
+                    onClick={() => onUpdate({ pricingMode: option.id, furnitureStatus: 'furnished' })}
+                  >
+                    <span className={`text-sm font-bold ${isSelected ? 'text-primary' : 'text-slate-700'}`}>{option.label}</span>
+                    <span className="text-xs text-muted-foreground mt-1 text-center">{option.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {isHourly && (
+          <div>
+            <h2 className="text-2xl font-bold text-slate-700 mb-2">Hours needed</h2>
+            <p className="text-sm text-slate-600 mb-4">Minimum {DEEP_CLEANING_MIN_HOURS} hours. Charged at the one-time domestic hourly rate.</p>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                className="h-12 w-12 rounded-xl border border-border flex items-center justify-center hover:border-primary/50"
+                onClick={() => onUpdate({ hourlyHours: Math.max(DEEP_CLEANING_MIN_HOURS, (data.hourlyHours || DEEP_CLEANING_MIN_HOURS) - 0.5) })}
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="text-2xl font-bold text-slate-700 min-w-[4rem] text-center">
+                {(data.hourlyHours || DEEP_CLEANING_MIN_HOURS).toFixed(1)}h
+              </span>
+              <button
+                type="button"
+                className="h-12 w-12 rounded-xl border border-border flex items-center justify-center hover:border-primary/50"
+                onClick={() => onUpdate({ hourlyHours: (data.hourlyHours || DEEP_CLEANING_MIN_HOURS) + 0.5 })}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isHourly && (
+        <>
         {/* Property Type */}
         <div className="relative z-10">
           <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Details</h2>
@@ -390,7 +463,8 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         </div>
 
-        {/* Furniture Status - always visible */}
+        {/* Furniture Status - Deep Cleaning is always occupied/furnished */}
+        {!isDeepCleaning && (
         <div>
           <h2 className="text-2xl font-bold text-slate-700 mb-4">Property Status</h2>
           <div className="grid grid-cols-3 gap-3">
@@ -413,6 +487,7 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
             })}
           </div>
         </div>
+        )}
 
         {/* Kitchen/Living Room Layout (hide for house share) */}
         {!isHouseShare && (
@@ -474,6 +549,9 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
           </div>
         )}
 
+        </>
+        )}
+
         {/* Oven Cleaning (hide for house share) */}
         {!isHouseShare && (
           <div className="relative z-[5]">
@@ -499,6 +577,35 @@ export const EndOfTenancyPropertyStep: React.FC<EndOfTenancyPropertyStepProps> =
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {isDeepCleaning && (
+          <div className="rounded-2xl border border-border p-4 space-y-3">
+            <h2 className="text-2xl font-bold text-slate-700">Equipment</h2>
+            {deepCleaningCalc.equipmentIncluded ? (
+              <p className="text-sm text-slate-600">
+                Equipment is included in the price for cleans of {EQUIPMENT_INCLUDED_HOURS} hours or more.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-slate-600">
+                  Jobs under {EQUIPMENT_INCLUDED_HOURS} hours can add a one-off equipment delivery for £{deepCleaningCalc.equipmentOneOffCost.toFixed(2)}.
+                </p>
+                <button
+                  type="button"
+                  className={`w-full h-14 rounded-2xl border transition-all duration-300 flex items-center justify-center ${
+                    data.wantsEquipment ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+                  }`}
+                  onClick={() => onUpdate({ wantsEquipment: !data.wantsEquipment })}
+                >
+                  {data.wantsEquipment && <CheckCircle className="h-4 w-4 text-primary mr-2" />}
+                  <span className={`text-sm font-bold ${data.wantsEquipment ? 'text-primary' : 'text-slate-500'}`}>
+                    Add equipment
+                  </span>
+                </button>
+              </>
+            )}
           </div>
         )}
 

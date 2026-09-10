@@ -139,7 +139,20 @@ serve(async (req: Request) => {
           // Pin to UTC — bookings.date_time stores London wall-clock digits under a
           // hardcoded +00:00 suffix, so formatting in UTC preserves the intended UK time.
           booking_date: bookingData.date_time ? new Date(bookingData.date_time).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : 'TBC',
-          booking_time: bookingData.date_time ? new Date(bookingData.date_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' }) : (bookingData.time_only || 'TBC'),
+          booking_time: bookingData.time_only
+            ? (() => {
+                const hour = parseInt(String(bookingData.time_only).split(':')[0], 10);
+                if (Number.isNaN(hour)) return 'Flexible';
+                const formatHour = (value: number) => {
+                  const normalized = ((value % 24) + 24) % 24;
+                  if (normalized === 0) return '12:00 AM';
+                  if (normalized < 12) return `${normalized}:00 AM`;
+                  if (normalized === 12) return '12:00 PM';
+                  return `${normalized - 12}:00 PM`;
+                };
+                return `${formatHour(hour)} – ${formatHour(hour + 1)}`;
+              })()
+            : (bookingData.date_time ? 'Flexible' : 'TBC'),
           service_type: bookingData.service_type || 'Cleaning Service',
           cleaning_type: bookingData.cleaning_type || '',
           address: bookingData.address || 'Address not specified',

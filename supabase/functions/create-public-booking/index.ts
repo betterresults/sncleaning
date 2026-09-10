@@ -196,8 +196,8 @@ const handler = async (req: Request): Promise<Response> => {
         
         if (data.selectedTime) {
           let time24 = data.selectedTime;
-          if (time24.includes(' - ')) {
-            time24 = time24.split(' - ')[0].trim();
+          if (time24.includes(' - ') || time24.includes(' – ')) {
+            time24 = time24.split(/\s+[–-]\s+/)[0].trim();
           }
           
           if (time24.toLowerCase().includes('am') || time24.toLowerCase().includes('pm')) {
