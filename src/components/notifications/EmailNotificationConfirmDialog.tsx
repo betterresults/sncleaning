@@ -57,6 +57,11 @@ export function EmailNotificationConfirmDialog({
                 Customer: <span className="text-foreground">{customerName}</span>
               </p>
             )}
+            {emailType === 'booking_rescheduled' && (
+              <p className="text-sm font-medium text-foreground">
+                The email will say their date has been changed, with the new date and time.
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">
               You can always send notifications later from the Email Notifications management page.
             </p>
