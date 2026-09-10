@@ -8,6 +8,7 @@ import {
   parseRecurringDaysOfTheWeek,
   recurringAlignDateToDow,
   recurringDayNameToDow,
+  shouldSkipRecurringDate,
   utcDate,
 } from '@/lib/recurringWeekdays';
 
@@ -106,13 +107,35 @@ describe('firstDateForWeekday / expectedDatesThroughHorizon', () => {
       stepDays: 14,
     });
     expect(formatUtcDate(nextFriday)).toBe('2026-09-18');
+  });
+
+  it('walks from start_date when a biweekly series has no upcoming row', () => {
     expect(formatUtcDate(firstDateForWeekday({
       today,
-      startDate: start,
-      dow: 5,
+      startDate: utcDate(2026, 5, 25),
+      dow: 4,
       lastBookingOnDow: null,
       stepDays: 14,
-    }))).toBe('2026-09-11');
+    }))).toBe('2026-09-17');
+  });
+
+  it('keeps monthly steps on the same weekday', () => {
+    const first = firstDateForWeekday({
+      today: utcDate(2026, 8, 10),
+      startDate: utcDate(2026, 0, 30),
+      dow: 5,
+      lastBookingOnDow: utcDate(2026, 8, 25),
+      stepDays: 30,
+    });
+    expect(formatUtcDate(first)).toBe('2026-10-30');
+    expect(
+      expectedDatesThroughHorizon({
+        firstDate: first,
+        stepDays: 30,
+        horizon: utcDate(2027, 1, 28),
+        dow: 5,
+      }).map(formatUtcDate),
+    ).toEqual(['2026-10-30', '2026-12-04', '2027-01-08', '2027-02-12']);
   });
 
   it('uses a future start_date instead of today', () => {
@@ -136,6 +159,14 @@ describe('firstDateForWeekday / expectedDatesThroughHorizon', () => {
     }).map(formatUtcDate);
     expect(dates).not.toContain('2026-10-12');
     expect(horizon.toISOString().slice(0, 10)).toBe('2026-10-10');
+  });
+});
+
+describe('shouldSkipRecurringDate', () => {
+  it('honours a cancelled past visit so cron cannot recreate it', () => {
+    expect(shouldSkipRecurringDate({ hasLiveBooking: false, hasCancelledPastOnDate: true })).toBe(true);
+    expect(shouldSkipRecurringDate({ hasLiveBooking: true, hasCancelledPastOnDate: false })).toBe(true);
+    expect(shouldSkipRecurringDate({ hasLiveBooking: false, hasCancelledPastOnDate: false })).toBe(false);
   });
 });
 

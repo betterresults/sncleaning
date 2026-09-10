@@ -57,6 +57,10 @@ export function frequencyStepDays(frequently: string | null | undefined): number
   }
 }
 
+export function advanceDateToDow(date: Date, stepDays: number, dow: number): Date {
+  return recurringAlignDateToDow(addUtcDays(date, stepDays), dow);
+}
+
 export function firstDateForWeekday(args: {
   today: Date;
   startDate: Date;
@@ -65,26 +69,41 @@ export function firstDateForWeekday(args: {
   stepDays: number;
 }): Date {
   if (args.lastBookingOnDow) {
-    let next = addUtcDays(args.lastBookingOnDow, args.stepDays);
+    let next = advanceDateToDow(args.lastBookingOnDow, args.stepDays, args.dow);
     while (next < args.today) {
-      next = addUtcDays(next, args.stepDays);
+      next = advanceDateToDow(next, args.stepDays, args.dow);
     }
-    return recurringAlignDateToDow(next, args.dow);
+    return next;
   }
-  const base = args.startDate > args.today ? args.startDate : args.today;
-  return recurringAlignDateToDow(base, args.dow);
+
+  let next = recurringAlignDateToDow(args.startDate, args.dow);
+  while (next < args.today) {
+    next = advanceDateToDow(next, args.stepDays, args.dow);
+  }
+  return next;
 }
 
 export function expectedDatesThroughHorizon(args: {
   firstDate: Date;
   stepDays: number;
   horizon: Date;
+  dow?: number;
 }): Date[] {
   const dates: Date[] = [];
   let cursor = args.firstDate;
   while (cursor <= args.horizon) {
     dates.push(cursor);
-    cursor = addUtcDays(cursor, args.stepDays);
+    cursor =
+      args.dow == null
+        ? addUtcDays(cursor, args.stepDays)
+        : advanceDateToDow(cursor, args.stepDays, args.dow);
   }
   return dates;
+}
+
+export function shouldSkipRecurringDate(args: {
+  hasLiveBooking: boolean;
+  hasCancelledPastOnDate: boolean;
+}): boolean {
+  return args.hasLiveBooking || args.hasCancelledPastOnDate;
 }
