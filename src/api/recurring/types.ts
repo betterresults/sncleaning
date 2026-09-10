@@ -2,6 +2,7 @@ export type RecurringGenerationGapReason =
   | 'missing_schedule_fields'
   | 'missing_group_id'
   | 'no_upcoming_booking'
+  | 'missing_weekday'
   | 'horizon_lag';
 
 export interface RecurringGenerationGap {
@@ -54,5 +55,9 @@ export interface RecurringSeriesGapRepairResult {
 }
 
 export function isRepairableGapReason(reason: RecurringGenerationGapReason): boolean {
-  return reason === 'no_upcoming_booking' || reason === 'horizon_lag';
+  return (
+    reason === 'no_upcoming_booking' ||
+    reason === 'horizon_lag' ||
+    reason === 'missing_weekday'
+  );
 }
