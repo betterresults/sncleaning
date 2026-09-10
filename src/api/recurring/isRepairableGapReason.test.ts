@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { isRepairableGapReason } from '@/api/recurring/types';
 
 describe('isRepairableGapReason', () => {
-  it('allows repair for missing upcoming bookings and horizon lag', () => {
+  it('allows repair for missing upcoming bookings, missing weekdays, and horizon lag', () => {
     expect(isRepairableGapReason('no_upcoming_booking')).toBe(true);
     expect(isRepairableGapReason('horizon_lag')).toBe(true);
+    expect(isRepairableGapReason('missing_weekday')).toBe(true);
   });
 
   it('requires Edit for schedule/group data problems', () => {

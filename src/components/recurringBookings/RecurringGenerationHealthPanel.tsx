@@ -33,6 +33,8 @@ function gapReasonLabel(reason: RecurringGenerationGapReason): string {
       return 'No upcoming booking';
     case 'horizon_lag':
       return 'Horizon not filled (~30 days)';
+    case 'missing_weekday':
+      return 'Missing weekday in horizon';
     case 'missing_schedule_fields':
       return 'Missing schedule fields';
     case 'missing_group_id':
