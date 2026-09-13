@@ -19,7 +19,7 @@ import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import { format } from 'date-fns';
 import { formatUKDate, getUKBookedFilterDateRange, getUKTodayRange } from '@/lib/ukTime';
-import { bookingsToCsv, downloadCsv, fetchAllUpcomingBookings } from '@/lib/exportBookingsCsv';
+import { bookingsToCsv, bookingsToSheetCsv, downloadCsv, fetchAllUpcomingBookings, fetchAllUpcomingBookingsWithCleanerEmail } from '@/lib/exportBookingsCsv';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
