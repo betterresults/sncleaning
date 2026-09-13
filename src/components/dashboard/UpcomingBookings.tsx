@@ -533,6 +533,10 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
           {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           {exporting ? 'Preparing…' : 'Download CSV'}
         </Button>
+        <Button variant="outline" size="sm" className="ml-2" onClick={handleExportSheetCsv} disabled={exportingSheet}>
+          {exportingSheet ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {exportingSheet ? 'Preparing…' : 'Download for import'}
+        </Button>
       </div>
       <BookingsViewControls
         viewMode={viewMode}
