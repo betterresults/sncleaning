@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Download, Loader2 } from "lucide-react";
+import { recurringToCsv, downloadCsv, fetchAllRecurringForExport } from "@/lib/exportRecurringCsv";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,7 +53,24 @@ export default function RecurringBookings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [frequencyFilter, setFrequencyFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
+
+  const handleExportAll = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllRecurringForExport();
+      const csv = recurringToCsv(rows);
+      const today = new Date().toISOString().slice(0, 10);
+      downloadCsv(csv, `recurring-bookings-${today}.csv`);
+      toast({ title: "Success", description: `Exported ${rows.length} recurring booking${rows.length === 1 ? '' : 's'}` });
+    } catch (error) {
+      console.error('Error exporting recurring bookings:', error);
+      toast({ title: "Error", description: "Failed to export recurring bookings", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
   const {
     user,
     userRole,
@@ -286,7 +305,22 @@ export default function RecurringBookings() {
                           <SelectItem value="postponed">Postponed</SelectItem>
                         </SelectContent>
                       </Select>
-                      
+
+                      <Button
+                        variant="outline"
+                        onClick={handleExportAll}
+                        disabled={exporting}
+                        className="flex items-center gap-2 whitespace-nowrap"
+                      >
+                        {exporting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Download CSV'}</span>
+                        <span className="sm:hidden">CSV</span>
+                      </Button>
+
                       <Button onClick={() => navigate('/recurring-bookings/add')} className="flex items-center gap-2 whitespace-nowrap">
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">Add Recurring Booking</span>
