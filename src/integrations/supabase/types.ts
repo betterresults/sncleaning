@@ -1248,8 +1248,10 @@ export type Database = {
           cleans_number: number | null
           DBS: string | null
           DBS_date: string | null
+          default_payment_type: string
           email: string | null
           first_name: string | null
+          fixed_amount: number | null
           frontly_id: number | null
           full_name: string | null
           has_equipment: boolean
@@ -1262,8 +1264,6 @@ export type Database = {
           photo: string | null
           postcode: string | null
           presentage_rate: number | null
-          default_payment_type: string
-          fixed_amount: number | null
           rating: number | null
           reviews: number | null
           years: number | null
@@ -1273,8 +1273,10 @@ export type Database = {
           cleans_number?: number | null
           DBS?: string | null
           DBS_date?: string | null
+          default_payment_type?: string
           email?: string | null
           first_name?: string | null
+          fixed_amount?: number | null
           frontly_id?: number | null
           full_name?: string | null
           has_equipment?: boolean
@@ -1287,8 +1289,6 @@ export type Database = {
           photo?: string | null
           postcode?: string | null
           presentage_rate?: number | null
-          default_payment_type?: string
-          fixed_amount?: number | null
           rating?: number | null
           reviews?: number | null
           years?: number | null
@@ -1298,8 +1298,10 @@ export type Database = {
           cleans_number?: number | null
           DBS?: string | null
           DBS_date?: string | null
+          default_payment_type?: string
           email?: string | null
           first_name?: string | null
+          fixed_amount?: number | null
           frontly_id?: number | null
           full_name?: string | null
           has_equipment?: boolean
@@ -1312,8 +1314,6 @@ export type Database = {
           photo?: string | null
           postcode?: string | null
           presentage_rate?: number | null
-          default_payment_type?: string
-          fixed_amount?: number | null
           rating?: number | null
           reviews?: number | null
           years?: number | null
@@ -3062,10 +3062,10 @@ export type Database = {
         Row: {
           address: string | null
           cleaner: number | null
-          cleaner_rate: number | null
+          cleaner_fixed_amount: number | null
           cleaner_pay_type: string
           cleaner_percentage: number | null
-          cleaner_fixed_amount: number | null
+          cleaner_rate: number | null
           cleaning_type: string | null
           confirmed: boolean
           cost_per_hour: number | null
@@ -3091,10 +3091,10 @@ export type Database = {
         Insert: {
           address?: string | null
           cleaner?: number | null
-          cleaner_rate?: number | null
+          cleaner_fixed_amount?: number | null
           cleaner_pay_type?: string
           cleaner_percentage?: number | null
-          cleaner_fixed_amount?: number | null
+          cleaner_rate?: number | null
           cleaning_type?: string | null
           confirmed?: boolean
           cost_per_hour?: number | null
@@ -3120,10 +3120,10 @@ export type Database = {
         Update: {
           address?: string | null
           cleaner?: number | null
-          cleaner_rate?: number | null
+          cleaner_fixed_amount?: number | null
           cleaner_pay_type?: string
           cleaner_percentage?: number | null
-          cleaner_fixed_amount?: number | null
+          cleaner_rate?: number | null
           cleaning_type?: string | null
           confirmed?: boolean
           cost_per_hour?: number | null
@@ -3691,6 +3691,7 @@ export type Database = {
           past_bookings_updated: number
         }[]
       }
+      format_booking_arrival_slot: { Args: { p_time: string }; Returns: string }
       generate_recurring_bookings: {
         Args: { p_service_id?: number; p_triggered_by?: string }
         Returns: Json
@@ -3742,6 +3743,28 @@ export type Database = {
       }
       move_to_past_bookings_table: { Args: never; Returns: undefined }
       populate_sample_activity_logs: { Args: never; Returns: undefined }
+      recurring_align_date_to_dow: {
+        Args: { p_date: string; p_dow: number }
+        Returns: string
+      }
+      recurring_day_name_to_dow: { Args: { p_day: string }; Returns: number }
+      recurring_has_missing_weekday: {
+        Args: {
+          p_days_of_the_week: string
+          p_frequently: string
+          p_recurring_group_id: string
+          p_start_date: string
+        }
+        Returns: boolean
+      }
+      recurring_occurrence_is_cancelled: {
+        Args: { p_customer: number; p_date: string }
+        Returns: boolean
+      }
+      recurring_step_to_dow: {
+        Args: { p_date: string; p_dow: number; p_interval: string }
+        Returns: string
+      }
       repair_recurring_series_gap: {
         Args: { p_service_id: number }
         Returns: Json
