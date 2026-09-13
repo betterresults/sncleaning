@@ -123,6 +123,33 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
 
+  const [exportingSheet, setExportingSheet] = useState(false);
+
+  const handleExportSheetCsv = async () => {
+    setExportingSheet(true);
+    try {
+      const range = bookedFilter !== 'none'
+        ? getUKBookedFilterDateRange(bookedFilter)
+        : dashboardDateFilter;
+      const dateFrom = range?.dateFrom || getUKTodayRange().start;
+      const rows = await fetchAllUpcomingBookingsWithCleanerEmail(dateFrom, range?.dateTo);
+      if (rows.length === 0) {
+        toast({ title: 'Nothing to export', description: 'No bookings match the current range.' });
+        return;
+      }
+      downloadCsv(bookingsToSheetCsv(rows), `bookings-import-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      toast({ title: 'Export ready', description: `${rows.length} bookings downloaded.` });
+    } catch (err) {
+      toast({
+        title: 'Export failed',
+        description: err instanceof Error ? err.message : 'Could not export bookings.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExportingSheet(false);
+    }
+  };
+
   const handleExportCsv = async () => {
     setExporting(true);
     try {
