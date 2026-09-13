@@ -19,7 +19,7 @@ import ManualPaymentDialog from '@/components/payments/ManualPaymentDialog';
 import { InvoilessPaymentDialog } from '@/components/payments/InvoilessPaymentDialog';
 import { format } from 'date-fns';
 import { formatUKDate, getUKBookedFilterDateRange, getUKTodayRange } from '@/lib/ukTime';
-import { bookingsToCsv, downloadCsv, fetchAllUpcomingBookings } from '@/lib/exportBookingsCsv';
+import { bookingsToCsv, bookingsToSheetCsv, downloadCsv, fetchAllUpcomingBookings, fetchAllUpcomingBookingsWithCleanerEmail } from '@/lib/exportBookingsCsv';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar';
@@ -122,6 +122,33 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
   const [bookedFilter, setBookedFilter] = useState<BookedFilterType>('none');
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
+
+  const [exportingSheet, setExportingSheet] = useState(false);
+
+  const handleExportSheetCsv = async () => {
+    setExportingSheet(true);
+    try {
+      const range = bookedFilter !== 'none'
+        ? getUKBookedFilterDateRange(bookedFilter)
+        : dashboardDateFilter;
+      const dateFrom = range?.dateFrom || getUKTodayRange().start;
+      const rows = await fetchAllUpcomingBookingsWithCleanerEmail(dateFrom, range?.dateTo);
+      if (rows.length === 0) {
+        toast({ title: 'Nothing to export', description: 'No bookings match the current range.' });
+        return;
+      }
+      downloadCsv(bookingsToSheetCsv(rows), `bookings-import-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      toast({ title: 'Export ready', description: `${rows.length} bookings downloaded.` });
+    } catch (err) {
+      toast({
+        title: 'Export failed',
+        description: err instanceof Error ? err.message : 'Could not export bookings.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExportingSheet(false);
+    }
+  };
 
   const handleExportCsv = async () => {
     setExporting(true);
@@ -505,6 +532,10 @@ const UpcomingBookings = ({ dashboardDateFilter, openBookingId }: UpcomingBookin
         <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={exporting}>
           {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
           {exporting ? 'Preparing…' : 'Download CSV'}
+        </Button>
+        <Button variant="outline" size="sm" className="ml-2" onClick={handleExportSheetCsv} disabled={exportingSheet}>
+          {exportingSheet ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {exportingSheet ? 'Preparing…' : 'Download for import'}
         </Button>
       </div>
       <BookingsViewControls
