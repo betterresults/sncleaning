@@ -224,7 +224,7 @@ export default function AddRecurringBooking() {
 
       if (error) throw error;
       console.log('Fetched cleaners:', data?.length);
-      setCleaners(data || []);
+      setCleaners((data || []) as Cleaner[]);
       return data;
     } catch (error) {
       console.error('Error fetching cleaners:', error);

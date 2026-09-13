@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { UserPlus, X } from 'lucide-react';
+import { UserPlus, X, Download, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { downloadAllCustomersCsv } from '@/lib/exportCustomersCsv';
 import {
   getAddButtonText,
   UsersListAddUserForm,
@@ -15,6 +17,20 @@ import {
 
 const ModernUsersTable = (props: ModernUsersTableProps) => {
   const vm = useModernUsersTable(props);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportAll = async () => {
+    setExporting(true);
+    try {
+      await downloadAllCustomersCsv();
+      toast.success('Customers exported to CSV');
+    } catch (err) {
+      toast.error('Failed to export customers');
+      console.error(err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -38,23 +54,40 @@ const ModernUsersTable = (props: ModernUsersTableProps) => {
           </span>
         }
         actions={
-          <Button
-            onClick={() => vm.setShowAddUserForm(!vm.showAddUserForm)}
-            size="sm"
-            variant={vm.showAddUserForm ? 'ghost' : 'outline'}
-          >
-            {vm.showAddUserForm ? (
-              <>
-                <X className="h-4 w-4" />
-                Cancel
-              </>
-            ) : (
-              <>
-                <UserPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">{getAddButtonText(vm.userType)}</span>
-              </>
+          <>
+            {vm.userType === 'customer' && (
+              <Button
+                onClick={handleExportAll}
+                disabled={exporting}
+                size="sm"
+                variant="outline"
+              >
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">Export All</span>
+              </Button>
             )}
-          </Button>
+            <Button
+              onClick={() => vm.setShowAddUserForm(!vm.showAddUserForm)}
+              size="sm"
+              variant={vm.showAddUserForm ? 'ghost' : 'outline'}
+            >
+              {vm.showAddUserForm ? (
+                <>
+                  <X className="h-4 w-4" />
+                  Cancel
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4" />
+                  <span className="hidden sm:inline">{getAddButtonText(vm.userType)}</span>
+                </>
+              )}
+            </Button>
+          </>
         }
       />
 

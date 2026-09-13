@@ -125,7 +125,7 @@ export const useLinkedCleaners = (
           full_name: c.full_name,
           hourly_rate: c.hourly_rate,
           presentage_rate: c.presentage_rate,
-          default_payment_type: c.default_payment_type,
+          default_payment_type: c.default_payment_type as 'hourly' | 'percentage' | 'fixed' | null,
           fixed_amount: c.fixed_amount,
           serviceTypeKeys,
           offersService: cleanerOffersService(serviceTypeKeys, serviceType),

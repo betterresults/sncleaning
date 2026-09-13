@@ -37,7 +37,7 @@ export const createEmptyNewCleanerData = () => ({
   postcode: '',
   hourly_rate: 20,
   presentage_rate: 70,
-  default_payment_type: 'hourly' as const,
+  default_payment_type: 'hourly' as 'hourly' | 'percentage' | 'fixed',
   fixed_amount: 0,
   notes: '',
   years: 0,
