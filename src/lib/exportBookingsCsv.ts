@@ -121,3 +121,68 @@ export async function fetchAllUpcomingBookings(dateFrom: string, dateTo?: string
 
   return all;
 }
+
+/* ---------------------------------------------------------------
+   Import-friendly export (fixed column set for external software)
+   --------------------------------------------------------------- */
+
+const SHEET_HEADERS = [
+  'date', 'time', 'customer_email', 'cleaner_email', 'service_address_name',
+  'service_address', 'service_postcode', 'cleaning_type', 'pricing_type', 'hours',
+  'cleaning_cost_per_hour', 'fixed_price', 'total_cost', 'booking_status',
+  'payment_status', 'notes', 'extras',
+];
+
+export interface ExportBookingSheetRow extends ExportBookingRow {
+  cleaning_cost_per_hour?: number | null;
+  primary_cleaner_email?: string | null;
+}
+
+export function bookingsToSheetCsv(bookings: ExportBookingSheetRow[]): string {
+  const rows = bookings.map((b) => {
+    const perHour = b.cleaning_cost_per_hour ?? null;
+    const isHourly = !!perHour && Number(perHour) > 0;
+    return [
+      b.date_time ? formatUK(b.date_time, 'yyyy-MM-dd') : '',
+      b.time_only || (b.date_time ? formatUK(b.date_time, 'HH:mm') : ''),
+      b.email || '',
+      b.primary_cleaner_email || '',
+      `${b.first_name || ''} ${b.last_name || ''}`.trim(),
+      b.address || '',
+      b.postcode || '',
+      b.cleaning_type || b.service_type || '',
+      isHourly ? 'hourly' : 'fixed',
+      b.total_hours ?? '',
+      isHourly ? perHour : '',
+      isHourly ? '' : (b.total_cost ?? ''),
+      b.total_cost ?? '',
+      b.booking_status || '',
+      b.payment_status || '',
+      b.additional_details || '',
+      b.extras || '',
+    ];
+  });
+
+  return [SHEET_HEADERS, ...rows].map((r) => r.map(escapeCell).join(',')).join('\r\n');
+}
+
+/** Same fetch as above, but also resolves each booking's primary cleaner email. */
+export async function fetchAllUpcomingBookingsWithCleanerEmail(dateFrom: string, dateTo?: string) {
+  const all = (await fetchAllUpcomingBookings(dateFrom, dateTo)) as ExportBookingSheetRow[];
+  const ids = all.map((b) => b.id);
+  if (ids.length === 0) return all;
+
+  const emailMap: Record<number, string> = {};
+  for (let i = 0; i < ids.length; i += 500) {
+    const { data } = await supabase
+      .from('cleaner_payments')
+      .select('booking_id, cleaners ( email )')
+      .in('booking_id', ids.slice(i, i + 500))
+      .eq('is_primary', true);
+    (data || []).forEach((row: any) => {
+      if (row.cleaners?.email) emailMap[row.booking_id] = row.cleaners.email;
+    });
+  }
+  all.forEach((b) => { b.primary_cleaner_email = emailMap[b.id] || null; });
+  return all;
+}
