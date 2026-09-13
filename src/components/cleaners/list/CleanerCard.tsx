@@ -10,6 +10,7 @@ import {
   MapPin,
   DollarSign,
   Clock,
+  Sparkles,
 } from 'lucide-react';
 import { CleanerAccountActions } from '@/components/admin/CleanerAccountActions';
 import { CleanerCalendarStatus } from '@/components/admin/CleanerCalendarStatus';
