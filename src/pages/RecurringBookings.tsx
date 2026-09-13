@@ -305,7 +305,22 @@ export default function RecurringBookings() {
                           <SelectItem value="postponed">Postponed</SelectItem>
                         </SelectContent>
                       </Select>
-                      
+
+                      <Button
+                        variant="outline"
+                        onClick={handleExportAll}
+                        disabled={exporting}
+                        className="flex items-center gap-2 whitespace-nowrap"
+                      >
+                        {exporting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        <span className="hidden sm:inline">{exporting ? 'Exporting...' : 'Download CSV'}</span>
+                        <span className="sm:hidden">CSV</span>
+                      </Button>
+
                       <Button onClick={() => navigate('/recurring-bookings/add')} className="flex items-center gap-2 whitespace-nowrap">
                         <Plus className="h-4 w-4" />
                         <span className="hidden sm:inline">Add Recurring Booking</span>
