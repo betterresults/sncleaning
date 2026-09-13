@@ -53,7 +53,24 @@ export default function RecurringBookings() {
   const [searchQuery, setSearchQuery] = useState('');
   const [frequencyFilter, setFrequencyFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [exporting, setExporting] = useState(false);
   const navigate = useNavigate();
+
+  const handleExportAll = async () => {
+    setExporting(true);
+    try {
+      const rows = await fetchAllRecurringForExport();
+      const csv = recurringToCsv(rows);
+      const today = new Date().toISOString().slice(0, 10);
+      downloadCsv(csv, `recurring-bookings-${today}.csv`);
+      toast({ title: "Success", description: `Exported ${rows.length} recurring booking${rows.length === 1 ? '' : 's'}` });
+    } catch (error) {
+      console.error('Error exporting recurring bookings:', error);
+      toast({ title: "Error", description: "Failed to export recurring bookings", variant: "destructive" });
+    } finally {
+      setExporting(false);
+    }
+  };
   const {
     user,
     userRole,
