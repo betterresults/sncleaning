@@ -17,6 +17,20 @@ import {
 
 const ModernUsersTable = (props: ModernUsersTableProps) => {
   const vm = useModernUsersTable(props);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportAll = async () => {
+    setExporting(true);
+    try {
+      await downloadAllCustomersCsv();
+      toast.success('Customers exported to CSV');
+    } catch (err) {
+      toast.error('Failed to export customers');
+      console.error(err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
