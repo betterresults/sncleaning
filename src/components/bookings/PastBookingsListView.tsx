@@ -7,6 +7,15 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { PastBookingsFilters } from '@/components/bookings/PastBookingsFilters';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Download, Loader2 } from 'lucide-react';
+import {
+  bookingsToCsv,
+  bookingsToSheetCsv,
+  downloadCsv,
+  fetchAllCompletedBookings,
+  fetchAllCompletedBookingsWithCleanerEmail,
+} from '@/lib/exportBookingsCsv';
 import { BookingsListPagination } from '@/components/bookings/list/BookingsListPagination';
 import {
   BookingsListEmpty,
@@ -195,9 +204,38 @@ const PastBookingsListView = ({
   const endIndex = startIndex + itemsPerPage;
   const displayedBookings = displayBookings.slice(startIndex, endIndex);
   const showFilters = !dashboardDateFilter;
+  const [exporting, setExporting] = useState<'all' | 'import' | null>(null);
+  const handleExportCompleted = async (kind: 'all' | 'import') => {
+    setExporting(kind);
+    try {
+      const rows = kind === 'all'
+        ? await fetchAllCompletedBookings()
+        : await fetchAllCompletedBookingsWithCleanerEmail();
+      const csv = kind === 'all' ? bookingsToCsv(rows) : bookingsToSheetCsv(rows);
+      const date = new Date().toISOString().slice(0, 10);
+      downloadCsv(csv, `completed-bookings${kind === 'import' ? '-import' : ''}-${date}.csv`);
+      toast({ title: 'Download ready', description: `${rows.length} completed bookings exported.` });
+    } catch (e: any) {
+      toast({ title: 'Export failed', description: e?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setExporting(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
+      {showFilters && !showOnlyCancelled && userRole === 'admin' && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={() => handleExportCompleted('all')} disabled={!!exporting}>
+            {exporting === 'all' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting === 'all' ? 'Preparing…' : 'Download CSV'}
+          </Button>
+          <Button variant="outline" size="sm" className="ml-2" onClick={() => handleExportCompleted('import')} disabled={!!exporting}>
+            {exporting === 'import' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting === 'import' ? 'Preparing…' : 'Download for import'}
+          </Button>
+        </div>
+      )}
       {showFilters && !showOnlyCancelled && showStatsForAdmin && (
         <PastBookingsListStats bookings={displayBookings} />
       )}

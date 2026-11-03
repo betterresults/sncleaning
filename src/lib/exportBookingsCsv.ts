@@ -80,18 +80,32 @@ export function downloadCsv(csv: string, filename: string) {
 
 /** Fetches every upcoming booking (paginated past the 1000-row limit) and returns CSV rows. */
 export async function fetchAllUpcomingBookings(dateFrom: string, dateTo?: string) {
+  return fetchAllBookingsFrom('bookings', dateFrom, dateTo);
+}
+
+/** All completed (past, not cancelled) bookings. */
+export async function fetchAllCompletedBookings() {
+  const all = await fetchAllBookingsFrom('past_bookings');
+  return all.filter((b) => (b.booking_status || '').toLowerCase() !== 'cancelled');
+}
+
+export async function fetchAllCompletedBookingsWithCleanerEmail() {
+  const all = (await fetchAllCompletedBookings()) as ExportBookingSheetRow[];
+  return attachCleanerEmails(all);
+}
+
+async function fetchAllBookingsFrom(table: 'bookings' | 'past_bookings', dateFrom?: string, dateTo?: string) {
   const pageSize = 1000;
   let from = 0;
   const all: ExportBookingRow[] = [];
 
   while (true) {
-    let query = supabase
-      .from('bookings')
+    let query = (supabase.from(table) as any)
       .select('*')
-      .gte('date_time', dateFrom)
       .order('date_time', { ascending: true })
       .range(from, from + pageSize - 1);
 
+    if (dateFrom) query = query.gte('date_time', dateFrom);
     if (dateTo) query = query.lte('date_time', dateTo);
 
     const { data, error } = await query;
@@ -169,6 +183,10 @@ export function bookingsToSheetCsv(bookings: ExportBookingSheetRow[]): string {
 /** Same fetch as above, but also resolves each booking's primary cleaner email. */
 export async function fetchAllUpcomingBookingsWithCleanerEmail(dateFrom: string, dateTo?: string) {
   const all = (await fetchAllUpcomingBookings(dateFrom, dateTo)) as ExportBookingSheetRow[];
+  return attachCleanerEmails(all);
+}
+
+async function attachCleanerEmails(all: ExportBookingSheetRow[]) {
   const ids = all.map((b) => b.id);
   if (ids.length === 0) return all;
 

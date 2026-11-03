@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.3"
   }
   public: {
     Tables: {
@@ -285,42 +285,132 @@ export type Database = {
         }
         Relationships: []
       }
+      area_page_template: {
+        Row: {
+          display_order: number
+          example: string | null
+          field: string
+          how_to_write: string
+          id: number
+          must_be_unique: boolean
+          page_section: string
+          purpose: string
+          required: boolean
+        }
+        Insert: {
+          display_order: number
+          example?: string | null
+          field: string
+          how_to_write: string
+          id?: number
+          must_be_unique?: boolean
+          page_section: string
+          purpose: string
+          required?: boolean
+        }
+        Update: {
+          display_order?: number
+          example?: string | null
+          field?: string
+          how_to_write?: string
+          id?: number
+          must_be_unique?: boolean
+          page_section?: string
+          purpose?: string
+          required?: boolean
+        }
+        Relationships: []
+      }
       area_pages: {
         Row: {
+          add_ons: Json
+          content_sections: Json
           created_at: string
+          extra_bathroom_price: number
+          extra_rooms: Json
           faqs: Json | null
           id: string
+          included_tasks: Json
           intro: string | null
+          local_intro: string | null
+          manager_name: string | null
+          manager_note: string | null
+          manager_photo: string | null
+          manager_role: string | null
           meta_description: string | null
           meta_title: string | null
+          neighbourhoods: Json
+          postcodes: Json
+          price_from: number | null
+          pricing_tiers: Json
           published: boolean
+          quick_answer: string | null
+          rating: number | null
           region_id: string
+          review_count: number | null
+          review_url: string | null
           service_id: string
           slug: string
           updated_at: string
         }
         Insert: {
+          add_ons?: Json
+          content_sections?: Json
           created_at?: string
+          extra_bathroom_price?: number
+          extra_rooms?: Json
           faqs?: Json | null
           id?: string
+          included_tasks?: Json
           intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
           meta_description?: string | null
           meta_title?: string | null
+          neighbourhoods?: Json
+          postcodes?: Json
+          price_from?: number | null
+          pricing_tiers?: Json
           published?: boolean
+          quick_answer?: string | null
+          rating?: number | null
           region_id: string
+          review_count?: number | null
+          review_url?: string | null
           service_id: string
           slug: string
           updated_at?: string
         }
         Update: {
+          add_ons?: Json
+          content_sections?: Json
           created_at?: string
+          extra_bathroom_price?: number
+          extra_rooms?: Json
           faqs?: Json | null
           id?: string
+          included_tasks?: Json
           intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
           meta_description?: string | null
           meta_title?: string | null
+          neighbourhoods?: Json
+          postcodes?: Json
+          price_from?: number | null
+          pricing_tiers?: Json
           published?: boolean
+          quick_answer?: string | null
+          rating?: number | null
           region_id?: string
+          review_count?: number | null
+          review_url?: string | null
           service_id?: string
           slug?: string
           updated_at?: string
@@ -341,6 +431,390 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      area_pages_backup_20261101: {
+        Row: {
+          add_ons: Json | null
+          content_sections: Json | null
+          created_at: string | null
+          extra_bathroom_price: number | null
+          extra_rooms: Json | null
+          faqs: Json | null
+          id: string | null
+          included_tasks: Json | null
+          intro: string | null
+          local_intro: string | null
+          manager_name: string | null
+          manager_note: string | null
+          manager_photo: string | null
+          manager_role: string | null
+          meta_description: string | null
+          meta_title: string | null
+          neighbourhoods: Json | null
+          postcodes: Json | null
+          price_from: number | null
+          pricing_tiers: Json | null
+          published: boolean | null
+          quick_answer: string | null
+          rating: number | null
+          region_id: string | null
+          review_count: number | null
+          review_url: string | null
+          service_id: string | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      area_pages_backup_20261102: {
+        Row: {
+          add_ons: Json | null
+          content_sections: Json | null
+          created_at: string | null
+          extra_bathroom_price: number | null
+          extra_rooms: Json | null
+          faqs: Json | null
+          id: string | null
+          included_tasks: Json | null
+          intro: string | null
+          local_intro: string | null
+          manager_name: string | null
+          manager_note: string | null
+          manager_photo: string | null
+          manager_role: string | null
+          meta_description: string | null
+          meta_title: string | null
+          neighbourhoods: Json | null
+          postcodes: Json | null
+          price_from: number | null
+          pricing_tiers: Json | null
+          published: boolean | null
+          quick_answer: string | null
+          rating: number | null
+          region_id: string | null
+          review_count: number | null
+          review_url: string | null
+          service_id: string | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      area_pages_backup_20261103: {
+        Row: {
+          add_ons: Json | null
+          content_sections: Json | null
+          created_at: string | null
+          extra_bathroom_price: number | null
+          extra_rooms: Json | null
+          faqs: Json | null
+          id: string | null
+          included_tasks: Json | null
+          intro: string | null
+          local_intro: string | null
+          manager_name: string | null
+          manager_note: string | null
+          manager_photo: string | null
+          manager_role: string | null
+          meta_description: string | null
+          meta_title: string | null
+          neighbourhoods: Json | null
+          postcodes: Json | null
+          price_from: number | null
+          pricing_tiers: Json | null
+          published: boolean | null
+          quick_answer: string | null
+          rating: number | null
+          region_id: string | null
+          review_count: number | null
+          review_url: string | null
+          service_id: string | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      area_pages_backup_20261103b: {
+        Row: {
+          add_ons: Json | null
+          content_sections: Json | null
+          created_at: string | null
+          extra_bathroom_price: number | null
+          extra_rooms: Json | null
+          faqs: Json | null
+          id: string | null
+          included_tasks: Json | null
+          intro: string | null
+          local_intro: string | null
+          manager_name: string | null
+          manager_note: string | null
+          manager_photo: string | null
+          manager_role: string | null
+          meta_description: string | null
+          meta_title: string | null
+          neighbourhoods: Json | null
+          postcodes: Json | null
+          price_from: number | null
+          pricing_tiers: Json | null
+          published: boolean | null
+          quick_answer: string | null
+          rating: number | null
+          region_id: string | null
+          review_count: number | null
+          review_url: string | null
+          service_id: string | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          add_ons?: Json | null
+          content_sections?: Json | null
+          created_at?: string | null
+          extra_bathroom_price?: number | null
+          extra_rooms?: Json | null
+          faqs?: Json | null
+          id?: string | null
+          included_tasks?: Json | null
+          intro?: string | null
+          local_intro?: string | null
+          manager_name?: string | null
+          manager_note?: string | null
+          manager_photo?: string | null
+          manager_role?: string | null
+          meta_description?: string | null
+          meta_title?: string | null
+          neighbourhoods?: Json | null
+          postcodes?: Json | null
+          price_from?: number | null
+          pricing_tiers?: Json | null
+          published?: boolean | null
+          quick_answer?: string | null
+          rating?: number | null
+          region_id?: string | null
+          review_count?: number | null
+          review_url?: string | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       automation_settings: {
         Row: {
@@ -373,6 +847,7 @@ export type Database = {
           created_at: string
           excerpt: string | null
           id: string
+          legacy_root: boolean
           meta_description: string | null
           meta_title: string | null
           published: boolean
@@ -387,6 +862,7 @@ export type Database = {
           created_at?: string
           excerpt?: string | null
           id?: string
+          legacy_root?: boolean
           meta_description?: string | null
           meta_title?: string | null
           published?: boolean
@@ -401,6 +877,7 @@ export type Database = {
           created_at?: string
           excerpt?: string | null
           id?: string
+          legacy_root?: boolean
           meta_description?: string | null
           meta_title?: string | null
           published?: boolean
@@ -738,6 +1215,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      case_study_submissions: {
+        Row: {
+          area: string
+          cleaners: number | null
+          created_at: string | null
+          customer_comment: string | null
+          customer_permission: boolean | null
+          id: string
+          interesting: string | null
+          photos: Json | null
+          postcode_district: string | null
+          products: string | null
+          property_size: string | null
+          property_type: string | null
+          published_url: string | null
+          service: string
+          situation: string
+          status: string | null
+          team_code: string | null
+          team_member: string
+          time_taken: string | null
+          what_we_did: string
+        }
+        Insert: {
+          area: string
+          cleaners?: number | null
+          created_at?: string | null
+          customer_comment?: string | null
+          customer_permission?: boolean | null
+          id?: string
+          interesting?: string | null
+          photos?: Json | null
+          postcode_district?: string | null
+          products?: string | null
+          property_size?: string | null
+          property_type?: string | null
+          published_url?: string | null
+          service: string
+          situation: string
+          status?: string | null
+          team_code?: string | null
+          team_member: string
+          time_taken?: string | null
+          what_we_did: string
+        }
+        Update: {
+          area?: string
+          cleaners?: number | null
+          created_at?: string | null
+          customer_comment?: string | null
+          customer_permission?: boolean | null
+          id?: string
+          interesting?: string | null
+          photos?: Json | null
+          postcode_district?: string | null
+          products?: string | null
+          property_size?: string | null
+          property_type?: string | null
+          published_url?: string | null
+          service?: string
+          situation?: string
+          status?: string | null
+          team_code?: string | null
+          team_member?: string
+          time_taken?: string | null
+          what_we_did?: string
+        }
+        Relationships: []
       }
       chat_messages: {
         Row: {
@@ -1572,27 +2118,33 @@ export type Database = {
       coverage_regions: {
         Row: {
           created_at: string
+          display_name: string | null
           display_order: number | null
           id: string
           is_active: boolean | null
+          level: string | null
           name: string
           parent_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          display_name?: string | null
           display_order?: number | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           name: string
           parent_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          display_name?: string | null
           display_order?: number | null
           id?: string
           is_active?: boolean | null
+          level?: string | null
           name?: string
           parent_id?: string | null
           updated_at?: string
@@ -3271,6 +3823,135 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_agent_runs: {
+        Row: {
+          created_at: string | null
+          id: number
+          indexed_total: number | null
+          indexing_requested: number | null
+          not_indexed_total: number | null
+          pages_improved: number | null
+          run_date: string | null
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          indexed_total?: number | null
+          indexing_requested?: number | null
+          not_indexed_total?: number | null
+          pages_improved?: number | null
+          run_date?: string | null
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          indexed_total?: number | null
+          indexing_requested?: number | null
+          not_indexed_total?: number | null
+          pages_improved?: number | null
+          run_date?: string | null
+          summary?: string | null
+        }
+        Relationships: []
+      }
+      seo_content_plan: {
+        Row: {
+          action: string
+          area: string
+          created_at: string | null
+          day_number: number
+          done_at: string | null
+          id: number
+          keyword: string | null
+          notes: string | null
+          service_slug: string | null
+          status: string
+          url: string | null
+        }
+        Insert: {
+          action: string
+          area: string
+          created_at?: string | null
+          day_number: number
+          done_at?: string | null
+          id?: never
+          keyword?: string | null
+          notes?: string | null
+          service_slug?: string | null
+          status?: string
+          url?: string | null
+        }
+        Update: {
+          action?: string
+          area?: string
+          created_at?: string | null
+          day_number?: number
+          done_at?: string | null
+          id?: never
+          keyword?: string | null
+          notes?: string | null
+          service_slug?: string | null
+          status?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      seo_page_tracker: {
+        Row: {
+          area_page_id: string | null
+          competitor_target: number | null
+          created_at: string | null
+          improved_at: string | null
+          index_status: string | null
+          indexing_requested_at: string | null
+          keyword: string | null
+          last_checked_at: string | null
+          neuron_query_id: string | null
+          notes: string | null
+          page_type: string | null
+          priority: number | null
+          score_after: number | null
+          score_before: number | null
+          url: string
+        }
+        Insert: {
+          area_page_id?: string | null
+          competitor_target?: number | null
+          created_at?: string | null
+          improved_at?: string | null
+          index_status?: string | null
+          indexing_requested_at?: string | null
+          keyword?: string | null
+          last_checked_at?: string | null
+          neuron_query_id?: string | null
+          notes?: string | null
+          page_type?: string | null
+          priority?: number | null
+          score_after?: number | null
+          score_before?: number | null
+          url: string
+        }
+        Update: {
+          area_page_id?: string | null
+          competitor_target?: number | null
+          created_at?: string | null
+          improved_at?: string | null
+          index_status?: string | null
+          indexing_requested_at?: string | null
+          keyword?: string | null
+          last_checked_at?: string | null
+          neuron_query_id?: string | null
+          notes?: string | null
+          page_type?: string | null
+          priority?: number | null
+          score_after?: number | null
+          score_before?: number | null
+          url?: string
+        }
+        Relationships: []
+      }
       service_pages: {
         Row: {
           created_at: string
@@ -3327,6 +4008,54 @@ export type Database = {
           },
         ]
       }
+      service_pages_backup_20261101: {
+        Row: {
+          created_at: string | null
+          faqs: Json | null
+          full_description: string | null
+          id: string | null
+          images: Json | null
+          included_tasks: Json | null
+          meta_description: string | null
+          meta_title: string | null
+          pricing_note: string | null
+          published: boolean | null
+          service_id: string | null
+          slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          faqs?: Json | null
+          full_description?: string | null
+          id?: string | null
+          images?: Json | null
+          included_tasks?: Json | null
+          meta_description?: string | null
+          meta_title?: string | null
+          pricing_note?: string | null
+          published?: boolean | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          faqs?: Json | null
+          full_description?: string | null
+          id?: string | null
+          images?: Json | null
+          included_tasks?: Json | null
+          meta_description?: string | null
+          meta_title?: string | null
+          pricing_note?: string | null
+          published?: boolean | null
+          service_id?: string | null
+          slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       service_pricing_formulas: {
         Row: {
           base_hourly_rate: number | null
@@ -3365,6 +4094,9 @@ export type Database = {
       }
       services: {
         Row: {
+          booking_embed_url: string | null
+          booking_url: string | null
+          coverage_postcode_areas: Json
           created_at: string
           features: Json
           icon: string | null
@@ -3377,6 +4109,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          booking_embed_url?: string | null
+          booking_url?: string | null
+          coverage_postcode_areas?: Json
           created_at?: string
           features?: Json
           icon?: string | null
@@ -3389,6 +4124,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          booking_embed_url?: string | null
+          booking_url?: string | null
+          coverage_postcode_areas?: Json
           created_at?: string
           features?: Json
           icon?: string | null
@@ -3399,6 +4137,54 @@ export type Database = {
           sort_order?: number
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      services_backup_20261101: {
+        Row: {
+          booking_embed_url: string | null
+          booking_url: string | null
+          coverage_postcode_areas: Json | null
+          created_at: string | null
+          features: Json | null
+          icon: string | null
+          id: string | null
+          published: boolean | null
+          short_description: string | null
+          slug: string | null
+          sort_order: number | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          booking_embed_url?: string | null
+          booking_url?: string | null
+          coverage_postcode_areas?: Json | null
+          created_at?: string | null
+          features?: Json | null
+          icon?: string | null
+          id?: string | null
+          published?: boolean | null
+          short_description?: string | null
+          slug?: string | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          booking_embed_url?: string | null
+          booking_url?: string | null
+          coverage_postcode_areas?: Json | null
+          created_at?: string | null
+          features?: Json | null
+          icon?: string | null
+          id?: string | null
+          published?: boolean | null
+          short_description?: string | null
+          slug?: string | null
+          sort_order?: number | null
+          title?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -3648,6 +4434,24 @@ export type Database = {
           name?: string
           updated_at?: string
           variables?: Json | null
+        }
+        Relationships: []
+      }
+      tmp_patch: {
+        Row: {
+          body: string | null
+          id: number
+          name: string | null
+        }
+        Insert: {
+          body?: string | null
+          id?: number
+          name?: string | null
+        }
+        Update: {
+          body?: string | null
+          id?: number
+          name?: string | null
         }
         Relationships: []
       }
