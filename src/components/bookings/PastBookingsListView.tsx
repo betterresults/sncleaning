@@ -88,6 +88,7 @@ const PastBookingsListView = ({
   const [selectedBookingForInvoiless, setSelectedBookingForInvoiless] = useState<PastBooking | null>(null);
   const [photoManagementOpen, setPhotoManagementOpen] = useState(false);
   const [selectedBookingForPhotos, setSelectedBookingForPhotos] = useState<PastBooking | null>(null);
+  const [exporting, setExporting] = useState<'all' | 'import' | null>(null);
 
   const refreshBookings = useCallback(() => {
     refetch();
@@ -204,7 +205,6 @@ const PastBookingsListView = ({
   const endIndex = startIndex + itemsPerPage;
   const displayedBookings = displayBookings.slice(startIndex, endIndex);
   const showFilters = !dashboardDateFilter;
-  const [exporting, setExporting] = useState<'all' | 'import' | null>(null);
   const handleExportCompleted = async (kind: 'all' | 'import') => {
     setExporting(kind);
     try {

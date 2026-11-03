@@ -2443,6 +2443,45 @@ export type Database = {
         }
         Relationships: []
       }
+      job_history: {
+        Row: {
+          created_at: string | null
+          district: string | null
+          frequency: string | null
+          home_key: string | null
+          hours: number | null
+          id: number
+          job_date: string
+          service: string
+          source: string
+          source_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          district?: string | null
+          frequency?: string | null
+          home_key?: string | null
+          hours?: number | null
+          id?: number
+          job_date: string
+          service: string
+          source: string
+          source_id: string
+        }
+        Update: {
+          created_at?: string | null
+          district?: string | null
+          frequency?: string | null
+          home_key?: string | null
+          hours?: number | null
+          id?: number
+          job_date?: string
+          service?: string
+          source?: string
+          source_id?: string
+        }
+        Relationships: []
+      }
       linen_inventory: {
         Row: {
           address_id: string
