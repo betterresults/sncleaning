@@ -183,6 +183,10 @@ export function bookingsToSheetCsv(bookings: ExportBookingSheetRow[]): string {
 /** Same fetch as above, but also resolves each booking's primary cleaner email. */
 export async function fetchAllUpcomingBookingsWithCleanerEmail(dateFrom: string, dateTo?: string) {
   const all = (await fetchAllUpcomingBookings(dateFrom, dateTo)) as ExportBookingSheetRow[];
+  return attachCleanerEmails(all);
+}
+
+async function attachCleanerEmails(all: ExportBookingSheetRow[]) {
   const ids = all.map((b) => b.id);
   if (ids.length === 0) return all;
 
